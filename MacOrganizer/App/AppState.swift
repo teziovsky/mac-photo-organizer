@@ -40,20 +40,30 @@ final class AppState: ObservableObject {
     }
 
     func selectAlbum(_ album: PhotoAlbum?) async {
-        selectedAlbum = album
         selectedMediaID = nil
-        mediaItems = []
         mediaError = nil
-        await ThumbnailLoader.shared.clearMemoryCache()
 
-        guard let album else { return }
+        guard let album else {
+            isLoadingMedia = false
+            selectedAlbum = nil
+            mediaItems = []
+            await ThumbnailLoader.shared.clearMemoryCache()
+            return
+        }
+
         isLoadingMedia = true
+        selectedAlbum = album
+        mediaItems = []
+
         defer { isLoadingMedia = false }
+
+        await ThumbnailLoader.shared.clearMemoryCache()
 
         do {
             mediaItems = try await photosService.mediaItems(for: album)
         } catch {
             mediaError = error.localizedDescription
+            mediaItems = []
         }
     }
 

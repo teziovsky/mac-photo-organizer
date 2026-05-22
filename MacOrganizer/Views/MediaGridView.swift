@@ -107,6 +107,7 @@ struct MediaGridView: View {
                 }
             }
             .background(Color.black.opacity(0.92))
+            .id(appState.selectedAlbum?.id)
         }
     }
 
