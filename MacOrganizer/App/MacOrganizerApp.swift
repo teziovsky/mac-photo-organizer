@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 @main
@@ -16,7 +17,13 @@ struct MacOrganizerApp: App {
         .windowStyle(.automatic)
         .commands {
             CommandGroup(replacing: .newItem) {}
-            SidebarCommands()
+            CommandGroup(replacing: .sidebar) {
+                Button("Toggle Sidebar") {
+                    NSApp.keyWindow?.firstResponder?
+                        .tryToPerform(#selector(NSSplitViewController.toggleSidebar(_:)), with: nil)
+                }
+                .keyboardShortcut("s", modifiers: .command)
+            }
             MacOrganizerAlbumCommands(appState: appState)
         }
 
