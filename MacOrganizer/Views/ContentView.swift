@@ -21,29 +21,7 @@ struct ContentView: View {
         .onExitCommand(perform: handleEscape)
         .navigationTitle(mainToolbarTitle)
         .toolbar {
-            if let album = appState.selectedAlbum {
-                ToolbarItem(placement: .principal) {
-                    VStack(alignment: .leading, spacing: AlbumListRowStyle.labelSpacing) {
-                        Text(album.name)
-                            .font(AlbumListRowStyle.toolbarTitleFont)
-                        Text(album.mediaSummary)
-                            .font(AlbumListRowStyle.detailFont)
-                            .foregroundStyle(.secondary)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-            }
-
-            ToolbarItem(placement: .navigation) {
-                if appState.selectedAlbum != nil {
-                    Button {
-                        Task { await appState.selectAlbum(nil) }
-                    } label: {
-                        Label("Back", systemImage: "chevron.left")
-                    }
-                    .help("Deselect album")
-                }
-            }
+            albumNavigationHeader
             if appState.selectedAlbum != nil {
                 ToolbarItemGroup(placement: .primaryAction) {
                     Button {
@@ -123,6 +101,49 @@ struct ContentView: View {
 
     private var mainToolbarTitle: String {
         appState.selectedAlbum == nil ? "iCloud Photos Organizer" : ""
+    }
+
+    @ToolbarContentBuilder
+    private var albumNavigationHeader: some ToolbarContent {
+        if let album = appState.selectedAlbum {
+            if #available(macOS 26.0, *) {
+                ToolbarItemGroup(placement: .navigation) {
+                    albumBackButton
+                }
+
+                ToolbarItem(placement: .navigation) {
+                    albumTitleHeader(album)
+                }
+                .sharedBackgroundVisibility(.hidden)
+            } else {
+                ToolbarItem(placement: .navigation) {
+                    HStack(spacing: 10) {
+                        albumBackButton
+                        albumTitleHeader(album)
+                    }
+                }
+            }
+        }
+    }
+
+    private var albumBackButton: some View {
+        Button {
+            Task { await appState.selectAlbum(nil) }
+        } label: {
+            Label("Back", systemImage: "chevron.left")
+        }
+        .labelStyle(.iconOnly)
+        .help("Deselect album")
+    }
+
+    private func albumTitleHeader(_ album: PhotoAlbum) -> some View {
+        VStack(alignment: .leading, spacing: AlbumListRowStyle.labelSpacing) {
+            Text(album.name)
+                .font(AlbumListRowStyle.navigationAlbumTitleFont)
+            Text(album.mediaSummary)
+                .font(AlbumListRowStyle.navigationAlbumDetailFont)
+                .foregroundStyle(.secondary)
+        }
     }
 
     private func handleEscape() {

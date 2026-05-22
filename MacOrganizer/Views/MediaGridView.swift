@@ -100,7 +100,7 @@ private struct MediaThumbnailCell: View {
     var body: some View {
         ZStack {
             Rectangle()
-                .fill(Color.black)
+                .fill(cellBackground)
 
             if let image {
                 thumbnailImage(image)
@@ -132,12 +132,21 @@ private struct MediaThumbnailCell: View {
         }
     }
 
+    private var cellBackground: Color {
+        switch displayMode {
+        case .square:
+            Color.black
+        case .fit:
+            Color.clear
+        }
+    }
+
     @ViewBuilder
     private func thumbnailImage(_ image: NSImage) -> some View {
         let dimensions = displayedImageDimensions(for: image)
         Image(nsImage: image)
             .resizable()
-            .scaledToFill()
+            .aspectRatio(contentMode: displayMode == .square ? .fill : .fit)
             .modifier(AnimatableThumbnailFrame(width: dimensions.width, height: dimensions.height))
             .clipShape(Rectangle())
             .overlay(alignment: .bottomTrailing) {

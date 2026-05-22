@@ -12,6 +12,8 @@ enum AlbumListRowStyle {
     static let nameFont: Font = .system(size: 15, weight: .medium)
     static let detailFont: Font = .system(size: 13)
     static let toolbarTitleFont: Font = .system(size: 17, weight: .semibold)
+    static let navigationAlbumTitleFont: Font = .system(size: 15, weight: .semibold)
+    static let navigationAlbumDetailFont: Font = .system(size: 12)
 
     static var hoverFill: Color {
         Color(nsColor: .quaternarySystemFill)
