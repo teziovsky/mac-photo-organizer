@@ -11,9 +11,15 @@ struct OrganizeProgressView: View {
                 .bold()
 
             if let album = appState.selectedAlbum {
-                Text(album.name)
-                    .font(AlbumListRowStyle.nameFont)
-                    .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(album.name)
+                        .font(AlbumListRowStyle.nameFont)
+                    if let destination = appState.organizeExporter.destinationAlbumTitle {
+                        Text("Moving to “\(destination)”")
+                            .font(AlbumListRowStyle.detailFont)
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
 
             if let progress = appState.organizeExporter.progress {
@@ -69,10 +75,10 @@ struct OrganizeProgressView: View {
     @ViewBuilder
     private func completionMessage(progress: OrganizeProgress) -> some View {
         if progress.wasCancelled {
-            Text("Export cancelled.")
+            Text("Organize cancelled.")
                 .foregroundStyle(.secondary)
         } else {
-            Text("Export finished.")
+            Text("Organize finished.")
                 .foregroundStyle(.secondary)
         }
     }

@@ -13,8 +13,11 @@ struct MediaGridView: View {
             Divider()
             gridContent
         }
-        .onExitCommand {
-            QuickLookHelper.closePreview()
+        .onChange(of: appState.selectedAlbum?.id) { _, _ in
+            isGridFocused = false
+        }
+        .background {
+            AlbumNumberKeyboardShortcuts()
         }
     }
 
@@ -30,20 +33,8 @@ struct MediaGridView: View {
                 }
             }
 
-            Spacer()
-
-            if let path = appState.exportDirectoryPath {
-                Text(path)
-                    .font(AlbumListRowStyle.detailFont)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .frame(maxWidth: 280)
-            } else {
-                Text("No export folder")
-                    .font(AlbumListRowStyle.detailFont)
-                    .foregroundStyle(.secondary)
-            }
+            exportPathLabel
+                .frame(maxWidth: .infinity, alignment: .trailing)
 
             Button("Choose Folder…") {
                 chooseExportDirectory()
@@ -63,14 +54,32 @@ struct MediaGridView: View {
                     || appState.organizeExporter.isRunning
                     || !appState.canOrganizeSelectedAlbum
             )
+            .keyboardShortcut("e", modifiers: .command)
             .help(
                 appState.canOrganizeSelectedAlbum
-                    ? "Copy album media to the export folder"
+                    ? "Export, move to album with suffix, and remove from source (⌘E)"
                     : "This album is omitted from Organize in Settings"
             )
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
+    }
+
+    @ViewBuilder
+    private var exportPathLabel: some View {
+        if let path = appState.exportDirectoryPath {
+            Text(path)
+                .font(AlbumListRowStyle.detailFont)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.head)
+                .multilineTextAlignment(.trailing)
+        } else {
+            Text("No export folder")
+                .font(AlbumListRowStyle.detailFont)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.trailing)
+        }
     }
 
     @ViewBuilder
@@ -130,7 +139,6 @@ struct MediaGridView: View {
             }
             .background(Color.black.opacity(0.92))
             .id(appState.selectedAlbum?.id)
-            .onAppear { isGridFocused = true }
         }
     }
 

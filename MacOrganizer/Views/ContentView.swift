@@ -18,8 +18,13 @@ struct ContentView: View {
                 )
             }
         }
+        .onExitCommand(perform: handleEscape)
         .navigationTitle("iCloud Photos Organizer")
-        .searchable(text: $appState.albumSearchText, prompt: "Search albums")
+        .searchable(
+            text: $appState.albumSearchText,
+            isPresented: $appState.isAlbumSearchFocused,
+            prompt: "Search albums"
+        )
         .toolbar {
             ToolbarItem(placement: .navigation) {
                 if appState.selectedAlbum != nil {
@@ -62,7 +67,8 @@ struct ContentView: View {
                         systemImage: appState.thumbnailDisplayMode.toolbarIcon
                     )
                 }
-                .help("Toggle square cropped or full aspect ratio thumbnails")
+                .help("Toggle square cropped or full aspect ratio thumbnails (⌘T)")
+                .keyboardShortcut("t", modifiers: .command)
                 .disabled(appState.selectedAlbum == nil)
 
                 Button {
@@ -70,6 +76,8 @@ struct ContentView: View {
                 } label: {
                     Label("Refresh", systemImage: "arrow.clockwise")
                 }
+                .help("Reload albums from Photos (⌘R)")
+                .keyboardShortcut("r", modifiers: .command)
                 .disabled(appState.photosService.isLoadingAlbums)
             }
         }
@@ -79,6 +87,18 @@ struct ContentView: View {
         }
         .background {
             MainWindowKeyboardShortcuts()
+            if appState.selectedAlbum == nil {
+                AlbumNumberKeyboardShortcuts()
+            }
         }
+    }
+
+    private func handleEscape() {
+        if QuickLookHelper.isPanelVisible {
+            QuickLookHelper.closePreview()
+            return
+        }
+        guard appState.selectedAlbum != nil else { return }
+        Task { await appState.selectAlbum(nil) }
     }
 }

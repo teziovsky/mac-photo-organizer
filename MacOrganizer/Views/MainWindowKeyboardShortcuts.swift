@@ -6,15 +6,6 @@ struct MainWindowKeyboardShortcuts: View {
 
     var body: some View {
         Group {
-            ForEach(1...9, id: \.self) { number in
-                Button("") {
-                    Task { await appState.selectAlbum(at: number - 1) }
-                }
-                .keyboardShortcut(shortcutKey(number), modifiers: .command)
-                .hidden()
-                .disabled(!appState.selectableAlbums.indices.contains(number - 1))
-            }
-
             Button("") {
                 Task { await appState.selectPreviousAlbum() }
             }
@@ -51,6 +42,42 @@ struct MainWindowKeyboardShortcuts: View {
             .disabled(appState.selectedAlbum == nil || !appState.canIncreaseMediaGridColumnCount)
 
             Button("") {
+                appState.toggleThumbnailDisplayMode()
+            }
+            .keyboardShortcut("t", modifiers: .command)
+            .hidden()
+            .disabled(appState.selectedAlbum == nil)
+
+            Button("") {
+                Task { await appState.photosService.reloadAlbums() }
+            }
+            .keyboardShortcut("r", modifiers: .command)
+            .hidden()
+            .disabled(appState.photosService.isLoadingAlbums)
+
+            Button("") {
+                appState.focusAlbumSearch()
+            }
+            .keyboardShortcut("f", modifiers: .command)
+            .hidden()
+
+            Button("") {
+                if AppSettings.resolveExportDirectory() == nil {
+                    return
+                }
+                appState.startOrganize()
+            }
+            .keyboardShortcut("e", modifiers: .command)
+            .hidden()
+            .disabled(
+                appState.selectedAlbum == nil
+                    || appState.mediaItems.isEmpty
+                    || appState.organizeExporter.isRunning
+                    || !appState.canOrganizeSelectedAlbum
+                    || AppSettings.resolveExportDirectory() == nil
+            )
+
+            Button("") {
                 appState.toggleSidebarVisibility()
             }
             .keyboardShortcut("s", modifiers: .command)
@@ -58,7 +85,4 @@ struct MainWindowKeyboardShortcuts: View {
         }
     }
 
-    private func shortcutKey(_ number: Int) -> KeyEquivalent {
-        KeyEquivalent(Character(String(number)))
-    }
 }

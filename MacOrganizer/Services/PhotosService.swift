@@ -11,6 +11,7 @@ enum PhotosAuthorizationState: Sendable {
 enum PhotosServiceError: LocalizedError, Sendable {
     case accessDenied
     case albumNotFound(String)
+    case organizeFailed(String)
 
     var errorDescription: String? {
         switch self {
@@ -18,6 +19,8 @@ enum PhotosServiceError: LocalizedError, Sendable {
             return "Photos library access was denied. Grant access in System Settings → Privacy & Security → Photos."
         case .albumNotFound(let name):
             return "Album \"\(name)\" was not found in Photos."
+        case .organizeFailed(let message):
+            return message
         }
     }
 }
@@ -60,6 +63,31 @@ final class PhotosService: ObservableObject {
 
     func asset(for item: MediaItem) -> PHAsset? {
         PHAsset.fetchAssets(withLocalIdentifiers: [item.id], options: nil).firstObject
+    }
+
+    static func destinationAlbumTitle(forSourceAlbumNamed sourceName: String) -> String {
+        let suffix = AppSettings.excludedAlbumSuffix.trimmingCharacters(in: .whitespacesAndNewlines)
+        return sourceName + suffix
+    }
+
+    func moveAsset(
+        _ asset: PHAsset,
+        fromSourceAlbum sourceAlbum: PhotoAlbum,
+        toAlbumNamed targetTitle: String
+    ) async throws {
+        guard authorizationState == .authorized else { throw PhotosServiceError.accessDenied }
+        guard targetTitle != sourceAlbum.name else {
+            throw PhotosServiceError.organizeFailed("Destination album name matches the source album.")
+        }
+        guard let sourceCollection = Self.fetchCollection(identifier: sourceAlbum.collectionIdentifier) else {
+            throw PhotosServiceError.albumNotFound(sourceAlbum.name)
+        }
+
+        try await Self.performMove(
+            asset: asset,
+            sourceCollection: sourceCollection,
+            targetAlbumTitle: targetTitle
+        )
     }
 
     private func mapStatus(_ status: PHAuthorizationStatus) -> PhotosAuthorizationState {
@@ -144,6 +172,82 @@ final class PhotosService: ObservableObject {
             withLocalIdentifiers: [identifier],
             options: nil
         ).firstObject
+    }
+
+    nonisolated private static func fetchCollection(title: String) -> PHAssetCollection? {
+        let collections = PHAssetCollection.fetchAssetCollections(
+            with: .album,
+            subtype: .any,
+            options: nil
+        )
+        var index = 0
+        while index < collections.count {
+            let collection = collections.object(at: index)
+            if collection.localizedTitle == title {
+                return collection
+            }
+            index += 1
+        }
+        return nil
+    }
+
+    nonisolated private static func performMove(
+        asset: PHAsset,
+        sourceCollection: PHAssetCollection,
+        targetAlbumTitle: String
+    ) async throws {
+        let targetCollection: PHAssetCollection
+        if let existing = fetchCollection(title: targetAlbumTitle) {
+            targetCollection = existing
+        } else {
+            targetCollection = try await createAlbum(title: targetAlbumTitle)
+        }
+
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            PHPhotoLibrary.shared().performChanges {
+                PHAssetCollectionChangeRequest(for: targetCollection)?
+                    .addAssets([asset] as NSArray)
+                PHAssetCollectionChangeRequest(for: sourceCollection)?
+                    .removeAssets([asset] as NSArray)
+            } completionHandler: { success, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else if success {
+                    continuation.resume()
+                } else {
+                    continuation.resume(
+                        throwing: PhotosServiceError.organizeFailed("Photos could not update albums.")
+                    )
+                }
+            }
+        }
+    }
+
+    nonisolated private static func createAlbum(title: String) async throws -> PHAssetCollection {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<PHAssetCollection, Error>) in
+            var createdIdentifier: String?
+            PHPhotoLibrary.shared().performChanges {
+                let request = PHAssetCollectionChangeRequest.creationRequestForAssetCollection(withTitle: title)
+                createdIdentifier = request.placeholderForCreatedAssetCollection.localIdentifier
+            } completionHandler: { success, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                guard success,
+                      let createdIdentifier,
+                      let collection = PHAssetCollection.fetchAssetCollections(
+                        withLocalIdentifiers: [createdIdentifier],
+                        options: nil
+                      ).firstObject else {
+                    continuation.resume(
+                        throwing: PhotosServiceError.organizeFailed("Could not create album \"\(title)\".")
+                    )
+                    return
+                }
+                continuation.resume(returning: collection)
+            }
+        }
     }
 
     nonisolated private static func fetchMediaItems(in collection: PHAssetCollection) -> [MediaItem] {

@@ -24,8 +24,13 @@ enum QuickLookHelper {
         }
     }
 
+    static var isPanelVisible: Bool {
+        QLPreviewPanel.shared()?.isVisible ?? false
+    }
+
     static func closePreview() {
         QLPreviewPanel.shared()?.orderOut(nil)
+        activeDataSource = nil
     }
 
     private static func exportURL(for asset: PHAsset, filename: String) async throws -> URL {

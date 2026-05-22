@@ -17,6 +17,12 @@ struct MacOrganizerApp: App {
         .windowStyle(.automatic)
         .commands {
             CommandGroup(replacing: .newItem) {}
+            CommandGroup(after: .newItem) {
+                Button("Search Albums") {
+                    appState.focusAlbumSearch()
+                }
+                .keyboardShortcut("f", modifiers: .command)
+            }
             CommandGroup(replacing: .sidebar) {
                 Button("Toggle Sidebar") {
                     appState.toggleSidebarVisibility()
@@ -24,6 +30,34 @@ struct MacOrganizerApp: App {
             }
             MacOrganizerAlbumCommands(appState: appState)
             CommandGroup(after: .sidebar) {
+                Button("Refresh Albums") {
+                    Task { await appState.photosService.reloadAlbums() }
+                }
+                .keyboardShortcut("r", modifiers: .command)
+                .disabled(appState.photosService.isLoadingAlbums)
+
+                Button("Toggle Thumbnail Display") {
+                    appState.toggleThumbnailDisplayMode()
+                }
+                .keyboardShortcut("t", modifiers: .command)
+                .disabled(appState.selectedAlbum == nil)
+
+                Divider()
+
+                Button("Organize Album") {
+                    appState.startOrganize()
+                }
+                .keyboardShortcut("e", modifiers: .command)
+                .disabled(
+                    appState.selectedAlbum == nil
+                        || appState.mediaItems.isEmpty
+                        || appState.organizeExporter.isRunning
+                        || !appState.canOrganizeSelectedAlbum
+                        || AppSettings.resolveExportDirectory() == nil
+                )
+
+                Divider()
+
                 Button("Quick Look") {
                     Task { await appState.previewSelectedMedia() }
                 }
@@ -45,8 +79,10 @@ private struct MacOrganizerAlbumCommands: Commands {
         CommandMenu("Albums") {
             ForEach(Array(appState.selectableAlbums.prefix(9).enumerated()), id: \.element.id) { index, album in
                 Button(album.name) {
-                    Task { await appState.selectAlbum(at: index) }
+                    Task { await appState.toggleAlbumSelection(album) }
                 }
+                .keyboardShortcut(KeyEquivalent(Character(String(index + 1))), modifiers: .command)
+                .disabled(!appState.selectableAlbums.indices.contains(index))
             }
 
             Divider()

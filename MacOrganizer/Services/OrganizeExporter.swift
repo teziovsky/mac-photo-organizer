@@ -6,13 +6,23 @@ final class OrganizeExporter: ObservableObject {
     @Published private(set) var progress: OrganizeProgress?
     @Published private(set) var failures: [OrganizeFailure] = []
     @Published private(set) var isRunning = false
+    @Published private(set) var destinationAlbumTitle: String?
 
     private var exportTask: Task<Void, Never>?
+    private var onFinished: (@MainActor () async -> Void)?
 
-    func organize(items: [MediaItem], to exportDirectory: URL) {
+    func organize(
+        items: [MediaItem],
+        sourceAlbum: PhotoAlbum,
+        to exportDirectory: URL,
+        photosService: PhotosService,
+        onFinished: (@MainActor () async -> Void)? = nil
+    ) {
         cancel()
         failures = []
         isRunning = true
+        self.onFinished = onFinished
+        destinationAlbumTitle = PhotosService.destinationAlbumTitle(forSourceAlbumNamed: sourceAlbum.name)
         progress = OrganizeProgress(
             current: 0,
             total: items.count,
@@ -23,8 +33,15 @@ final class OrganizeExporter: ObservableObject {
             wasCancelled: false
         )
 
+        let targetTitle = destinationAlbumTitle!
         exportTask = Task {
-            await runExport(items: items, exportDirectory: exportDirectory)
+            await runOrganize(
+                items: items,
+                sourceAlbum: sourceAlbum,
+                targetAlbumTitle: targetTitle,
+                exportDirectory: exportDirectory,
+                photosService: photosService
+            )
         }
     }
 
@@ -47,7 +64,13 @@ final class OrganizeExporter: ObservableObject {
         isRunning = false
     }
 
-    private func runExport(items: [MediaItem], exportDirectory: URL) async {
+    private func runOrganize(
+        items: [MediaItem],
+        sourceAlbum: PhotoAlbum,
+        targetAlbumTitle: String,
+        exportDirectory: URL,
+        photosService: PhotosService
+    ) async {
         let fileManager = FileManager.default
         try? fileManager.createDirectory(at: exportDirectory, withIntermediateDirectories: true)
 
@@ -84,18 +107,31 @@ final class OrganizeExporter: ObservableObject {
 
             do {
                 try await exportAsset(asset, to: destination)
+                try await photosService.moveAsset(
+                    asset,
+                    fromSourceAlbum: sourceAlbum,
+                    toAlbumNamed: targetAlbumTitle
+                )
             } catch {
                 if error is OrganizeSkipError {
                     skippedCount += 1
                     failureList.append(OrganizeFailure(filename: item.filename, message: error.localizedDescription))
                 } else {
                     failedCount += 1
-                    failureList.append(OrganizeFailure(filename: item.filename, message: error.localizedDescription))
+                    failureList.append(
+                        OrganizeFailure(
+                            filename: item.filename,
+                            message: error.localizedDescription
+                        )
+                    )
                 }
             }
         }
 
         let cancelled = Task.isCancelled
+        let finished = onFinished
+        onFinished = nil
+
         await MainActor.run {
             failures = failureList
             progress = OrganizeProgress(
@@ -109,6 +145,10 @@ final class OrganizeExporter: ObservableObject {
             )
             isRunning = false
             exportTask = nil
+        }
+
+        if !cancelled {
+            await finished?()
         }
     }
 

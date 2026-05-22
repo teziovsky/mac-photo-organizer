@@ -22,6 +22,7 @@ final class AppState: ObservableObject {
     @Published var showOrganizeSheet = false
     @Published var thumbnailDisplayMode: ThumbnailDisplayMode = AppSettings.thumbnailDisplayMode
     @Published var albumSearchText = ""
+    @Published var isAlbumSearchFocused = false
     @Published var exportDirectoryPath: String? = AppSettings.exportDirectoryPath
     @Published var omittedFromOrganizeAlbumIDs: Set<String> = AppSettings.omittedFromOrganizeAlbumIDs
     @Published var mediaGridColumnCount = AppSettings.mediaGridColumnCount
@@ -86,7 +87,7 @@ final class AppState: ObservableObject {
     func selectAlbum(at index: Int) async {
         let albums = selectableAlbums
         guard albums.indices.contains(index) else { return }
-        await selectAlbum(albums[index])
+        await toggleAlbumSelection(albums[index])
     }
 
     var canSelectNextAlbum: Bool {
@@ -129,6 +130,11 @@ final class AppState: ObservableObject {
         } else {
             await selectAlbum(albums[albums.count - 1])
         }
+    }
+
+    func focusAlbumSearch() {
+        isAlbumSearchFocused = true
+        AlbumSearchFocus.focusAndSelectAll()
     }
 
     func toggleSidebarVisibility() {
@@ -232,9 +238,27 @@ final class AppState: ObservableObject {
     func startOrganize() {
         guard let album = selectedAlbum, !isAlbumOmittedFromOrganize(album) else { return }
         guard !mediaItems.isEmpty else { return }
+        guard !organizeExporter.isRunning else { return }
         guard AppSettings.resolveExportDirectory() != nil else { return }
         showOrganizeSheet = true
         guard let exportURL = AppSettings.resolveExportDirectory() else { return }
-        organizeExporter.organize(items: mediaItems, to: exportURL)
+
+        let sourceAlbumID = album.id
+        organizeExporter.organize(
+            items: mediaItems,
+            sourceAlbum: album,
+            to: exportURL,
+            photosService: photosService
+        ) { [weak self] in
+            guard let self else { return }
+            await photosService.reloadAlbums()
+            if selectableAlbums.contains(where: { $0.id == sourceAlbumID }) {
+                if let refreshed = selectableAlbums.first(where: { $0.id == sourceAlbumID }) {
+                    await selectAlbum(refreshed)
+                }
+            } else {
+                await selectAlbum(nil)
+            }
+        }
     }
 }
