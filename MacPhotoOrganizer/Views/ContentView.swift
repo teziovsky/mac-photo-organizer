@@ -109,7 +109,7 @@ struct ContentView: View {
     }
 
     private var mainToolbarTitle: String {
-        appState.selectedAlbum == nil ? "iCloud Photos Organizer" : ""
+        appState.selectedAlbum == nil ? "Photos Organizer" : ""
     }
 
     @ToolbarContentBuilder
