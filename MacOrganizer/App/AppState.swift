@@ -21,18 +21,13 @@ final class AppState: ObservableObject {
     @Published var mediaError: String?
     @Published var showOrganizeSheet = false
     @Published var thumbnailDisplayMode: ThumbnailDisplayMode = AppSettings.thumbnailDisplayMode
-    @Published var albumSearchText = ""
-    @Published var isAlbumSearchFocused = false
     @Published var exportDirectoryPath: String? = AppSettings.exportDirectoryPath
     @Published var omittedFromOrganizeAlbumIDs: Set<String> = AppSettings.omittedFromOrganizeAlbumIDs
     @Published var mediaGridColumnCount = AppSettings.mediaGridColumnCount
     @Published var columnVisibility: NavigationSplitViewVisibility = .all
 
     var selectableAlbums: [PhotoAlbum] {
-        let albums = photosService.albums.filter { !omittedFromOrganizeAlbumIDs.contains($0.id) }
-        let query = albumSearchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !query.isEmpty else { return albums }
-        return albums.filter { $0.name.localizedCaseInsensitiveContains(query) }
+        photosService.albums.filter { !omittedFromOrganizeAlbumIDs.contains($0.id) }
     }
 
     init() {
@@ -137,11 +132,6 @@ final class AppState: ObservableObject {
         }
     }
 
-    func focusAlbumSearch() {
-        isAlbumSearchFocused = true
-        AlbumSearchFocus.focusAndSelectAll()
-    }
-
     func toggleSidebarVisibility() {
         withAnimation(.easeInOut(duration: 0.28)) {
             columnVisibility = columnVisibility == .detailOnly ? .all : .detailOnly
@@ -238,6 +228,25 @@ final class AppState: ObservableObject {
     var canOrganizeSelectedAlbum: Bool {
         guard let album = selectedAlbum else { return false }
         return !isAlbumOmittedFromOrganize(album)
+    }
+
+    /// Shows the export folder picker, then runs organize when a folder is chosen.
+    func promptExportDirectoryAndOrganize() {
+        guard let album = selectedAlbum, !isAlbumOmittedFromOrganize(album) else { return }
+        guard !mediaItems.isEmpty else { return }
+        guard !organizeExporter.isRunning else { return }
+
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.allowsMultipleSelection = false
+        panel.prompt = "Organize"
+        panel.message = "Photos and videos will be copied into this folder when you organize."
+        panel.directoryURL = AppSettings.resolveExportDirectory()
+
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        setExportDirectory(url)
+        startOrganize()
     }
 
     func startOrganize() {

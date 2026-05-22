@@ -19,13 +19,21 @@ struct ContentView: View {
             }
         }
         .onExitCommand(perform: handleEscape)
-        .navigationTitle("iCloud Photos Organizer")
-        .searchable(
-            text: $appState.albumSearchText,
-            isPresented: $appState.isAlbumSearchFocused,
-            prompt: "Search albums"
-        )
+        .navigationTitle(mainToolbarTitle)
         .toolbar {
+            if let album = appState.selectedAlbum {
+                ToolbarItem(placement: .principal) {
+                    VStack(alignment: .leading, spacing: AlbumListRowStyle.labelSpacing) {
+                        Text(album.name)
+                            .font(AlbumListRowStyle.toolbarTitleFont)
+                        Text(album.mediaSummary)
+                            .font(AlbumListRowStyle.detailFont)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+
             ToolbarItem(placement: .navigation) {
                 if appState.selectedAlbum != nil {
                     Button {
@@ -80,6 +88,26 @@ struct ContentView: View {
                 .keyboardShortcut("r", modifiers: .command)
                 .disabled(appState.photosService.isLoadingAlbums)
             }
+
+            if appState.selectedAlbum != nil {
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Organize") {
+                        appState.promptExportDirectoryAndOrganize()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(
+                        appState.mediaItems.isEmpty
+                            || appState.organizeExporter.isRunning
+                            || !appState.canOrganizeSelectedAlbum
+                    )
+                    .keyboardShortcut("e", modifiers: .command)
+                    .help(
+                        appState.canOrganizeSelectedAlbum
+                            ? "Export, move to album with suffix, and remove from source (⌘E)"
+                            : "This album is omitted from Organize in Settings"
+                    )
+                }
+            }
         }
         .sheet(isPresented: $appState.showOrganizeSheet) {
             OrganizeProgressView()
@@ -91,6 +119,10 @@ struct ContentView: View {
                 AlbumNumberKeyboardShortcuts()
             }
         }
+    }
+
+    private var mainToolbarTitle: String {
+        appState.selectedAlbum == nil ? "iCloud Photos Organizer" : ""
     }
 
     private func handleEscape() {

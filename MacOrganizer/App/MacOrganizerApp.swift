@@ -17,12 +17,6 @@ struct MacOrganizerApp: App {
         .windowStyle(.automatic)
         .commands {
             CommandGroup(replacing: .newItem) {}
-            CommandGroup(after: .newItem) {
-                Button("Search Albums") {
-                    appState.focusAlbumSearch()
-                }
-                .keyboardShortcut("f", modifiers: .command)
-            }
             CommandGroup(replacing: .sidebar) {
                 Button("Toggle Sidebar") {
                     appState.toggleSidebarVisibility()
@@ -45,7 +39,7 @@ struct MacOrganizerApp: App {
                 Divider()
 
                 Button("Organize Album") {
-                    appState.startOrganize()
+                    appState.promptExportDirectoryAndOrganize()
                 }
                 .keyboardShortcut("e", modifiers: .command)
                 .disabled(
@@ -53,7 +47,6 @@ struct MacOrganizerApp: App {
                         || appState.mediaItems.isEmpty
                         || appState.organizeExporter.isRunning
                         || !appState.canOrganizeSelectedAlbum
-                        || AppSettings.resolveExportDirectory() == nil
                 )
 
                 Divider()

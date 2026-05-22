@@ -6,86 +6,24 @@ struct MediaGridView: View {
     @FocusState private var isGridFocused: Bool
 
     private let cellSpacing: CGFloat = 2
+    private let gridEdgeInset: CGFloat = 8
 
     var body: some View {
-        VStack(spacing: 0) {
-            toolbar
-            Divider()
-            gridContent
-        }
-        .onChange(of: appState.selectedAlbum?.id) { _, _ in
-            isGridFocused = false
-        }
-        .onChange(of: appState.isLoadingMedia) { _, isLoading in
-            guard !isLoading,
-                  appState.selectedAlbum != nil,
-                  appState.selectedMediaID != nil else { return }
-            isGridFocused = true
-        }
-        .background {
-            AlbumNumberKeyboardShortcuts()
-        }
-    }
-
-    private var toolbar: some View {
-        HStack(spacing: 12) {
-            if let album = appState.selectedAlbum {
-                VStack(alignment: .leading, spacing: AlbumListRowStyle.labelSpacing) {
-                    Text(album.name)
-                        .font(AlbumListRowStyle.toolbarTitleFont)
-                    Text(album.mediaSummary)
-                        .font(AlbumListRowStyle.detailFont)
-                        .foregroundStyle(.secondary)
-                }
+        gridContent
+            .padding(.leading, gridEdgeInset)
+            .padding(.top, gridEdgeInset)
+            .onChange(of: appState.selectedAlbum?.id) { _, _ in
+                isGridFocused = false
             }
-
-            exportPathLabel
-                .frame(maxWidth: .infinity, alignment: .trailing)
-
-            Button("Choose Folder…") {
-                chooseExportDirectory()
+            .onChange(of: appState.isLoadingMedia) { _, isLoading in
+                guard !isLoading,
+                      appState.selectedAlbum != nil,
+                      appState.selectedMediaID != nil else { return }
+                isGridFocused = true
             }
-
-            Button("Organize") {
-                if AppSettings.resolveExportDirectory() == nil {
-                    chooseExportDirectory(thenOrganize: true)
-                } else {
-                    appState.startOrganize()
-                }
+            .background {
+                AlbumNumberKeyboardShortcuts()
             }
-            .buttonStyle(.borderedProminent)
-            .disabled(
-                appState.selectedAlbum == nil
-                    || appState.mediaItems.isEmpty
-                    || appState.organizeExporter.isRunning
-                    || !appState.canOrganizeSelectedAlbum
-            )
-            .keyboardShortcut("e", modifiers: .command)
-            .help(
-                appState.canOrganizeSelectedAlbum
-                    ? "Export, move to album with suffix, and remove from source (⌘E)"
-                    : "This album is omitted from Organize in Settings"
-            )
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-    }
-
-    @ViewBuilder
-    private var exportPathLabel: some View {
-        if let path = appState.exportDirectoryPath {
-            Text(path)
-                .font(AlbumListRowStyle.detailFont)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .truncationMode(.head)
-                .multilineTextAlignment(.trailing)
-        } else {
-            Text("No export folder")
-                .font(AlbumListRowStyle.detailFont)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.trailing)
-        }
     }
 
     @ViewBuilder
@@ -143,26 +81,10 @@ struct MediaGridView: View {
                     }
                 }
             }
-            .background(Color.black.opacity(0.92))
             .id(appState.selectedAlbum?.id)
         }
     }
 
-    private func chooseExportDirectory(thenOrganize: Bool = false) {
-        let panel = NSOpenPanel()
-        panel.canChooseDirectories = true
-        panel.canChooseFiles = false
-        panel.allowsMultipleSelection = false
-        panel.prompt = "Choose Export Folder"
-        panel.message = "Photos and videos will be copied into this folder when you organize."
-
-        if panel.runModal() == .OK, let url = panel.url {
-            appState.setExportDirectory(url)
-            if thenOrganize {
-                appState.startOrganize()
-            }
-        }
-    }
 }
 
 private struct MediaThumbnailCell: View {

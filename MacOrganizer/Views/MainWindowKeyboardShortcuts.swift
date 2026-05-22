@@ -56,16 +56,7 @@ struct MainWindowKeyboardShortcuts: View {
             .disabled(appState.photosService.isLoadingAlbums)
 
             Button("") {
-                appState.focusAlbumSearch()
-            }
-            .keyboardShortcut("f", modifiers: .command)
-            .hidden()
-
-            Button("") {
-                if AppSettings.resolveExportDirectory() == nil {
-                    return
-                }
-                appState.startOrganize()
+                appState.promptExportDirectoryAndOrganize()
             }
             .keyboardShortcut("e", modifiers: .command)
             .hidden()
@@ -74,7 +65,6 @@ struct MainWindowKeyboardShortcuts: View {
                     || appState.mediaItems.isEmpty
                     || appState.organizeExporter.isRunning
                     || !appState.canOrganizeSelectedAlbum
-                    || AppSettings.resolveExportDirectory() == nil
             )
 
             Button("") {
