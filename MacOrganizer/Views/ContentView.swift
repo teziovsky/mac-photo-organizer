@@ -31,25 +31,29 @@ struct ContentView: View {
                     .help("Deselect album")
                 }
             }
-            ToolbarItemGroup(placement: .primaryAction) {
-                if appState.selectedAlbum != nil {
+            if appState.selectedAlbum != nil {
+                ToolbarItemGroup(placement: .primaryAction) {
                     Button {
                         appState.decreaseMediaGridColumnCount()
                     } label: {
-                        Label("Fewer Columns", systemImage: "minus")
+                        Label("Larger Thumbnails", systemImage: "plus")
                     }
-                    .help("Show fewer columns (larger thumbnails)")
+                    .help("Fewer columns, larger thumbnails (⌘+)")
+                    .keyboardShortcut("+", modifiers: .command)
                     .disabled(!appState.canDecreaseMediaGridColumnCount)
 
                     Button {
                         appState.increaseMediaGridColumnCount()
                     } label: {
-                        Label("More Columns", systemImage: "plus")
+                        Label("Smaller Thumbnails", systemImage: "minus")
                     }
-                    .help("Show more columns (smaller thumbnails)")
+                    .help("More columns, smaller thumbnails (⌘−)")
+                    .keyboardShortcut("-", modifiers: .command)
                     .disabled(!appState.canIncreaseMediaGridColumnCount)
                 }
+            }
 
+            ToolbarItemGroup(placement: .primaryAction) {
                 Button {
                     appState.toggleThumbnailDisplayMode()
                 } label: {
@@ -59,6 +63,7 @@ struct ContentView: View {
                     )
                 }
                 .help("Toggle square cropped or full aspect ratio thumbnails")
+                .disabled(appState.selectedAlbum == nil)
 
                 Button {
                     Task { await appState.photosService.reloadAlbums() }

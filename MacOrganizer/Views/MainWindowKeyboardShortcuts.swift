@@ -37,6 +37,20 @@ struct MainWindowKeyboardShortcuts: View {
             .disabled(appState.selectedMediaID == nil)
 
             Button("") {
+                appState.decreaseMediaGridColumnCount()
+            }
+            .keyboardShortcut("+", modifiers: .command)
+            .hidden()
+            .disabled(appState.selectedAlbum == nil || !appState.canDecreaseMediaGridColumnCount)
+
+            Button("") {
+                appState.increaseMediaGridColumnCount()
+            }
+            .keyboardShortcut("-", modifiers: .command)
+            .hidden()
+            .disabled(appState.selectedAlbum == nil || !appState.canIncreaseMediaGridColumnCount)
+
+            Button("") {
                 appState.toggleSidebarVisibility()
             }
             .keyboardShortcut("s", modifiers: .command)
