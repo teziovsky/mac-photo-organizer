@@ -37,6 +37,7 @@ final class PhotosService: NSObject, ObservableObject {
     @Published var errorMessage: String?
 
     private var changeObserverRegistered = false
+    private var deferAlbumReloadFromLibraryChanges = false
 
     override init() {
         super.init()
@@ -66,6 +67,16 @@ final class PhotosService: NSObject, ObservableObject {
         albums = await Task.detached(priority: .userInitiated) {
             Self.collectAlbums(excludedSuffix: excludedSuffix)
         }.value
+    }
+
+    /// Coalesces `photoLibraryDidChange` reloads while Organize is moving assets (one refresh at `endDeferringAlbumReloadFromLibraryChanges`).
+    func beginDeferringAlbumReloadFromLibraryChanges() {
+        deferAlbumReloadFromLibraryChanges = true
+    }
+
+    func endDeferringAlbumReloadFromLibraryChanges() async {
+        deferAlbumReloadFromLibraryChanges = false
+        await reloadAlbums()
     }
 
     func mediaItems(for album: PhotoAlbum) async throws -> [MediaItem] {
@@ -323,7 +334,9 @@ final class PhotosService: NSObject, ObservableObject {
 extension PhotosService: PHPhotoLibraryChangeObserver {
     nonisolated func photoLibraryDidChange(_ changeInstance: PHChange) {
         Task { @MainActor in
-            guard canAccessLibrary, !isLoadingAlbums else { return }
+            guard canAccessLibrary else { return }
+            guard !deferAlbumReloadFromLibraryChanges else { return }
+            guard !isLoadingAlbums else { return }
             await reloadAlbums()
         }
     }

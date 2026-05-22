@@ -47,6 +47,7 @@ final class OrganizeExporter: ObservableObject {
         }
 
         let targetTitle = destinationAlbumTitle!
+        photosService.beginDeferringAlbumReloadFromLibraryChanges()
         exportTask = Task {
             await runOrganize(
                 items: items,
@@ -91,6 +92,7 @@ final class OrganizeExporter: ObservableObject {
     ) async {
         guard let scopedDirectory = directoryAccess.beginAccess() else {
             await finishWithAccessError(items: items)
+            await photosService.endDeferringAlbumReloadFromLibraryChanges()
             return
         }
 
@@ -184,6 +186,7 @@ final class OrganizeExporter: ObservableObject {
         directoryAccess.endAccess()
         sleepAssertion.release()
 
+        await photosService.endDeferringAlbumReloadFromLibraryChanges()
         if !cancelled {
             await finished?()
         }

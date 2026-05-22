@@ -287,7 +287,6 @@ final class AppState: ObservableObject {
             photosService: photosService
         ) { [weak self] in
             guard let self else { return }
-            await photosService.reloadAlbums()
             if selectableAlbums.contains(where: { $0.id == sourceAlbumID }) {
                 if let refreshed = selectableAlbums.first(where: { $0.id == sourceAlbumID }) {
                     await selectAlbum(refreshed)
