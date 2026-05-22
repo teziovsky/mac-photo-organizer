@@ -79,7 +79,7 @@ private struct MacOrganizerAlbumCommands: Commands {
         CommandMenu("Albums") {
             ForEach(Array(appState.selectableAlbums.prefix(9).enumerated()), id: \.element.id) { index, album in
                 Button(album.name) {
-                    Task { await appState.toggleAlbumSelection(album) }
+                    Task { await appState.selectAlbum(at: index) }
                 }
                 .keyboardShortcut(KeyEquivalent(Character(String(index + 1))), modifiers: .command)
                 .disabled(!appState.selectableAlbums.indices.contains(index))

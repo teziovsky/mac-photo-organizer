@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// ⌘1–⌘9 album shortcuts; mounted on the grid so they work while the grid has focus.
+/// ⌘1–⌘9: select album by index (no toggle; Escape deselects). Mounted on the grid so shortcuts work while it has focus.
 struct AlbumNumberKeyboardShortcuts: View {
     @EnvironmentObject private var appState: AppState
 

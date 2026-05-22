@@ -86,10 +86,13 @@ final class AppState: ObservableObject {
         }
     }
 
+    /// ⌘1–⌘9: select album by index; does not deselect when already selected (use Escape).
     func selectAlbum(at index: Int) async {
         let albums = selectableAlbums
         guard albums.indices.contains(index) else { return }
-        await toggleAlbumSelection(albums[index])
+        let album = albums[index]
+        guard selectedAlbum?.id != album.id else { return }
+        await selectAlbum(album)
     }
 
     var canSelectNextAlbum: Bool {
