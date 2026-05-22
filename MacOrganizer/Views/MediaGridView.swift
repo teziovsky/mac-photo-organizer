@@ -16,6 +16,12 @@ struct MediaGridView: View {
         .onChange(of: appState.selectedAlbum?.id) { _, _ in
             isGridFocused = false
         }
+        .onChange(of: appState.isLoadingMedia) { _, isLoading in
+            guard !isLoading,
+                  appState.selectedAlbum != nil,
+                  appState.selectedMediaID != nil else { return }
+            isGridFocused = true
+        }
         .background {
             AlbumNumberKeyboardShortcuts()
         }

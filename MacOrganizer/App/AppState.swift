@@ -70,9 +70,11 @@ final class AppState: ObservableObject {
 
         do {
             mediaItems = try await photosService.mediaItems(for: album)
+            selectedMediaID = mediaItems.first?.id
         } catch {
             mediaError = error.localizedDescription
             mediaItems = []
+            selectedMediaID = nil
         }
     }
 
