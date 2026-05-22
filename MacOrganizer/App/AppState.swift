@@ -24,7 +24,7 @@ final class AppState: ObservableObject {
     @Published var albumSearchText = ""
     @Published var exportDirectoryPath: String? = AppSettings.exportDirectoryPath
     @Published var omittedFromOrganizeAlbumIDs: Set<String> = AppSettings.omittedFromOrganizeAlbumIDs
-    @Published var mediaGridColumnCount = 1
+    @Published var mediaGridColumnCount = AppSettings.mediaGridColumnCount
     @Published var columnVisibility: NavigationSplitViewVisibility = .all
 
     var selectableAlbums: [PhotoAlbum] {
@@ -155,15 +155,38 @@ final class AppState: ObservableObject {
         await QuickLookHelper.preview(item: item)
     }
 
-    func updateMediaGridColumnCount(_ count: Int) {
-        mediaGridColumnCount = max(1, count)
+    var canDecreaseMediaGridColumnCount: Bool {
+        mediaGridColumnCount > AppSettings.mediaGridColumnCountMin
+    }
+
+    var canIncreaseMediaGridColumnCount: Bool {
+        mediaGridColumnCount < AppSettings.mediaGridColumnCountMax
+    }
+
+    func decreaseMediaGridColumnCount() {
+        guard canDecreaseMediaGridColumnCount else { return }
+        withAnimation(.smooth(duration: 0.4)) {
+            mediaGridColumnCount -= 1
+            AppSettings.mediaGridColumnCount = mediaGridColumnCount
+        }
+    }
+
+    func increaseMediaGridColumnCount() {
+        guard canIncreaseMediaGridColumnCount else { return }
+        withAnimation(.smooth(duration: 0.4)) {
+            mediaGridColumnCount += 1
+            AppSettings.mediaGridColumnCount = mediaGridColumnCount
+        }
     }
 
     func moveMediaSelection(_ direction: MediaGridMoveDirection) {
         let items = mediaItems
         guard !items.isEmpty else { return }
 
-        let columns = max(1, mediaGridColumnCount)
+        let columns = min(
+            max(mediaGridColumnCount, AppSettings.mediaGridColumnCountMin),
+            AppSettings.mediaGridColumnCountMax
+        )
         let currentIndex: Int
         if let selectedMediaID,
            let index = items.firstIndex(where: { $0.id == selectedMediaID }) {

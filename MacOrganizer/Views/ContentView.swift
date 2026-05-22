@@ -32,6 +32,24 @@ struct ContentView: View {
                 }
             }
             ToolbarItemGroup(placement: .primaryAction) {
+                if appState.selectedAlbum != nil {
+                    Button {
+                        appState.decreaseMediaGridColumnCount()
+                    } label: {
+                        Label("Fewer Columns", systemImage: "minus")
+                    }
+                    .help("Show fewer columns (larger thumbnails)")
+                    .disabled(!appState.canDecreaseMediaGridColumnCount)
+
+                    Button {
+                        appState.increaseMediaGridColumnCount()
+                    } label: {
+                        Label("More Columns", systemImage: "plus")
+                    }
+                    .help("Show more columns (smaller thumbnails)")
+                    .disabled(!appState.canIncreaseMediaGridColumnCount)
+                }
+
                 Button {
                     appState.toggleThumbnailDisplayMode()
                 } label: {

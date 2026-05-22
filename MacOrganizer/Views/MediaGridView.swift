@@ -4,11 +4,8 @@ import SwiftUI
 struct MediaGridView: View {
     @EnvironmentObject private var appState: AppState
     @FocusState private var isGridFocused: Bool
-    @State private var columnLayoutDebounceTask: Task<Void, Never>?
 
     private let cellSpacing: CGFloat = 2
-    private let minimumCellSize: CGFloat = 160
-    private let columnLayoutDebounceInterval: Duration = .milliseconds(320)
 
     var body: some View {
         VStack(spacing: 0) {
@@ -87,26 +84,21 @@ struct MediaGridView: View {
             ContentUnavailableView("No Media", systemImage: "photo", description: Text("This album has no photos or videos."))
         } else {
             GeometryReader { geometry in
-                let layout = gridLayout(for: geometry.size.width)
                 ScrollViewReader { proxy in
                     ScrollView {
-                        LazyVGrid(columns: layout.columns, spacing: cellSpacing) {
-                            ForEach(appState.mediaItems) { item in
-                                MediaThumbnailCell(
-                                    item: item,
-                                    album: appState.selectedAlbum!,
-                                    isSelected: appState.selectedMediaID == item.id,
-                                    displayMode: appState.thumbnailDisplayMode,
-                                    cellSize: layout.cellSize
-                                )
-                                .id(item.id)
-                                .onTapGesture {
-                                    appState.selectedMediaID = item.id
-                                    isGridFocused = true
-                                }
+                        SmoothMediaGrid(
+                            columnCount: CGFloat(appState.mediaGridColumnCount),
+                            availableWidth: geometry.size.width,
+                            spacing: cellSpacing,
+                            items: appState.mediaItems,
+                            selectedAlbum: appState.selectedAlbum!,
+                            selectedMediaID: appState.selectedMediaID,
+                            displayMode: appState.thumbnailDisplayMode,
+                            onSelect: { itemID in
+                                appState.selectedMediaID = itemID
+                                isGridFocused = true
                             }
-                        }
-                        .padding(cellSpacing)
+                        )
                         .animation(.smooth(duration: 0.35), value: appState.thumbnailDisplayMode)
                     }
                     .focusable()
@@ -128,15 +120,6 @@ struct MediaGridView: View {
                         appState.moveMediaSelection(.down)
                         return .handled
                     }
-                    .onAppear {
-                        appState.updateMediaGridColumnCount(layout.columnCount)
-                    }
-                    .onChange(of: geometry.size.width) { _, width in
-                        scheduleColumnLayoutUpdate(for: width)
-                    }
-                    .onDisappear {
-                        columnLayoutDebounceTask?.cancel()
-                    }
                     .onChange(of: appState.selectedMediaID) { _, newID in
                         guard let newID else { return }
                         withAnimation(.easeInOut(duration: 0.2)) {
@@ -149,24 +132,6 @@ struct MediaGridView: View {
             .id(appState.selectedAlbum?.id)
             .onAppear { isGridFocused = true }
         }
-    }
-
-    private func scheduleColumnLayoutUpdate(for width: CGFloat) {
-        let columnCount = gridLayout(for: width).columnCount
-        columnLayoutDebounceTask?.cancel()
-        columnLayoutDebounceTask = Task { @MainActor in
-            try? await Task.sleep(for: columnLayoutDebounceInterval)
-            guard !Task.isCancelled else { return }
-            appState.updateMediaGridColumnCount(columnCount)
-        }
-    }
-
-    private func gridLayout(for width: CGFloat) -> (columns: [GridItem], cellSize: CGFloat, columnCount: Int) {
-        let availableWidth = max(width - cellSpacing * 2, minimumCellSize)
-        let columnCount = max(1, Int((availableWidth + cellSpacing) / (minimumCellSize + cellSpacing)))
-        let cellSize = (availableWidth - cellSpacing * CGFloat(columnCount - 1)) / CGFloat(columnCount)
-        let columns = Array(repeating: GridItem(.fixed(cellSize), spacing: cellSpacing), count: columnCount)
-        return (columns, cellSize, columnCount)
     }
 
     private func chooseExportDirectory(thenOrganize: Bool = false) {
@@ -212,7 +177,7 @@ private struct MediaThumbnailCell: View {
                     .controlSize(.small)
             }
         }
-        .frame(width: cellSize, height: cellSize)
+        .modifier(AnimatableCellSize(size: cellSize))
         .overlay {
             Rectangle()
                 .strokeBorder(isSelected ? Color.accentColor : .clear, lineWidth: 3)
@@ -271,6 +236,94 @@ private struct MediaThumbnailCell: View {
             return CGSize(width: cellSize, height: cellSize / aspect)
         }
         return CGSize(width: cellSize * aspect, height: cellSize)
+    }
+}
+
+/// Lazy row grid with animatable column count and cell size for smooth +/- transitions.
+private struct SmoothMediaGrid: View, Animatable {
+    var columnCount: CGFloat
+    var availableWidth: CGFloat
+    let spacing: CGFloat
+    let items: [MediaItem]
+    let selectedAlbum: PhotoAlbum
+    let selectedMediaID: String?
+    let displayMode: ThumbnailDisplayMode
+    let onSelect: (String) -> Void
+
+    var animatableData: CGFloat {
+        get { columnCount }
+        set { columnCount = newValue }
+    }
+
+    private var clampedColumnCount: CGFloat {
+        min(
+            max(columnCount, CGFloat(AppSettings.mediaGridColumnCountMin)),
+            CGFloat(AppSettings.mediaGridColumnCountMax)
+        )
+    }
+
+    private var layoutColumnCount: Int {
+        Int(round(clampedColumnCount))
+    }
+
+    private var cellSize: CGFloat {
+        let available = max(availableWidth - spacing * 2, 1)
+        return (available - spacing * (clampedColumnCount - 1)) / clampedColumnCount
+    }
+
+    private var rowCount: Int {
+        guard layoutColumnCount > 0 else { return 0 }
+        return (items.count + layoutColumnCount - 1) / layoutColumnCount
+    }
+
+    var body: some View {
+        LazyVStack(alignment: .leading, spacing: spacing) {
+            ForEach(0..<rowCount, id: \.self) { row in
+                HStack(alignment: .top, spacing: spacing) {
+                    ForEach(itemsInRow(row)) { item in
+                        MediaThumbnailCell(
+                            item: item,
+                            album: selectedAlbum,
+                            isSelected: selectedMediaID == item.id,
+                            displayMode: displayMode,
+                            cellSize: cellSize
+                        )
+                        .id(item.id)
+                        .onTapGesture {
+                            onSelect(item.id)
+                        }
+                    }
+
+                    if itemsInRow(row).count < layoutColumnCount {
+                        ForEach(0..<(layoutColumnCount - itemsInRow(row).count), id: \.self) { _ in
+                            Color.clear
+                                .modifier(AnimatableCellSize(size: cellSize))
+                        }
+                    }
+                }
+            }
+        }
+        .padding(spacing)
+    }
+
+    private func itemsInRow(_ row: Int) -> [MediaItem] {
+        let start = row * layoutColumnCount
+        let end = min(start + layoutColumnCount, items.count)
+        guard start < end else { return [] }
+        return Array(items[start..<end])
+    }
+}
+
+private struct AnimatableCellSize: AnimatableModifier {
+    var size: CGFloat
+
+    var animatableData: CGFloat {
+        get { size }
+        set { size = newValue }
+    }
+
+    func body(content: Content) -> some View {
+        content.frame(width: size, height: size)
     }
 }
 

@@ -4,8 +4,24 @@ enum AppSettings {
     private static let excludedSuffixKey = "excludedAlbumSuffix"
     private static let omittedFromOrganizeAlbumIDsKey = "omittedFromOrganizeAlbumIDs"
     private static let thumbnailDisplayModeKey = "thumbnailDisplayMode"
+    private static let mediaGridColumnCountKey = "mediaGridColumnCount"
+    static let mediaGridColumnCountMin = 3
+    static let mediaGridColumnCountMax = 9
+    private static let defaultMediaGridColumnCount = 4
     private static let exportDirectoryBookmarkKey = "exportDirectoryBookmark"
     private static let exportDirectoryPathKey = "exportDirectoryPath"
+
+    static var mediaGridColumnCount: Int {
+        get {
+            let stored = UserDefaults.standard.integer(forKey: mediaGridColumnCountKey)
+            let value = stored > 0 ? stored : defaultMediaGridColumnCount
+            return min(max(value, mediaGridColumnCountMin), mediaGridColumnCountMax)
+        }
+        set {
+            let clamped = min(max(newValue, mediaGridColumnCountMin), mediaGridColumnCountMax)
+            UserDefaults.standard.set(clamped, forKey: mediaGridColumnCountKey)
+        }
+    }
 
     static var thumbnailDisplayMode: ThumbnailDisplayMode {
         get {
