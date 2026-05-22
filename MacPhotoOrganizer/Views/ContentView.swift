@@ -9,6 +9,12 @@ struct ContentView: View {
         } detail: {
             if appState.selectedAlbum != nil {
                 MediaGridView()
+            } else if appState.photosService.canAccessLibrary && appState.selectableAlbums.isEmpty {
+                let message = OrganizeCompleteMessaging.sidebar(
+                    allAlbums: appState.photosService.albums,
+                    selectableAlbums: appState.selectableAlbums
+                )
+                OrganizeCompleteEmptyView(title: message.title, description: message.description)
             } else {
                 ContentUnavailableView(
                     "Select an Album",

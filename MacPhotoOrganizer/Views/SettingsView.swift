@@ -130,7 +130,8 @@ private struct AlbumsSettingsTab: View {
                 AlbumsLoadingView()
                     .frame(maxHeight: 200)
             } else if sortedAlbums.isEmpty {
-                ContentUnavailableView("No Albums", systemImage: "folder")
+                let message = OrganizeCompleteMessaging.settingsAlbumList
+                OrganizeCompleteEmptyView(title: message.title, description: message.description)
                     .frame(maxHeight: 200)
             } else {
                 ScrollView {

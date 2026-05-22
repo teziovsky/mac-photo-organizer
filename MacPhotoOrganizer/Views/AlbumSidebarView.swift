@@ -38,12 +38,12 @@ struct AlbumSidebarView: View {
         if appState.photosService.isLoadingAlbums && appState.selectableAlbums.isEmpty {
             AlbumsLoadingView()
         } else if appState.selectableAlbums.isEmpty {
-            ContentUnavailableView(
-                "No Albums",
-                systemImage: "folder",
-                description: Text(emptyAlbumsDescription)
+            let message = OrganizeCompleteMessaging.sidebar(
+                allAlbums: appState.photosService.albums,
+                selectableAlbums: appState.selectableAlbums
             )
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            OrganizeCompleteEmptyView(title: message.title, description: message.description)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: AlbumListRowStyle.sidebarRowSpacing) {
@@ -75,13 +75,6 @@ struct AlbumSidebarView: View {
         }
     }
 
-    private var emptyAlbumsDescription: String {
-        let suffix = AppSettings.excludedAlbumSuffix.trimmingCharacters(in: .whitespacesAndNewlines)
-        if suffix.isEmpty {
-            return "No non-empty albums were found in Photos."
-        }
-        return "No non-empty albums without the \"\(suffix)\" suffix were found in Photos."
-    }
 }
 
 private struct AlbumSidebarListRow: View {
