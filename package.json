@@ -2,7 +2,7 @@
   "name": "mac-organizer",
   "version": "1.0.0",
   "private": true,
-  "description": "Native macOS app to review Photos albums and export them to a folder",
+  "description": "iCloud Photos Organizer — native macOS app to review Photos albums and export them to a folder",
   "license": "MIT",
   "author": "teziovsky",
   "scripts": {

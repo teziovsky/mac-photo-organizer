@@ -18,7 +18,7 @@ struct ContentView: View {
                 )
             }
         }
-        .navigationTitle("Mac Organizer")
+        .navigationTitle("iCloud Photos Organizer")
         .searchable(text: $appState.albumSearchText, prompt: "Search albums")
         .toolbar {
             ToolbarItem(placement: .navigation) {

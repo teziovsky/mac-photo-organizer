@@ -16,7 +16,7 @@ struct AlbumSidebarView: View {
                     "Photos Access Required",
                     systemImage: "lock.slash",
                     description: Text(
-                        "Allow Mac Organizer to access your Photos library in System Settings.")
+                        "Allow iCloud Photos Organizer to access your Photos library in System Settings.")
                 )
             }
         }

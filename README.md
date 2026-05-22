@@ -1,4 +1,4 @@
-# Mac Organizer
+# iCloud Photos Organizer
 
 Native macOS app for reviewing Photos albums and exporting them to a folder.
 
