@@ -78,39 +78,47 @@ final class PhotosService: ObservableObject {
     }
 
     nonisolated private static func collectAlbums(excludedSuffix: String) -> [PhotoAlbum] {
-        let topLevel = PHCollectionList.fetchTopLevelUserCollections(with: nil)
+        let collections = PHAssetCollection.fetchAssetCollections(
+            with: .album,
+            subtype: .any,
+            options: nil
+        )
         var results: [PhotoAlbum] = []
+        results.reserveCapacity(collections.count)
+
         var index = 0
-        while index < topLevel.count {
-            let collection = topLevel.object(at: index)
-            results.append(contentsOf: collect(from: collection, excludedSuffix: excludedSuffix))
+        while index < collections.count {
+            let album = collections.object(at: index)
+            if let photoAlbum = makePhotoAlbum(from: album, excludedSuffix: excludedSuffix) {
+                results.append(photoAlbum)
+            }
             index += 1
         }
+
         return results.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
 
-    nonisolated private static func collect(
-        from collection: PHCollection,
-        excludedSuffix: String
-    ) -> [PhotoAlbum] {
-        if let list = collection as? PHCollectionList {
-            let children = PHCollection.fetchCollections(in: list, options: nil)
-            var nested: [PhotoAlbum] = []
-            var childIndex = 0
-            while childIndex < children.count {
-                nested.append(contentsOf: collect(from: children.object(at: childIndex), excludedSuffix: excludedSuffix))
-                childIndex += 1
-            }
-            return nested
+    nonisolated private static func isSharedAlbum(_ album: PHAssetCollection) -> Bool {
+        switch album.assetCollectionSubtype {
+        case .albumCloudShared, .albumMyPhotoStream:
+            return true
+        default:
+            return false
         }
+    }
 
-        guard let album = collection as? PHAssetCollection else { return [] }
+    nonisolated private static func makePhotoAlbum(
+        from album: PHAssetCollection,
+        excludedSuffix: String
+    ) -> PhotoAlbum? {
+        guard !isSharedAlbum(album) else { return nil }
+
         let name = album.localizedTitle ?? "Untitled"
-        guard AlbumNameFilter.shouldInclude(albumName: name, excludedSuffix: excludedSuffix) else { return [] }
+        guard AlbumNameFilter.shouldInclude(albumName: name, excludedSuffix: excludedSuffix) else { return nil }
 
         let assets = PHAsset.fetchAssets(in: album, options: nil)
         let mediaCount = assets.count
-        guard mediaCount > 0 else { return [] }
+        guard mediaCount > 0 else { return nil }
 
         var videoCount = 0
         var assetIndex = 0
@@ -121,16 +129,14 @@ final class PhotosService: ObservableObject {
             assetIndex += 1
         }
 
-        return [
-            PhotoAlbum(
-                id: album.localIdentifier,
-                name: name,
-                mediaCount: mediaCount,
-                photoCount: mediaCount - videoCount,
-                videoCount: videoCount,
-                collectionIdentifier: album.localIdentifier
-            ),
-        ]
+        return PhotoAlbum(
+            id: album.localIdentifier,
+            name: name,
+            mediaCount: mediaCount,
+            photoCount: mediaCount - videoCount,
+            videoCount: videoCount,
+            collectionIdentifier: album.localIdentifier
+        )
     }
 
     nonisolated private static func fetchCollection(identifier: String) -> PHAssetCollection? {

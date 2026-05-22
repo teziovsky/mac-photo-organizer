@@ -13,7 +13,10 @@ struct AlbumSidebarView: View {
     var body: some View {
         Group {
             switch appState.photosService.authorizationState {
-            case .notDetermined, .authorized:
+            case .notDetermined:
+                ProgressView("Connecting to Photos…")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            case .authorized:
                 albumList
             case .denied, .restricted:
                 ContentUnavailableView(

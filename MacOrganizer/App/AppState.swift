@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import Foundation
 import SwiftUI
 
@@ -7,12 +8,23 @@ final class AppState: ObservableObject {
     let photosService = PhotosService()
     let organizeExporter = OrganizeExporter()
 
+    private var cancellables = Set<AnyCancellable>()
+
     @Published var selectedAlbum: PhotoAlbum?
     @Published var mediaItems: [MediaItem] = []
     @Published var isLoadingMedia = false
     @Published var selectedMediaID: String?
     @Published var mediaError: String?
     @Published var showOrganizeSheet = false
+
+    init() {
+        photosService.objectWillChange
+            .sink { [weak self] _ in self?.objectWillChange.send() }
+            .store(in: &cancellables)
+        organizeExporter.objectWillChange
+            .sink { [weak self] _ in self?.objectWillChange.send() }
+            .store(in: &cancellables)
+    }
 
     func bootstrap() async {
         await photosService.requestAuthorization()
