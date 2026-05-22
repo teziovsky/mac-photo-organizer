@@ -1,4 +1,5 @@
 import AppKit
+import Photos
 import SwiftUI
 
 struct MediaGridView: View {
@@ -47,6 +48,7 @@ struct MediaGridView: View {
                             selectedAlbum: appState.selectedAlbum!,
                             selectedMediaID: appState.selectedMediaID,
                             displayMode: appState.thumbnailDisplayMode,
+                            assetForItem: { appState.asset(for: $0) },
                             onSelect: { itemID in
                                 appState.selectedMediaID = itemID
                                 isGridFocused = true
@@ -93,9 +95,11 @@ private struct MediaThumbnailCell: View {
     let isSelected: Bool
     let displayMode: ThumbnailDisplayMode
     let cellSize: CGFloat
+    let asset: PHAsset?
 
     @State private var image: NSImage?
     @State private var loadFailed = false
+    @State private var loadGeneration = 0
 
     var body: some View {
         ZStack {
@@ -105,9 +109,16 @@ private struct MediaThumbnailCell: View {
             if let image {
                 thumbnailImage(image)
             } else if loadFailed {
-                Image(systemName: item.isVideo ? "video" : "photo")
-                    .font(.title)
-                    .foregroundStyle(.secondary)
+                VStack(spacing: 4) {
+                    Image(systemName: item.isVideo ? "video" : "photo")
+                        .font(.title)
+                        .foregroundStyle(.secondary)
+                    Button("Retry") {
+                        retryLoad()
+                    }
+                    .buttonStyle(.borderless)
+                    .font(.caption2)
+                }
             } else {
                 ProgressView()
                     .controlSize(.small)
@@ -119,17 +130,40 @@ private struct MediaThumbnailCell: View {
                 .strokeBorder(isSelected ? Color.accentColor : .clear, lineWidth: 3)
         }
         .contentShape(Rectangle())
+        .accessibilityLabel(accessibilityLabel)
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
         .task(id: item.id) {
-            loadFailed = false
-            if let cached = await ThumbnailLoader.shared.cachedImage(for: item.id) {
-                image = cached
-                return
-            }
-            image = await ThumbnailLoader.shared.thumbnail(for: item, album: album)
-            if image == nil {
-                loadFailed = true
-            }
+            await loadThumbnail()
         }
+    }
+
+    private var accessibilityLabel: String {
+        let kind = item.isVideo ? "Video" : "Photo"
+        return "\(kind), \(item.filename)"
+    }
+
+    private func retryLoad() {
+        loadFailed = false
+        image = nil
+        loadGeneration += 1
+        let generation = loadGeneration
+        Task {
+            await loadThumbnail(generation: generation)
+        }
+    }
+
+    private func loadThumbnail(generation: Int? = nil) async {
+        let activeGeneration = generation ?? loadGeneration
+        loadFailed = false
+        if let cached = await ThumbnailLoader.shared.cachedImage(for: item.id) {
+            guard activeGeneration == loadGeneration else { return }
+            image = cached
+            return
+        }
+        let loaded = await ThumbnailLoader.shared.thumbnail(for: item, album: album, asset: asset)
+        guard activeGeneration == loadGeneration else { return }
+        image = loaded
+        loadFailed = loaded == nil
     }
 
     private var cellBackground: Color {
@@ -193,6 +227,7 @@ private struct SmoothMediaGrid: View, Animatable {
     let selectedAlbum: PhotoAlbum
     let selectedMediaID: String?
     let displayMode: ThumbnailDisplayMode
+    let assetForItem: (MediaItem) -> PHAsset?
     let onSelect: (String) -> Void
 
     var animatableData: CGFloat {
@@ -226,17 +261,20 @@ private struct SmoothMediaGrid: View, Animatable {
             ForEach(0..<rowCount, id: \.self) { row in
                 HStack(alignment: .top, spacing: spacing) {
                     ForEach(itemsInRow(row)) { item in
-                        MediaThumbnailCell(
-                            item: item,
-                            album: selectedAlbum,
-                            isSelected: selectedMediaID == item.id,
-                            displayMode: displayMode,
-                            cellSize: cellSize
-                        )
-                        .id(item.id)
-                        .onTapGesture {
+                        Button {
                             onSelect(item.id)
+                        } label: {
+                            MediaThumbnailCell(
+                                item: item,
+                                album: selectedAlbum,
+                                isSelected: selectedMediaID == item.id,
+                                displayMode: displayMode,
+                                cellSize: cellSize,
+                                asset: assetForItem(item)
+                            )
                         }
+                        .buttonStyle(.plain)
+                        .id(item.id)
                     }
 
                     if itemsInRow(row).count < layoutColumnCount {

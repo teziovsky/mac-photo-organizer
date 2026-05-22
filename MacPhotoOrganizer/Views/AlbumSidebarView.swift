@@ -7,32 +7,37 @@ struct AlbumSidebarView: View {
         Group {
             switch appState.photosService.authorizationState {
             case .notDetermined:
-                ProgressView("Connecting to Photos…")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                AlbumsLoadingView(message: "Connecting to Photos…")
             case .authorized:
                 albumList
+            case .limited:
+                PhotosLimitedAccessView()
             case .denied, .restricted:
-                ContentUnavailableView(
-                    "Photos Access Required",
-                    systemImage: "lock.slash",
-                    description: Text(
-                        "Allow iCloud Photos Organizer to access your Photos library in System Settings.")
+                PhotosAccessUnavailableView(
+                    title: "Photos Access Required",
+                    description: "Allow iCloud Photos Organizer to access your Photos library in System Settings."
                 )
             }
         }
         .frame(minWidth: 280, maxHeight: .infinity)
         .navigationSplitViewColumnWidth(min: 260, ideal: 280)
-        .overlay {
-            if appState.photosService.isLoadingAlbums {
-                ProgressView()
-                    .controlSize(.regular)
+        .overlay(alignment: .top) {
+            if let error = appState.photosService.errorMessage {
+                Text(error)
+                    .font(AlbumListRowStyle.detailFont)
+                    .foregroundStyle(.red)
+                    .padding(8)
+                    .frame(maxWidth: .infinity)
+                    .background(.regularMaterial)
             }
         }
     }
 
     @ViewBuilder
     private var albumList: some View {
-        if appState.selectableAlbums.isEmpty && !appState.photosService.isLoadingAlbums {
+        if appState.photosService.isLoadingAlbums && appState.selectableAlbums.isEmpty {
+            AlbumsLoadingView()
+        } else if appState.selectableAlbums.isEmpty {
             ContentUnavailableView(
                 "No Albums",
                 systemImage: "folder",
@@ -41,7 +46,7 @@ struct AlbumSidebarView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
             ScrollView {
-                VStack(alignment: .leading, spacing: AlbumListRowStyle.sidebarRowSpacing) {
+                LazyVStack(alignment: .leading, spacing: AlbumListRowStyle.sidebarRowSpacing) {
                     ForEach(appState.selectableAlbums) { album in
                         AlbumSidebarListRow(
                             album: album,
@@ -56,6 +61,17 @@ struct AlbumSidebarView: View {
                 .padding(.vertical, AlbumListRowStyle.sidebarListInset)
             }
             .frame(maxHeight: .infinity)
+            .overlay {
+                if appState.photosService.isLoadingAlbums {
+                    ZStack {
+                        Color.clear
+                        ProgressView()
+                            .controlSize(.regular)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .allowsHitTesting(false)
+                }
+            }
         }
     }
 
@@ -75,12 +91,15 @@ private struct AlbumSidebarListRow: View {
     @State private var isHovered = false
 
     var body: some View {
-        AlbumSidebarRowContent(album: album)
-            .albumSidebarRowChrome(backgroundFill: rowBackgroundFill)
-            .onTapGesture(perform: onSelect)
-            .onHover { isHovered = $0 }
-            .accessibilityElement(children: .combine)
-            .accessibilityAddTraits(.isButton)
+        Button(action: onSelect) {
+            AlbumSidebarRowContent(album: album)
+                .albumSidebarRowChrome(backgroundFill: rowBackgroundFill)
+        }
+        .buttonStyle(.plain)
+        .onHover { isHovered = $0 }
+        .accessibilityLabel(album.name)
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+        .accessibilityHint("\(album.mediaCount) items")
     }
 
     private var rowBackgroundFill: Color {

@@ -10,16 +10,6 @@ struct PhotoAlbum: Identifiable, Hashable, Sendable {
     let collectionIdentifier: String
 
     var mediaSummary: String {
-        var parts: [String] = []
-        if photoCount > 0 {
-            parts.append("\(photoCount) \(photoCount == 1 ? "photo" : "photos")")
-        }
-        if videoCount > 0 {
-            parts.append("\(videoCount) \(videoCount == 1 ? "video" : "videos")")
-        }
-        if parts.isEmpty {
-            return "\(mediaCount) media"
-        }
-        return parts.joined(separator: ", ")
+        MediaSummary.text(photoCount: photoCount, videoCount: videoCount, mediaCount: mediaCount)
     }
 }

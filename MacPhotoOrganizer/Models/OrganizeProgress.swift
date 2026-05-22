@@ -6,6 +6,7 @@ struct OrganizeProgress: Sendable {
     let filename: String
     let failedCount: Int
     let skippedCount: Int
+    let movedCount: Int
     let isComplete: Bool
     let wasCancelled: Bool
 

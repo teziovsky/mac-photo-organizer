@@ -4,6 +4,10 @@ struct OrganizeProgressView: View {
     @EnvironmentObject private var appState: AppState
     @Environment(\.dismiss) private var dismiss
 
+    private var failures: [OrganizeFailure] {
+        appState.organizeExporter.failures
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Organizing Album")
@@ -32,6 +36,10 @@ struct OrganizeProgressView: View {
                 }
 
                 HStack(spacing: 16) {
+                    if progress.movedCount > 0 {
+                        Label("\(progress.movedCount) moved", systemImage: "checkmark.circle")
+                            .foregroundStyle(.green)
+                    }
                     if progress.failedCount > 0 {
                         Label("\(progress.failedCount) failed", systemImage: "xmark.circle")
                             .foregroundStyle(.red)
@@ -50,7 +58,7 @@ struct OrganizeProgressView: View {
                 ProgressView()
             }
 
-            if !appState.organizeExporter.failures.isEmpty {
+            if !failures.isEmpty {
                 failuresList
             }
 
@@ -75,8 +83,13 @@ struct OrganizeProgressView: View {
     @ViewBuilder
     private func completionMessage(progress: OrganizeProgress) -> some View {
         if progress.wasCancelled {
-            Text("Organize cancelled.")
+            Text("Organize cancelled. Some items may already have been exported or moved.")
                 .foregroundStyle(.secondary)
+        } else if progress.failedCount > 0 || progress.skippedCount > 0 {
+            Text(
+                "Organize finished with issues. Exported files may remain on disk even when a move failed; you can run Organize again for remaining items."
+            )
+            .foregroundStyle(.secondary)
         } else {
             Text("Organize finished.")
                 .foregroundStyle(.secondary)
@@ -84,10 +97,13 @@ struct OrganizeProgressView: View {
     }
 
     private var failuresList: some View {
-        GroupBox("Issues") {
+        let visible = Array(failures.prefix(50))
+        let hiddenCount = failures.count - visible.count
+
+        return GroupBox("Issues") {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 6) {
-                    ForEach(appState.organizeExporter.failures.prefix(50)) { failure in
+                    ForEach(visible) { failure in
                         VStack(alignment: .leading, spacing: 2) {
                             Text(failure.filename)
                                 .font(AlbumListRowStyle.detailFont)
@@ -96,11 +112,18 @@ struct OrganizeProgressView: View {
                                 .font(AlbumListRowStyle.detailFont)
                                 .foregroundStyle(.secondary)
                         }
+                        .accessibilityElement(children: .combine)
+                    }
+                    if hiddenCount > 0 {
+                        Text("And \(hiddenCount) more…")
+                            .font(AlbumListRowStyle.detailFont)
+                            .foregroundStyle(.secondary)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .frame(maxHeight: 160)
+            .accessibilityLabel("Organize issues, \(failures.count) total")
         }
     }
 }

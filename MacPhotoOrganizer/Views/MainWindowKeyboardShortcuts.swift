@@ -6,73 +6,61 @@ struct MainWindowKeyboardShortcuts: View {
 
     var body: some View {
         Group {
-            Button("") {
+            shortcutButton("Previous album", enabled: appState.canSelectPreviousAlbum) {
                 Task { await appState.selectPreviousAlbum() }
             }
             .keyboardShortcut(.upArrow, modifiers: .command)
-            .hidden()
-            .disabled(!appState.canSelectPreviousAlbum)
 
-            Button("") {
+            shortcutButton("Next album", enabled: appState.canSelectNextAlbum) {
                 Task { await appState.selectNextAlbum() }
             }
             .keyboardShortcut(.downArrow, modifiers: .command)
-            .hidden()
-            .disabled(!appState.canSelectNextAlbum)
 
-            Button("") {
+            shortcutButton("Quick Look", enabled: appState.selectedMediaID != nil) {
                 Task { await appState.previewSelectedMedia() }
             }
             .keyboardShortcut("y", modifiers: .command)
-            .hidden()
-            .disabled(appState.selectedMediaID == nil)
 
-            Button("") {
+            shortcutButton("Larger thumbnails", enabled: appState.selectedAlbum != nil && appState.canDecreaseMediaGridColumnCount) {
                 appState.decreaseMediaGridColumnCount()
             }
             .keyboardShortcut("+", modifiers: .command)
-            .hidden()
-            .disabled(appState.selectedAlbum == nil || !appState.canDecreaseMediaGridColumnCount)
 
-            Button("") {
+            shortcutButton("Smaller thumbnails", enabled: appState.selectedAlbum != nil && appState.canIncreaseMediaGridColumnCount) {
                 appState.increaseMediaGridColumnCount()
             }
             .keyboardShortcut("-", modifiers: .command)
-            .hidden()
-            .disabled(appState.selectedAlbum == nil || !appState.canIncreaseMediaGridColumnCount)
 
-            Button("") {
+            shortcutButton("Toggle thumbnail display", enabled: appState.selectedAlbum != nil) {
                 appState.toggleThumbnailDisplayMode()
             }
             .keyboardShortcut("t", modifiers: .command)
-            .hidden()
-            .disabled(appState.selectedAlbum == nil)
 
-            Button("") {
+            shortcutButton("Refresh albums", enabled: !appState.photosService.isLoadingAlbums) {
                 Task { await appState.photosService.reloadAlbums() }
             }
             .keyboardShortcut("r", modifiers: .command)
-            .hidden()
-            .disabled(appState.photosService.isLoadingAlbums)
 
-            Button("") {
+            shortcutButton("Organize album", enabled: appState.canOrganizeSelectedAlbum && !appState.mediaItems.isEmpty && !appState.organizeExporter.isRunning) {
                 appState.promptExportDirectoryAndOrganize()
             }
             .keyboardShortcut("e", modifiers: .command)
-            .hidden()
-            .disabled(
-                appState.selectedAlbum == nil
-                    || appState.mediaItems.isEmpty
-                    || appState.organizeExporter.isRunning
-                    || !appState.canOrganizeSelectedAlbum
-            )
 
-            Button("") {
+            shortcutButton("Toggle sidebar", enabled: true) {
                 appState.toggleSidebarVisibility()
             }
             .keyboardShortcut("s", modifiers: .command)
-            .hidden()
         }
     }
 
+    private func shortcutButton(
+        _ label: String,
+        enabled: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(label, action: action)
+            .hidden()
+            .accessibilityHidden(true)
+            .disabled(!enabled)
+    }
 }

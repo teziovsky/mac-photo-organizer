@@ -35,7 +35,7 @@ struct SettingsView: View {
     }
 
     private func loadAlbumsIfNeeded() {
-        guard appState.photosService.authorizationState == .authorized,
+        guard appState.photosService.canAccessLibrary,
               appState.photosService.albums.isEmpty else { return }
         Task { await appState.photosService.reloadAlbums() }
     }
@@ -116,19 +116,25 @@ private struct AlbumsSettingsTab: View {
         case .notDetermined:
             ProgressView("Connecting to Photos…")
                 .controlSize(.small)
+        case .limited:
+            PhotosLimitedAccessView()
+                .frame(maxHeight: 200)
         case .denied, .restricted:
-            Text("Photos access is required to list albums.")
-                .foregroundStyle(.secondary)
+            PhotosAccessUnavailableView(
+                title: "Photos Access Required",
+                description: "Allow access in System Settings to manage omitted albums."
+            )
+            .frame(maxHeight: 200)
         case .authorized:
-            if appState.photosService.isLoadingAlbums {
-                ProgressView("Loading albums…")
-                    .controlSize(.small)
+            if appState.photosService.isLoadingAlbums && sortedAlbums.isEmpty {
+                AlbumsLoadingView()
+                    .frame(maxHeight: 200)
             } else if sortedAlbums.isEmpty {
-                Text("No albums available.")
-                    .foregroundStyle(.secondary)
+                ContentUnavailableView("No Albums", systemImage: "folder")
+                    .frame(maxHeight: 200)
             } else {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 2) {
+                    LazyVStack(alignment: .leading, spacing: 2) {
                         ForEach(sortedAlbums) { album in
                             OmitAlbumSettingsRow(
                                 album: album,
@@ -144,7 +150,7 @@ private struct AlbumsSettingsTab: View {
     }
 
     private func loadAlbumsIfNeeded() {
-        guard appState.photosService.authorizationState == .authorized,
+        guard appState.photosService.canAccessLibrary,
               appState.photosService.albums.isEmpty else { return }
         Task { await appState.photosService.reloadAlbums() }
     }
@@ -168,10 +174,9 @@ private struct OmitAlbumSettingsRow: View {
                 .font(AlbumListRowStyle.detailFont)
         }
         .albumListRowChrome(backgroundFill: isHovered ? AlbumListRowStyle.hoverFill : .clear)
-        .onTapGesture {
-            toggleOmit()
-        }
         .onHover { isHovered = $0 }
+        .accessibilityLabel(album.name)
+        .accessibilityValue(isOmitted ? "Omitted from Organize" : "Included in Organize")
     }
 
     private var omitBinding: Binding<Bool> {
@@ -185,13 +190,5 @@ private struct OmitAlbumSettingsRow: View {
                 }
             }
         )
-    }
-
-    private func toggleOmit() {
-        if isOmitted {
-            omittedAlbumIDs.remove(album.id)
-        } else {
-            omittedAlbumIDs.insert(album.id)
-        }
     }
 }

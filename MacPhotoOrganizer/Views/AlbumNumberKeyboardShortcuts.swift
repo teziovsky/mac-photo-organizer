@@ -7,11 +7,12 @@ struct AlbumNumberKeyboardShortcuts: View {
     var body: some View {
         Group {
             ForEach(1...9, id: \.self) { number in
-                Button("") {
+                Button("Select album \(number)") {
                     Task { await appState.selectAlbum(at: number - 1) }
                 }
                 .keyboardShortcut(shortcutKey(number), modifiers: .command)
                 .hidden()
+                .accessibilityHidden(true)
                 .disabled(!appState.selectableAlbums.indices.contains(number - 1))
             }
         }

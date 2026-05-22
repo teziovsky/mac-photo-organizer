@@ -8,20 +8,18 @@ enum QuickLookHelper {
     private static var tempExports: [String: URL] = [:]
     private static var activeDataSource: PreviewDataSource?
 
-    static func preview(item: MediaItem) async {
-        guard let asset = item.asset else { return }
-
-        do {
-            let url = try await exportURL(for: asset, filename: item.filename)
-            let dataSource = PreviewDataSource(url: url)
-            activeDataSource = dataSource
-            let panel = QLPreviewPanel.shared()
-            panel?.dataSource = dataSource
-            panel?.reloadData()
-            panel?.makeKeyAndOrderFront(nil)
-        } catch {
-            NSSound.beep()
+    static func preview(item: MediaItem, asset: PHAsset?) async throws {
+        guard let asset else {
+            throw QuickLookError.noAsset
         }
+
+        let url = try await exportURL(for: asset, filename: item.filename)
+        let dataSource = PreviewDataSource(url: url)
+        activeDataSource = dataSource
+        let panel = QLPreviewPanel.shared()
+        panel?.dataSource = dataSource
+        panel?.reloadData()
+        panel?.makeKeyAndOrderFront(nil)
     }
 
     static var isPanelVisible: Bool {
@@ -31,6 +29,7 @@ enum QuickLookHelper {
     static func closePreview() {
         QLPreviewPanel.shared()?.orderOut(nil)
         activeDataSource = nil
+        pruneTempExports(keeping: [])
     }
 
     private static func exportURL(for asset: PHAsset, filename: String) async throws -> URL {
@@ -42,45 +41,65 @@ enum QuickLookHelper {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("MacPhotoOrganizer-QuickLook", isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        pruneTempExports(keeping: Array(tempExports.keys))
 
-        let safeName = filename.isEmpty ? "preview.dat" : filename
+        let safeName = SafeFilename.sanitize(filename, fallback: "preview.dat")
         let destination = tempDir.appendingPathComponent(
             "\(asset.localIdentifier.replacingOccurrences(of: "/", with: "_"))-\(safeName)"
         )
+
+        guard SafeFilename.isContained(destination, in: tempDir) else {
+            throw QuickLookError.invalidPath
+        }
 
         if FileManager.default.fileExists(atPath: destination.path) {
             tempExports[asset.localIdentifier] = destination
             return destination
         }
 
-        let resources = PHAssetResource.assetResources(for: asset)
-        guard let resource = resources.first(where: { $0.type == .photo || $0.type == .video || $0.type == .fullSizeVideo })
-            ?? resources.first else {
+        do {
+            try await PhotoAssetExporter.writeOriginalResource(for: asset, to: destination)
+        } catch PhotoAssetExportError.noResource {
             throw QuickLookError.noResource
-        }
-
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            let options = PHAssetResourceRequestOptions()
-            options.isNetworkAccessAllowed = true
-            PHAssetResourceManager.default().writeData(for: resource, toFile: destination, options: options) { error in
-                if let error {
-                    continuation.resume(throwing: error)
-                } else {
-                    continuation.resume()
-                }
-            }
         }
 
         tempExports[asset.localIdentifier] = destination
         return destination
     }
+
+    private static func pruneTempExports(keeping activeIDs: [String]) {
+        let keep = Set(activeIDs)
+        for (id, url) in tempExports where !keep.contains(id) {
+            try? FileManager.default.removeItem(at: url)
+            tempExports.removeValue(forKey: id)
+        }
+
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("MacPhotoOrganizer-QuickLook", isDirectory: true)
+        guard let contents = try? FileManager.default.contentsOfDirectory(at: tempDir, includingPropertiesForKeys: nil) else {
+            return
+        }
+        let keepPaths = Set(tempExports.values.map(\.path))
+        for url in contents where !keepPaths.contains(url.path) {
+            try? FileManager.default.removeItem(at: url)
+        }
+    }
 }
 
 private enum QuickLookError: LocalizedError {
     case noResource
+    case noAsset
+    case invalidPath
 
     var errorDescription: String? {
-        "Could not load preview"
+        switch self {
+        case .noResource:
+            return "Could not load preview"
+        case .noAsset:
+            return "Photo is no longer available in the library"
+        case .invalidPath:
+            return "Could not create a safe preview file path"
+        }
     }
 }
 

@@ -91,6 +91,15 @@ struct ContentView: View {
             OrganizeProgressView()
                 .environmentObject(appState)
         }
+        .alert("Quick Look Failed", isPresented: quickLookErrorBinding) {
+            Button("OK", role: .cancel) {
+                appState.quickLookError = nil
+            }
+        } message: {
+            if let error = appState.quickLookError {
+                Text(error)
+            }
+        }
         .background {
             MainWindowKeyboardShortcuts()
             if appState.selectedAlbum == nil {
@@ -140,10 +149,17 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: AlbumListRowStyle.labelSpacing) {
             Text(album.name)
                 .font(AlbumListRowStyle.navigationAlbumTitleFont)
-            Text(album.mediaSummary)
+            Text(appState.selectedAlbumMediaSummary ?? album.mediaSummary)
                 .font(AlbumListRowStyle.navigationAlbumDetailFont)
                 .foregroundStyle(.secondary)
         }
+    }
+
+    private var quickLookErrorBinding: Binding<Bool> {
+        Binding(
+            get: { appState.quickLookError != nil },
+            set: { if !$0 { appState.quickLookError = nil } }
+        )
     }
 
     private func handleEscape() {

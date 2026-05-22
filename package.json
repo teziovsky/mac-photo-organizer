@@ -12,8 +12,9 @@
     "clean": "rm -rf build dist && xcodebuild -project MacPhotoOrganizer.xcodeproj -scheme MacPhotoOrganizer -derivedDataPath build/DerivedData clean",
     "build": "xcodebuild -project MacPhotoOrganizer.xcodeproj -scheme MacPhotoOrganizer -configuration Debug -derivedDataPath build/DerivedData build CODE_SIGNING_ALLOWED=NO",
     "clean:build": "npm run clean && npm run build",
-    "run": "npm run build && open build/DerivedData/Build/Products/Debug/MacPhotoOrganizer.app",
     "build:production": "xcodebuild -project MacPhotoOrganizer.xcodeproj -scheme MacPhotoOrganizer -configuration Release -derivedDataPath build/DerivedData build CODE_SIGNING_ALLOWED=NO",
+    "run": "npm run build && open build/DerivedData/Build/Products/Debug/MacPhotoOrganizer.app",
+    "test": "swift test",
     "release": "npm run build:production && rm -rf dist && mkdir -p dist && ditto build/DerivedData/Build/Products/Release/MacPhotoOrganizer.app dist/MacPhotoOrganizer.app && ditto -c -k --sequesterRsrc --keepParent dist/MacPhotoOrganizer.app dist/MacPhotoOrganizer-macOS.zip && echo 'Release artifacts: dist/MacPhotoOrganizer.app dist/MacPhotoOrganizer-macOS.zip'"
   }
 }

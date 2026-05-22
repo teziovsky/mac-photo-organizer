@@ -16,9 +16,12 @@
 		7B93AC732F16455E829ABC2A /* PhotosService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AB1CE809E09479BB2E18552 /* PhotosService.swift */; };
 		D988F41E5889443783213B93 /* QuickLookHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C7141389BA741AA8E197C48 /* QuickLookHelper.swift */; };
 		950A5883EA1547A794907F5F /* ThumbnailLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8E91EBDB1C849DBBCB91309 /* ThumbnailLoader.swift */; };
+		667788990011223344556677 /* PhotoAssetExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 778899001122334455667788 /* PhotoAssetExporter.swift */; };
 		43FC5DB48FDF4016A45C899E /* AlbumNameFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45613F36B23F480EA04A4A49 /* AlbumNameFilter.swift */; };
 		D4E5F6A7B8C94D0A1B2C3D5E /* AlbumListRowStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F6A7B8C9D04E1A2B3C4D6F /* AlbumListRowStyle.swift */; };
 		C06BBDDEA43E475C929DAC5A /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 610DCC74556F49B4987BC016 /* AppSettings.swift */; };
+		889900112233445566778899 /* FileDatePreservation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 990011223344556677889900 /* FileDatePreservation.swift */; };
+		AABBCCDDEEFF001122334455 /* SleepAssertion.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBCCDDEEFF00112233445566 /* SleepAssertion.swift */; };
 		E196206AD6D64E458CF84E2F /* AlbumSidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A80FE1B411B441C8CEB3CD8 /* AlbumSidebarView.swift */; };
 		817DB072A49F4EA692D8C2EB /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EE8B27A54424CF2B6F0C643 /* ContentView.swift */; };
 		C3D4E5F6A7B84990A1B2C3D4 /* MainWindowKeyboardShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6A7498091A2B3C4 /* MainWindowKeyboardShortcuts.swift */; };
@@ -26,6 +29,10 @@
 		FDA1FFB081CD4AF180526F7A /* MediaGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8542DD10E74489281F31F8C /* MediaGridView.swift */; };
 		38F287CD62414D72A3E35796 /* OrganizeProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCE88D550AA147A2A10449DB /* OrganizeProgressView.swift */; };
 		7ECD01CA2B604C1290A9B7DA /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E58F090FFBE4CD68111AA5E /* SettingsView.swift */; };
+		A1F2B3C4D5E6478990112233 /* SafeFilename.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6A7488990112234 /* SafeFilename.swift */; };
+		C3D4E5F6A7B8499001122334 /* MediaSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9499001122335 /* MediaSummary.swift */; };
+		E5F6A7B8C9D0499001122336 /* ExportDirectoryAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6A7B8C9D0E1499001122337 /* ExportDirectoryAccess.swift */; };
+		112233445566778899001122 /* PhotosAccessViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 223344556677889900112233 /* PhotosAccessViews.swift */; };
 		0FF1B5869E37421096AD477E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CCEC6AF34D2A457CA48F3ED4 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -43,9 +50,12 @@
 		9AB1CE809E09479BB2E18552 /* PhotosService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotosService.swift; sourceTree = "<group>"; };
 		0C7141389BA741AA8E197C48 /* QuickLookHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickLookHelper.swift; sourceTree = "<group>"; };
 		F8E91EBDB1C849DBBCB91309 /* ThumbnailLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThumbnailLoader.swift; sourceTree = "<group>"; };
+		778899001122334455667788 /* PhotoAssetExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoAssetExporter.swift; sourceTree = "<group>"; };
 		45613F36B23F480EA04A4A49 /* AlbumNameFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumNameFilter.swift; sourceTree = "<group>"; };
 		E5F6A7B8C9D04E1A2B3C4D6F /* AlbumListRowStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumListRowStyle.swift; sourceTree = "<group>"; };
 		610DCC74556F49B4987BC016 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
+		990011223344556677889900 /* FileDatePreservation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileDatePreservation.swift; sourceTree = "<group>"; };
+		BBCCDDEEFF00112233445566 /* SleepAssertion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepAssertion.swift; sourceTree = "<group>"; };
 		7A80FE1B411B441C8CEB3CD8 /* AlbumSidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumSidebarView.swift; sourceTree = "<group>"; };
 		4EE8B27A54424CF2B6F0C643 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		B2C3D4E5F6A7498091A2B3C4 /* MainWindowKeyboardShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainWindowKeyboardShortcuts.swift; sourceTree = "<group>"; };
@@ -53,6 +63,11 @@
 		C8542DD10E74489281F31F8C /* MediaGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaGridView.swift; sourceTree = "<group>"; };
 		CCE88D550AA147A2A10449DB /* OrganizeProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrganizeProgressView.swift; sourceTree = "<group>"; };
 		0E58F090FFBE4CD68111AA5E /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		B2C3D4E5F6A7488990112234 /* SafeFilename.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeFilename.swift; sourceTree = "<group>"; };
+		D4E5F6A7B8C9499001122335 /* MediaSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaSummary.swift; sourceTree = "<group>"; };
+		F6A7B8C9D0E1499001122337 /* ExportDirectoryAccess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportDirectoryAccess.swift; sourceTree = "<group>"; };
+		223344556677889900112233 /* PhotosAccessViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotosAccessViews.swift; sourceTree = "<group>"; };
+		334455667788990011223344 /* MacPhotoOrganizer.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MacPhotoOrganizer.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -101,6 +116,7 @@
 				9AB1CE809E09479BB2E18552 /* PhotosService.swift */,
 				0C7141389BA741AA8E197C48 /* QuickLookHelper.swift */,
 				F8E91EBDB1C849DBBCB91309 /* ThumbnailLoader.swift */,
+				778899001122334455667788 /* PhotoAssetExporter.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -111,6 +127,11 @@
 				45613F36B23F480EA04A4A49 /* AlbumNameFilter.swift */,
 				E5F6A7B8C9D04E1A2B3C4D6F /* AlbumListRowStyle.swift */,
 				610DCC74556F49B4987BC016 /* AppSettings.swift */,
+				990011223344556677889900 /* FileDatePreservation.swift */,
+				BBCCDDEEFF00112233445566 /* SleepAssertion.swift */,
+				B2C3D4E5F6A7488990112234 /* SafeFilename.swift */,
+				D4E5F6A7B8C9499001122335 /* MediaSummary.swift */,
+				F6A7B8C9D0E1499001122337 /* ExportDirectoryAccess.swift */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
@@ -125,6 +146,7 @@
 				C8542DD10E74489281F31F8C /* MediaGridView.swift */,
 				CCE88D550AA147A2A10449DB /* OrganizeProgressView.swift */,
 				0E58F090FFBE4CD68111AA5E /* SettingsView.swift */,
+				223344556677889900112233 /* PhotosAccessViews.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -133,6 +155,7 @@
 			isa = PBXGroup;
 			children = (
 				8CFB453D98264CF289BB3BBF /* Info.plist */,
+				334455667788990011223344 /* MacPhotoOrganizer.entitlements */,
 				CCEC6AF34D2A457CA48F3ED4 /* Assets.xcassets */,
 				5982603DBB044DE39769C2B3 /* App */,
 				F93BA27968F545659A7F0432 /* Models */,
@@ -225,9 +248,12 @@
 				7B93AC732F16455E829ABC2A /* PhotosService.swift in Sources */,
 				D988F41E5889443783213B93 /* QuickLookHelper.swift in Sources */,
 				950A5883EA1547A794907F5F /* ThumbnailLoader.swift in Sources */,
+				667788990011223344556677 /* PhotoAssetExporter.swift in Sources */,
 				43FC5DB48FDF4016A45C899E /* AlbumNameFilter.swift in Sources */,
 				D4E5F6A7B8C94D0A1B2C3D5E /* AlbumListRowStyle.swift in Sources */,
 				C06BBDDEA43E475C929DAC5A /* AppSettings.swift in Sources */,
+				889900112233445566778899 /* FileDatePreservation.swift in Sources */,
+				AABBCCDDEEFF001122334455 /* SleepAssertion.swift in Sources */,
 				E196206AD6D64E458CF84E2F /* AlbumSidebarView.swift in Sources */,
 				817DB072A49F4EA692D8C2EB /* ContentView.swift in Sources */,
 				C3D4E5F6A7B84990A1B2C3D4 /* MainWindowKeyboardShortcuts.swift in Sources */,
@@ -235,6 +261,10 @@
 				FDA1FFB081CD4AF180526F7A /* MediaGridView.swift in Sources */,
 				38F287CD62414D72A3E35796 /* OrganizeProgressView.swift in Sources */,
 				7ECD01CA2B604C1290A9B7DA /* SettingsView.swift in Sources */,
+				A1F2B3C4D5E6478990112233 /* SafeFilename.swift in Sources */,
+				C3D4E5F6A7B8499001122334 /* MediaSummary.swift in Sources */,
+				E5F6A7B8C9D0499001122336 /* ExportDirectoryAccess.swift in Sources */,
+				112233445566778899001122 /* PhotosAccessViews.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -243,8 +273,8 @@
 /* Begin XCBuildConfiguration section */
 		8E2FE48FAA6D4118B74173A8 /* Debug */ = { isa = XCBuildConfiguration; buildSettings = { ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; COPY_PHASE_STRIP = NO; DEBUG_INFORMATION_FORMAT = dwarf; GCC_DYNAMIC_NO_PIC = NO; GCC_OPTIMIZATION_LEVEL = 0; MACOSX_DEPLOYMENT_TARGET = 14.0; SDKROOT = macosx; SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG; SWIFT_OPTIMIZATION_LEVEL = "-Onone"; }; name = Debug; };
 		3AC4BF0363FF405EBB3FFAA3 /* Release */ = { isa = XCBuildConfiguration; buildSettings = { ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; COPY_PHASE_STRIP = NO; DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym"; MACOSX_DEPLOYMENT_TARGET = 14.0; SDKROOT = macosx; SWIFT_COMPILATION_MODE = wholemodule; SWIFT_OPTIMIZATION_LEVEL = "-O"; }; name = Release; };
-		50F8E5EDF5FC4F1DA671B1DA /* Debug */ = { isa = XCBuildConfiguration; buildSettings = { ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_STYLE = Automatic; COMBINE_HIDPI_IMAGES = YES; CURRENT_PROJECT_VERSION = 1; ENABLE_HARDENED_RUNTIME = YES; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = MacPhotoOrganizer/Info.plist; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/../Frameworks"); MARKETING_VERSION = 1.0; PRODUCT_BUNDLE_IDENTIFIER = com.teziovsky.mac-photo-organizer; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_VERSION = 5.0; }; name = Debug; };
-		B09F66805AE74C5DAE319563 /* Release */ = { isa = XCBuildConfiguration; buildSettings = { ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_STYLE = Automatic; COMBINE_HIDPI_IMAGES = YES; CURRENT_PROJECT_VERSION = 1; ENABLE_HARDENED_RUNTIME = YES; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = MacPhotoOrganizer/Info.plist; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/../Frameworks"); MARKETING_VERSION = 1.0; PRODUCT_BUNDLE_IDENTIFIER = com.teziovsky.mac-photo-organizer; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_VERSION = 5.0; }; name = Release; };
+		50F8E5EDF5FC4F1DA671B1DA /* Debug */ = { isa = XCBuildConfiguration; buildSettings = { ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_ENTITLEMENTS = MacPhotoOrganizer/MacPhotoOrganizer.entitlements; CODE_SIGN_STYLE = Automatic; COMBINE_HIDPI_IMAGES = YES; CURRENT_PROJECT_VERSION = 1; ENABLE_APP_SANDBOX = YES; ENABLE_HARDENED_RUNTIME = YES; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = MacPhotoOrganizer/Info.plist; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/../Frameworks"); MARKETING_VERSION = 1.0; PRODUCT_BUNDLE_IDENTIFIER = com.teziovsky.mac-photo-organizer; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_VERSION = 5.0; }; name = Debug; };
+		B09F66805AE74C5DAE319563 /* Release */ = { isa = XCBuildConfiguration; buildSettings = { ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_ENTITLEMENTS = MacPhotoOrganizer/MacPhotoOrganizer.entitlements; CODE_SIGN_STYLE = Automatic; COMBINE_HIDPI_IMAGES = YES; CURRENT_PROJECT_VERSION = 1; ENABLE_APP_SANDBOX = YES; ENABLE_HARDENED_RUNTIME = YES; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = MacPhotoOrganizer/Info.plist; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/../Frameworks"); MARKETING_VERSION = 1.0; PRODUCT_BUNDLE_IDENTIFIER = com.teziovsky.mac-photo-organizer; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_VERSION = 5.0; }; name = Release; };
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */

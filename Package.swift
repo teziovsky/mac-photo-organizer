@@ -15,6 +15,7 @@ let package = Package(
                 "Info.plist",
                 "Assets.xcassets",
                 "Resources",
+                "MacPhotoOrganizer.entitlements",
             ],
             linkerSettings: [
                 .linkedFramework("Photos"),
@@ -22,6 +23,11 @@ let package = Package(
                 .linkedFramework("QuickLookUI"),
                 .linkedFramework("Quartz"),
             ]
+        ),
+        .testTarget(
+            name: "MacPhotoOrganizerTests",
+            dependencies: ["MacPhotoOrganizer"],
+            path: "Tests/MacPhotoOrganizerTests"
         ),
     ]
 )

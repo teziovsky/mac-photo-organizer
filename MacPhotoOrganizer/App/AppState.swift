@@ -1,6 +1,7 @@
 import AppKit
 import Combine
 import Foundation
+import Photos
 import SwiftUI
 
 enum MediaGridMoveDirection: Sendable {
@@ -13,12 +14,15 @@ final class AppState: ObservableObject {
     let organizeExporter = OrganizeExporter()
 
     private var cancellables = Set<AnyCancellable>()
+    private var albumLoadGeneration = 0
+    private var currentAlbumAssets: [String: PHAsset] = [:]
 
     @Published var selectedAlbum: PhotoAlbum?
     @Published var mediaItems: [MediaItem] = []
     @Published var isLoadingMedia = false
     @Published var selectedMediaID: String?
     @Published var mediaError: String?
+    @Published var quickLookError: String?
     @Published var showOrganizeSheet = false
     @Published var thumbnailDisplayMode: ThumbnailDisplayMode = AppSettings.thumbnailDisplayMode
     @Published var exportDirectoryPath: String? = AppSettings.exportDirectoryPath
@@ -43,7 +47,14 @@ final class AppState: ObservableObject {
         await photosService.requestAuthorization()
     }
 
+    func asset(for item: MediaItem) -> PHAsset? {
+        currentAlbumAssets[item.id]
+    }
+
     func selectAlbum(_ album: PhotoAlbum?) async {
+        albumLoadGeneration += 1
+        let generation = albumLoadGeneration
+
         selectedMediaID = nil
         mediaError = nil
 
@@ -51,6 +62,7 @@ final class AppState: ObservableObject {
             isLoadingMedia = false
             selectedAlbum = nil
             mediaItems = []
+            currentAlbumAssets = [:]
             await ThumbnailLoader.shared.clearMemoryCache()
             return
         }
@@ -58,17 +70,27 @@ final class AppState: ObservableObject {
         isLoadingMedia = true
         selectedAlbum = album
         mediaItems = []
+        currentAlbumAssets = [:]
 
-        defer { isLoadingMedia = false }
+        defer {
+            if generation == albumLoadGeneration {
+                isLoadingMedia = false
+            }
+        }
 
-        await ThumbnailLoader.shared.clearMemoryCache()
+        await ThumbnailLoader.shared.clearMemoryCache(forAlbumID: album.id)
 
         do {
-            mediaItems = try await photosService.mediaItems(for: album)
+            let items = try await photosService.mediaItems(for: album)
+            guard generation == albumLoadGeneration else { return }
+            mediaItems = items
+            currentAlbumAssets = PhotosService.buildAssetCache(for: items)
             selectedMediaID = mediaItems.first?.id
         } catch {
+            guard generation == albumLoadGeneration else { return }
             mediaError = error.localizedDescription
             mediaItems = []
+            currentAlbumAssets = [:]
             selectedMediaID = nil
         }
     }
@@ -153,7 +175,18 @@ final class AppState: ObservableObject {
     func previewSelectedMedia() async {
         guard let id = selectedMediaID,
               let item = mediaItems.first(where: { $0.id == id }) else { return }
-        await QuickLookHelper.preview(item: item)
+        quickLookError = nil
+        do {
+            try await QuickLookHelper.preview(item: item, asset: asset(for: item))
+        } catch {
+            quickLookError = error.localizedDescription
+            NSSound.beep()
+        }
+    }
+
+    var selectedAlbumMediaSummary: String? {
+        guard selectedAlbum != nil, !mediaItems.isEmpty else { return nil }
+        return MediaSummary.text(for: mediaItems)
     }
 
     var canDecreaseMediaGridColumnCount: Bool {
@@ -227,39 +260,28 @@ final class AppState: ObservableObject {
 
     var canOrganizeSelectedAlbum: Bool {
         guard let album = selectedAlbum else { return false }
-        return !isAlbumOmittedFromOrganize(album)
+        return photosService.canAccessLibrary && !isAlbumOmittedFromOrganize(album)
     }
 
-    /// Shows the export folder picker, then runs organize when a folder is chosen.
+    /// Shows the export folder picker, then exports and organizes into the chosen folder.
     func promptExportDirectoryAndOrganize() {
-        guard let album = selectedAlbum, !isAlbumOmittedFromOrganize(album) else { return }
-        guard !mediaItems.isEmpty else { return }
-        guard !organizeExporter.isRunning else { return }
-
-        let panel = NSOpenPanel()
-        panel.canChooseDirectories = true
-        panel.canChooseFiles = false
-        panel.allowsMultipleSelection = false
-        panel.prompt = "Organize"
-        panel.message = "Photos and videos will be copied into this folder when you organize."
-        panel.directoryURL = AppSettings.resolveExportDirectory()
-
-        guard panel.runModal() == .OK, let url = panel.url else { return }
-        setExportDirectory(url)
+        guard prepareOrganize() else { return }
+        guard promptExportDirectory() else { return }
         startOrganize()
     }
 
     func startOrganize() {
-        guard let album = selectedAlbum, !isAlbumOmittedFromOrganize(album) else { return }
-        guard !mediaItems.isEmpty else { return }
-        guard !organizeExporter.isRunning else { return }
+        guard prepareOrganize() else { return }
         guard AppSettings.resolveExportDirectory() != nil else { return }
         showOrganizeSheet = true
-        guard let exportURL = AppSettings.resolveExportDirectory() else { return }
+        guard let exportURL = AppSettings.resolveExportDirectory(),
+              let album = selectedAlbum else { return }
 
         let sourceAlbumID = album.id
+        let assets = currentAlbumAssets
         organizeExporter.organize(
             items: mediaItems,
+            assetsByID: assets,
             sourceAlbum: album,
             to: exportURL,
             photosService: photosService
@@ -274,5 +296,28 @@ final class AppState: ObservableObject {
                 await selectAlbum(nil)
             }
         }
+    }
+
+    @discardableResult
+    private func prepareOrganize() -> Bool {
+        guard let album = selectedAlbum, !isAlbumOmittedFromOrganize(album) else { return false }
+        guard photosService.canAccessLibrary else { return false }
+        guard !mediaItems.isEmpty else { return false }
+        guard !organizeExporter.isRunning else { return false }
+        return true
+    }
+
+    @discardableResult
+    private func promptExportDirectory() -> Bool {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.allowsMultipleSelection = false
+        panel.prompt = "Export Here"
+        panel.message = "Choose the folder where photos and videos from this album will be exported."
+        panel.directoryURL = AppSettings.resolveExportDirectory()
+        guard panel.runModal() == .OK, let url = panel.url else { return false }
+        setExportDirectory(url)
+        return true
     }
 }
