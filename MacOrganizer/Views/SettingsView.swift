@@ -161,7 +161,7 @@ private struct OmitAlbumSettingsRow: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
-            AlbumListRowLabels(album: album, shortcutIndex: nil)
+            AlbumListRowLabels(album: album)
 
             Toggle("Omit", isOn: omitBinding)
                 .toggleStyle(.checkbox)
