@@ -35,9 +35,12 @@ Select the **MacPhotoOrganizer** scheme and press **Run** (⌘R).
 | `npm run run` | Debug build and launch the app |
 | `npm run build:production` | Release build (optimized) |
 | `npm run release` | Release build, copy `.app` to `dist/`, create `dist/MacPhotoOrganizer-macOS.zip` |
+| `npm run install` | Release build and install to `/Applications/MacPhotoOrganizer.app` |
+| `npm run install:open` | Same as `install`, then launch the app |
 
 ```bash
 npm run run
+npm run install
 ```
 
 ### Swift Package Manager (compile only)
