@@ -1,3 +1,6 @@
 {
-  "recommendations": ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode", "vitest.explorer"]
+  "recommendations": [
+    "esbenp.prettier-vscode",
+    "swiftlang.swift-vscode"
+  ]
 }

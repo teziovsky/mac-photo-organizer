@@ -1,55 +1,19 @@
 {
-  "$schema": "https://www.raycast.com/schemas/extension.json",
   "name": "mac-organizer",
-  "description": "Extension for help organize mac os",
-  "categories": [
-    "Productivity",
-    "Media"
-  ],
+  "version": "1.0.0",
+  "private": true,
+  "description": "Native macOS app to review Photos albums and export them to a folder",
   "license": "MIT",
   "author": "teziovsky",
   "scripts": {
-    "dev": "ray develop",
-    "build": "ray build",
-    "lint": "ray lint",
-    "fix-lint": "ray lint --fix",
-    "fix": "npm run fix-lint",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "prepublishOnly": "echo \"\\n\\nIt seems like you are trying to publish the Raycast extension to npm.\\n\\nIf you did intend to publish it to npm, remove the \\`prepublishOnly\\` script and rerun \\`npm publish\\` again.\\nIf you wanted to publish it to the Raycast Store instead, use \\`npm run publish\\` instead.\\n\\n\" && exit 1",
-    "pull-contributions": "npx @raycast/api@latest pull-contributions",
-    "publish": "npx @raycast/api@latest publish"
-  },
-  "dependencies": {
-    "@raycast/api": "^1.104.18",
-    "@raycast/utils": "^2.2.5",
-    "zod": "^4.4.3"
-  },
-  "devDependencies": {
-    "@ianvs/prettier-plugin-sort-imports": "^4.7.1",
-    "@raycast/eslint-config": "^2.1.1",
-    "@total-typescript/ts-reset": "^0.6.1",
-    "@types/node": "25.9.1",
-    "@types/react": "19.2.15",
-    "eslint": "^10.4.0",
-    "eslint-config-prettier": "^10.1.8",
-    "prettier": "^3.8.3",
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.7"
-  },
-  "icon": "extension-icon.png",
-  "commands": [
-    {
-      "mode": "view",
-      "name": "organize-icloud-photos",
-      "title": "Organize iCloud Photos",
-      "description": "Export and organize iCloud Photos",
-      "subtitle": "Mac Organizer"
-    }
-  ],
-  "platforms": [
-    "macOS"
-  ],
-  "title": "Mac Organizer"
+    "open": "open MacOrganizer.xcodeproj",
+    "swift:build": "swift build",
+    "swift:clean": "swift package clean && rm -rf .build",
+    "clean": "rm -rf build dist && xcodebuild -project MacOrganizer.xcodeproj -scheme MacOrganizer -derivedDataPath build/DerivedData clean",
+    "build": "xcodebuild -project MacOrganizer.xcodeproj -scheme MacOrganizer -configuration Debug -derivedDataPath build/DerivedData build CODE_SIGNING_ALLOWED=NO",
+    "clean:build": "npm run clean && npm run build",
+    "run": "npm run build && open build/DerivedData/Build/Products/Debug/MacOrganizer.app",
+    "build:production": "xcodebuild -project MacOrganizer.xcodeproj -scheme MacOrganizer -configuration Release -derivedDataPath build/DerivedData build CODE_SIGNING_ALLOWED=NO",
+    "release": "npm run build:production && rm -rf dist && mkdir -p dist && ditto build/DerivedData/Build/Products/Release/MacOrganizer.app dist/MacOrganizer.app && ditto -c -k --sequesterRsrc --keepParent dist/MacOrganizer.app dist/MacOrganizer-macOS.zip && echo 'Release artifacts: dist/MacOrganizer.app dist/MacOrganizer-macOS.zip'"
+  }
 }

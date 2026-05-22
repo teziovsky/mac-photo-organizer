@@ -1,0 +1,240 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		9C795D2769CD4500B193EF0C /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BF803B324DB4B12919B1402 /* AppState.swift */; };
+		13420944E3E4445E8A034E05 /* MacOrganizerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B67B14C17024B3E8407CCCE /* MacOrganizerApp.swift */; };
+		166D2A828251492495D9CF73 /* MediaItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C7A00AAFB3B4075B2D47ED5 /* MediaItem.swift */; };
+		16B4F10D882242B684686880 /* OrganizeProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 530AEEFA19934A4FA829453C /* OrganizeProgress.swift */; };
+		AAA573756E5843DAA8B4F485 /* PhotoAlbum.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C3088853AA6439AA0F74AB0 /* PhotoAlbum.swift */; };
+		4E2AFA3C045C47319CE7EACD /* OrganizeExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 022028CA8C2845F68A209161 /* OrganizeExporter.swift */; };
+		7B93AC732F16455E829ABC2A /* PhotosService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AB1CE809E09479BB2E18552 /* PhotosService.swift */; };
+		D988F41E5889443783213B93 /* QuickLookHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C7141389BA741AA8E197C48 /* QuickLookHelper.swift */; };
+		950A5883EA1547A794907F5F /* ThumbnailLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8E91EBDB1C849DBBCB91309 /* ThumbnailLoader.swift */; };
+		43FC5DB48FDF4016A45C899E /* AlbumNameFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45613F36B23F480EA04A4A49 /* AlbumNameFilter.swift */; };
+		C06BBDDEA43E475C929DAC5A /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 610DCC74556F49B4987BC016 /* AppSettings.swift */; };
+		E196206AD6D64E458CF84E2F /* AlbumSidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A80FE1B411B441C8CEB3CD8 /* AlbumSidebarView.swift */; };
+		817DB072A49F4EA692D8C2EB /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EE8B27A54424CF2B6F0C643 /* ContentView.swift */; };
+		FDA1FFB081CD4AF180526F7A /* MediaGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8542DD10E74489281F31F8C /* MediaGridView.swift */; };
+		38F287CD62414D72A3E35796 /* OrganizeProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCE88D550AA147A2A10449DB /* OrganizeProgressView.swift */; };
+		7ECD01CA2B604C1290A9B7DA /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E58F090FFBE4CD68111AA5E /* SettingsView.swift */; };
+		0FF1B5869E37421096AD477E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CCEC6AF34D2A457CA48F3ED4 /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		34B5C4B0A1734D6E9FABAC79 /* MacOrganizer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacOrganizer.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CFB453D98264CF289BB3BBF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		CCEC6AF34D2A457CA48F3ED4 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		7BF803B324DB4B12919B1402 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		4B67B14C17024B3E8407CCCE /* MacOrganizerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacOrganizerApp.swift; sourceTree = "<group>"; };
+		6C7A00AAFB3B4075B2D47ED5 /* MediaItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaItem.swift; sourceTree = "<group>"; };
+		530AEEFA19934A4FA829453C /* OrganizeProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrganizeProgress.swift; sourceTree = "<group>"; };
+		0C3088853AA6439AA0F74AB0 /* PhotoAlbum.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoAlbum.swift; sourceTree = "<group>"; };
+		022028CA8C2845F68A209161 /* OrganizeExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrganizeExporter.swift; sourceTree = "<group>"; };
+		9AB1CE809E09479BB2E18552 /* PhotosService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotosService.swift; sourceTree = "<group>"; };
+		0C7141389BA741AA8E197C48 /* QuickLookHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickLookHelper.swift; sourceTree = "<group>"; };
+		F8E91EBDB1C849DBBCB91309 /* ThumbnailLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThumbnailLoader.swift; sourceTree = "<group>"; };
+		45613F36B23F480EA04A4A49 /* AlbumNameFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumNameFilter.swift; sourceTree = "<group>"; };
+		610DCC74556F49B4987BC016 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
+		7A80FE1B411B441C8CEB3CD8 /* AlbumSidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumSidebarView.swift; sourceTree = "<group>"; };
+		4EE8B27A54424CF2B6F0C643 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		C8542DD10E74489281F31F8C /* MediaGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaGridView.swift; sourceTree = "<group>"; };
+		CCE88D550AA147A2A10449DB /* OrganizeProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrganizeProgressView.swift; sourceTree = "<group>"; };
+		0E58F090FFBE4CD68111AA5E /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		19098EA2A350455486BBB3E0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		7053E6AD45144FC3BE686725 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				34B5C4B0A1734D6E9FABAC79 /* MacOrganizer.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		5982603DBB044DE39769C2B3 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				7BF803B324DB4B12919B1402 /* AppState.swift */,
+				4B67B14C17024B3E8407CCCE /* MacOrganizerApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		F93BA27968F545659A7F0432 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				6C7A00AAFB3B4075B2D47ED5 /* MediaItem.swift */,
+				530AEEFA19934A4FA829453C /* OrganizeProgress.swift */,
+				0C3088853AA6439AA0F74AB0 /* PhotoAlbum.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		CF5854CF439F4816937DA449 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				022028CA8C2845F68A209161 /* OrganizeExporter.swift */,
+				9AB1CE809E09479BB2E18552 /* PhotosService.swift */,
+				0C7141389BA741AA8E197C48 /* QuickLookHelper.swift */,
+				F8E91EBDB1C849DBBCB91309 /* ThumbnailLoader.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		C1E0218640A34641AFA10F00 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				45613F36B23F480EA04A4A49 /* AlbumNameFilter.swift */,
+				610DCC74556F49B4987BC016 /* AppSettings.swift */,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
+		007CBEF38E6D498999500B4B /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				7A80FE1B411B441C8CEB3CD8 /* AlbumSidebarView.swift */,
+				4EE8B27A54424CF2B6F0C643 /* ContentView.swift */,
+				C8542DD10E74489281F31F8C /* MediaGridView.swift */,
+				CCE88D550AA147A2A10449DB /* OrganizeProgressView.swift */,
+				0E58F090FFBE4CD68111AA5E /* SettingsView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		7E97D5175DBD4D33AC959FBB /* MacOrganizer */ = {
+			isa = PBXGroup;
+			children = (
+				8CFB453D98264CF289BB3BBF /* Info.plist */,
+				CCEC6AF34D2A457CA48F3ED4 /* Assets.xcassets */,
+				5982603DBB044DE39769C2B3 /* App */,
+				F93BA27968F545659A7F0432 /* Models */,
+				CF5854CF439F4816937DA449 /* Services */,
+				C1E0218640A34641AFA10F00 /* Utilities */,
+				007CBEF38E6D498999500B4B /* Views */,
+			);
+			path = MacOrganizer;
+			sourceTree = "<group>";
+		};
+		76CB2111043F4E3CAF7CF08C = {
+			isa = PBXGroup;
+			children = (
+				7E97D5175DBD4D33AC959FBB /* MacOrganizer */,
+				7053E6AD45144FC3BE686725 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		DDCA7B284FAE47B894E4F7F3 /* MacOrganizer */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CF23A07885BD4BFD886F45A3 /* Build configuration list for PBXNativeTarget "MacOrganizer" */;
+			buildPhases = (
+				D2FCF6CDCFFA4F5FB37316EE /* Sources */,
+				19098EA2A350455486BBB3E0 /* Frameworks */,
+				6C07445700A54477A31C9EAE /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MacOrganizer;
+			productName = MacOrganizer;
+			productReference = 34B5C4B0A1734D6E9FABAC79 /* MacOrganizer.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		FA4A3D028F5F4257A58F2621 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+			};
+			buildConfigurationList = 38CB0A3263FD42C08938B9A7 /* Build configuration list for PBXProject "MacOrganizer" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 76CB2111043F4E3CAF7CF08C;
+			productRefGroup = 7053E6AD45144FC3BE686725 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				DDCA7B284FAE47B894E4F7F3 /* MacOrganizer */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		6C07445700A54477A31C9EAE /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0FF1B5869E37421096AD477E /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		D2FCF6CDCFFA4F5FB37316EE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9C795D2769CD4500B193EF0C /* AppState.swift in Sources */,
+				13420944E3E4445E8A034E05 /* MacOrganizerApp.swift in Sources */,
+				166D2A828251492495D9CF73 /* MediaItem.swift in Sources */,
+				16B4F10D882242B684686880 /* OrganizeProgress.swift in Sources */,
+				AAA573756E5843DAA8B4F485 /* PhotoAlbum.swift in Sources */,
+				4E2AFA3C045C47319CE7EACD /* OrganizeExporter.swift in Sources */,
+				7B93AC732F16455E829ABC2A /* PhotosService.swift in Sources */,
+				D988F41E5889443783213B93 /* QuickLookHelper.swift in Sources */,
+				950A5883EA1547A794907F5F /* ThumbnailLoader.swift in Sources */,
+				43FC5DB48FDF4016A45C899E /* AlbumNameFilter.swift in Sources */,
+				C06BBDDEA43E475C929DAC5A /* AppSettings.swift in Sources */,
+				E196206AD6D64E458CF84E2F /* AlbumSidebarView.swift in Sources */,
+				817DB072A49F4EA692D8C2EB /* ContentView.swift in Sources */,
+				FDA1FFB081CD4AF180526F7A /* MediaGridView.swift in Sources */,
+				38F287CD62414D72A3E35796 /* OrganizeProgressView.swift in Sources */,
+				7ECD01CA2B604C1290A9B7DA /* SettingsView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		8E2FE48FAA6D4118B74173A8 /* Debug */ = { isa = XCBuildConfiguration; buildSettings = { ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; COPY_PHASE_STRIP = NO; DEBUG_INFORMATION_FORMAT = dwarf; GCC_DYNAMIC_NO_PIC = NO; GCC_OPTIMIZATION_LEVEL = 0; MACOSX_DEPLOYMENT_TARGET = 14.0; SDKROOT = macosx; SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG; SWIFT_OPTIMIZATION_LEVEL = "-Onone"; }; name = Debug; };
+		3AC4BF0363FF405EBB3FFAA3 /* Release */ = { isa = XCBuildConfiguration; buildSettings = { ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; COPY_PHASE_STRIP = NO; DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym"; MACOSX_DEPLOYMENT_TARGET = 14.0; SDKROOT = macosx; SWIFT_COMPILATION_MODE = wholemodule; SWIFT_OPTIMIZATION_LEVEL = "-O"; }; name = Release; };
+		50F8E5EDF5FC4F1DA671B1DA /* Debug */ = { isa = XCBuildConfiguration; buildSettings = { ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_STYLE = Automatic; COMBINE_HIDPI_IMAGES = YES; CURRENT_PROJECT_VERSION = 1; ENABLE_HARDENED_RUNTIME = YES; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = MacOrganizer/Info.plist; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/../Frameworks"); MARKETING_VERSION = 1.0; PRODUCT_BUNDLE_IDENTIFIER = com.teziovsky.mac-organizer; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_VERSION = 5.0; }; name = Debug; };
+		B09F66805AE74C5DAE319563 /* Release */ = { isa = XCBuildConfiguration; buildSettings = { ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_STYLE = Automatic; COMBINE_HIDPI_IMAGES = YES; CURRENT_PROJECT_VERSION = 1; ENABLE_HARDENED_RUNTIME = YES; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = MacOrganizer/Info.plist; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/../Frameworks"); MARKETING_VERSION = 1.0; PRODUCT_BUNDLE_IDENTIFIER = com.teziovsky.mac-organizer; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_VERSION = 5.0; }; name = Release; };
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		38CB0A3263FD42C08938B9A7 /* Build configuration list for PBXProject "MacOrganizer" */ = { isa = XCConfigurationList; buildConfigurations = (8E2FE48FAA6D4118B74173A8 /* Debug */, 3AC4BF0363FF405EBB3FFAA3 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		CF23A07885BD4BFD886F45A3 /* Build configuration list for PBXNativeTarget "MacOrganizer" */ = { isa = XCConfigurationList; buildConfigurations = (50F8E5EDF5FC4F1DA671B1DA /* Debug */, B09F66805AE74C5DAE319563 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+/* End XCConfigurationList section */
+	};
+	rootObject = FA4A3D028F5F4257A58F2621 /* Project object */;
+}
