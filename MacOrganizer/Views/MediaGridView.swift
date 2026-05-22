@@ -4,9 +4,11 @@ import SwiftUI
 struct MediaGridView: View {
     @EnvironmentObject private var appState: AppState
     @FocusState private var isGridFocused: Bool
+    @State private var columnLayoutDebounceTask: Task<Void, Never>?
 
     private let cellSpacing: CGFloat = 2
     private let minimumCellSize: CGFloat = 160
+    private let columnLayoutDebounceInterval: Duration = .milliseconds(320)
 
     var body: some View {
         VStack(spacing: 0) {
@@ -130,7 +132,10 @@ struct MediaGridView: View {
                         appState.updateMediaGridColumnCount(layout.columnCount)
                     }
                     .onChange(of: geometry.size.width) { _, width in
-                        appState.updateMediaGridColumnCount(gridLayout(for: width).columnCount)
+                        scheduleColumnLayoutUpdate(for: width)
+                    }
+                    .onDisappear {
+                        columnLayoutDebounceTask?.cancel()
                     }
                     .onChange(of: appState.selectedMediaID) { _, newID in
                         guard let newID else { return }
@@ -143,6 +148,16 @@ struct MediaGridView: View {
             .background(Color.black.opacity(0.92))
             .id(appState.selectedAlbum?.id)
             .onAppear { isGridFocused = true }
+        }
+    }
+
+    private func scheduleColumnLayoutUpdate(for width: CGFloat) {
+        let columnCount = gridLayout(for: width).columnCount
+        columnLayoutDebounceTask?.cancel()
+        columnLayoutDebounceTask = Task { @MainActor in
+            try? await Task.sleep(for: columnLayoutDebounceInterval)
+            guard !Task.isCancelled else { return }
+            appState.updateMediaGridColumnCount(columnCount)
         }
     }
 

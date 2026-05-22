@@ -1,4 +1,3 @@
-import AppKit
 import SwiftUI
 
 /// Keyboard shortcuts scoped to the main window view hierarchy (inactive while Settings is focused).
@@ -38,8 +37,7 @@ struct MainWindowKeyboardShortcuts: View {
             .disabled(appState.selectedMediaID == nil)
 
             Button("") {
-                NSApp.keyWindow?.firstResponder?
-                    .tryToPerform(#selector(NSSplitViewController.toggleSidebar(_:)), with: nil)
+                appState.toggleSidebarVisibility()
             }
             .keyboardShortcut("s", modifiers: .command)
             .hidden()

@@ -19,7 +19,7 @@ struct MacOrganizerApp: App {
             CommandGroup(replacing: .newItem) {}
             CommandGroup(replacing: .sidebar) {
                 Button("Toggle Sidebar") {
-                    toggleSidebar()
+                    appState.toggleSidebarVisibility()
                 }
             }
             MacOrganizerAlbumCommands(appState: appState)
@@ -64,7 +64,3 @@ private struct MacOrganizerAlbumCommands: Commands {
     }
 }
 
-private func toggleSidebar() {
-    NSApp.keyWindow?.firstResponder?
-        .tryToPerform(#selector(NSSplitViewController.toggleSidebar(_:)), with: nil)
-}

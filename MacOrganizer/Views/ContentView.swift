@@ -4,7 +4,7 @@ struct ContentView: View {
     @EnvironmentObject private var appState: AppState
 
     var body: some View {
-        NavigationSplitView {
+        NavigationSplitView(columnVisibility: $appState.columnVisibility) {
             AlbumSidebarView()
         } detail: {
             if appState.selectedAlbum != nil {

@@ -25,6 +25,7 @@ final class AppState: ObservableObject {
     @Published var exportDirectoryPath: String? = AppSettings.exportDirectoryPath
     @Published var omittedFromOrganizeAlbumIDs: Set<String> = AppSettings.omittedFromOrganizeAlbumIDs
     @Published var mediaGridColumnCount = 1
+    @Published var columnVisibility: NavigationSplitViewVisibility = .all
 
     var selectableAlbums: [PhotoAlbum] {
         let albums = photosService.albums.filter { !omittedFromOrganizeAlbumIDs.contains($0.id) }
@@ -127,6 +128,12 @@ final class AppState: ObservableObject {
             await selectAlbum(albums[index - 1])
         } else {
             await selectAlbum(albums[albums.count - 1])
+        }
+    }
+
+    func toggleSidebarVisibility() {
+        withAnimation(.easeInOut(duration: 0.28)) {
+            columnVisibility = columnVisibility == .detailOnly ? .all : .detailOnly
         }
     }
 
