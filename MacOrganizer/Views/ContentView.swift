@@ -13,7 +13,8 @@ struct ContentView: View {
                 ContentUnavailableView(
                     "Select an Album",
                     systemImage: "photo.on.rectangle.angled",
-                    description: Text("Choose an album from the sidebar to review photos before organizing.")
+                    description: Text(
+                        "Choose an album from the sidebar to review photos before organizing.")
                 )
             }
         }

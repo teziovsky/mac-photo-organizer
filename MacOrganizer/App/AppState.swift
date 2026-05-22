@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import SwiftUI
 
@@ -33,6 +34,10 @@ final class AppState: ObservableObject {
         } catch {
             mediaError = error.localizedDescription
         }
+    }
+
+    func openSettings() {
+        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
     }
 
     func startOrganize() {
