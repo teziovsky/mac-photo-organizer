@@ -40,7 +40,7 @@ enum QuickLookHelper {
         }
 
         let tempDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("MacOrganizer-QuickLook", isDirectory: true)
+            .appendingPathComponent("MacPhotoOrganizer-QuickLook", isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
 
         let safeName = filename.isEmpty ? "preview.dat" : filename

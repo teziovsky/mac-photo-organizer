@@ -7,7 +7,7 @@ enum AppSettings {
     private static let mediaGridColumnCountKey = "mediaGridColumnCount"
     static let mediaGridColumnCountMin = 3
     static let mediaGridColumnCountMax = 9
-    private static let defaultMediaGridColumnCount = 4
+    private static let defaultMediaGridColumnCount = 6
     private static let exportDirectoryBookmarkKey = "exportDirectoryBookmark"
     private static let exportDirectoryPathKey = "exportDirectoryPath"
 

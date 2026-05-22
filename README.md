@@ -23,18 +23,18 @@ Native macOS app for reviewing Photos albums and exporting them to a folder.
 npm run open
 ```
 
-Select the **MacOrganizer** scheme and press **Run** (⌘R).
+Select the **MacPhotoOrganizer** scheme and press **Run** (⌘R).
 
 ### npm scripts (Xcode — full `.app` bundle)
 
 | Script | Description |
 |--------|-------------|
 | `npm run clean` | Remove `build/`, `dist/`, and run `xcodebuild clean` |
-| `npm run build` | Debug build → `build/DerivedData/Build/Products/Debug/MacOrganizer.app` |
+| `npm run build` | Debug build → `build/DerivedData/Build/Products/Debug/MacPhotoOrganizer.app` |
 | `npm run clean:build` | Clean, then debug build |
 | `npm run run` | Debug build and launch the app |
 | `npm run build:production` | Release build (optimized) |
-| `npm run release` | Release build, copy `.app` to `dist/`, create `dist/MacOrganizer-macOS.zip` |
+| `npm run release` | Release build, copy `.app` to `dist/`, create `dist/MacPhotoOrganizer-macOS.zip` |
 
 ```bash
 npm run run
@@ -55,8 +55,8 @@ Set your development team in Xcode for signed release builds outside this repo (
 
 ## App identity
 
-- **Bundle ID:** `com.teziovsky.mac-organizer`
-- **Icons:** `MacOrganizer/Assets.xcassets/AppIcon.appiconset` (also copied under `MacOrganizer/Resources/AppIcon/`)
+- **Bundle ID:** `com.teziovsky.mac-photo-organizer`
+- **Icons:** `MacPhotoOrganizer/Assets.xcassets/AppIcon.appiconset` (also copied under `MacPhotoOrganizer/Resources/AppIcon/`)
 
 ## Settings
 

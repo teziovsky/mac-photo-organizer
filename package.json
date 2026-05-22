@@ -1,19 +1,19 @@
 {
-  "name": "mac-organizer",
+  "name": "mac-photo-organizer",
   "version": "1.0.0",
   "private": true,
   "description": "iCloud Photos Organizer — native macOS app to review Photos albums and export them to a folder",
   "license": "MIT",
   "author": "teziovsky",
   "scripts": {
-    "open": "open MacOrganizer.xcodeproj",
+    "open": "open MacPhotoOrganizer.xcodeproj",
     "swift:build": "swift build",
     "swift:clean": "swift package clean && rm -rf .build",
-    "clean": "rm -rf build dist && xcodebuild -project MacOrganizer.xcodeproj -scheme MacOrganizer -derivedDataPath build/DerivedData clean",
-    "build": "xcodebuild -project MacOrganizer.xcodeproj -scheme MacOrganizer -configuration Debug -derivedDataPath build/DerivedData build CODE_SIGNING_ALLOWED=NO",
+    "clean": "rm -rf build dist && xcodebuild -project MacPhotoOrganizer.xcodeproj -scheme MacPhotoOrganizer -derivedDataPath build/DerivedData clean",
+    "build": "xcodebuild -project MacPhotoOrganizer.xcodeproj -scheme MacPhotoOrganizer -configuration Debug -derivedDataPath build/DerivedData build CODE_SIGNING_ALLOWED=NO",
     "clean:build": "npm run clean && npm run build",
-    "run": "npm run build && open build/DerivedData/Build/Products/Debug/MacOrganizer.app",
-    "build:production": "xcodebuild -project MacOrganizer.xcodeproj -scheme MacOrganizer -configuration Release -derivedDataPath build/DerivedData build CODE_SIGNING_ALLOWED=NO",
-    "release": "npm run build:production && rm -rf dist && mkdir -p dist && ditto build/DerivedData/Build/Products/Release/MacOrganizer.app dist/MacOrganizer.app && ditto -c -k --sequesterRsrc --keepParent dist/MacOrganizer.app dist/MacOrganizer-macOS.zip && echo 'Release artifacts: dist/MacOrganizer.app dist/MacOrganizer-macOS.zip'"
+    "run": "npm run build && open build/DerivedData/Build/Products/Debug/MacPhotoOrganizer.app",
+    "build:production": "xcodebuild -project MacPhotoOrganizer.xcodeproj -scheme MacPhotoOrganizer -configuration Release -derivedDataPath build/DerivedData build CODE_SIGNING_ALLOWED=NO",
+    "release": "npm run build:production && rm -rf dist && mkdir -p dist && ditto build/DerivedData/Build/Products/Release/MacPhotoOrganizer.app dist/MacPhotoOrganizer.app && ditto -c -k --sequesterRsrc --keepParent dist/MacPhotoOrganizer.app dist/MacPhotoOrganizer-macOS.zip && echo 'Release artifacts: dist/MacPhotoOrganizer.app dist/MacPhotoOrganizer-macOS.zip'"
   }
 }

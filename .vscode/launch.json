@@ -4,21 +4,21 @@
       "type": "swift",
       "request": "launch",
       "args": [],
-      "cwd": "${workspaceFolder:mac-organizer}",
-      "name": "Debug MacOrganizer",
-      "target": "MacOrganizer",
+      "cwd": "${workspaceFolder:mac-photo-organizer}",
+      "name": "Debug MacPhotoOrganizer",
+      "target": "MacPhotoOrganizer",
       "configuration": "debug",
-      "preLaunchTask": "swift: Build Debug MacOrganizer"
+      "preLaunchTask": "swift: Build Debug MacPhotoOrganizer"
     },
     {
       "type": "swift",
       "request": "launch",
       "args": [],
-      "cwd": "${workspaceFolder:mac-organizer}",
-      "name": "Release MacOrganizer",
-      "target": "MacOrganizer",
+      "cwd": "${workspaceFolder:mac-photo-organizer}",
+      "name": "Release MacPhotoOrganizer",
+      "target": "MacPhotoOrganizer",
       "configuration": "release",
-      "preLaunchTask": "swift: Build Release MacOrganizer"
+      "preLaunchTask": "swift: Build Release MacPhotoOrganizer"
     }
   ]
 }

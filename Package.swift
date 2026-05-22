@@ -2,15 +2,15 @@
 import PackageDescription
 
 let package = Package(
-    name: "MacOrganizer",
+    name: "MacPhotoOrganizer",
     platforms: [.macOS(.v14)],
     products: [
-        .executable(name: "MacOrganizer", targets: ["MacOrganizer"]),
+        .executable(name: "MacPhotoOrganizer", targets: ["MacPhotoOrganizer"]),
     ],
     targets: [
         .executableTarget(
-            name: "MacOrganizer",
-            path: "MacOrganizer",
+            name: "MacPhotoOrganizer",
+            path: "MacPhotoOrganizer",
             exclude: [
                 "Info.plist",
                 "Assets.xcassets",
