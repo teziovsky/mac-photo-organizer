@@ -18,10 +18,41 @@ struct ContentView: View {
                 )
             }
         }
+        .navigationTitle("Mac Organizer")
+        .searchable(text: $appState.albumSearchText, prompt: "Search albums")
+        .toolbar {
+            ToolbarItem(placement: .navigation) {
+                if appState.selectedAlbum != nil {
+                    Button {
+                        Task { await appState.selectAlbum(nil) }
+                    } label: {
+                        Label("Back", systemImage: "chevron.left")
+                    }
+                    .help("Deselect album")
+                }
+            }
+            ToolbarItemGroup(placement: .primaryAction) {
+                Button {
+                    appState.toggleThumbnailDisplayMode()
+                } label: {
+                    Label(
+                        appState.thumbnailDisplayMode.toolbarLabel,
+                        systemImage: appState.thumbnailDisplayMode.toolbarIcon
+                    )
+                }
+                .help("Toggle square cropped or full aspect ratio thumbnails")
+
+                Button {
+                    Task { await appState.photosService.reloadAlbums() }
+                } label: {
+                    Label("Refresh", systemImage: "arrow.clockwise")
+                }
+                .disabled(appState.photosService.isLoadingAlbums)
+            }
+        }
         .sheet(isPresented: $appState.showOrganizeSheet) {
             OrganizeProgressView()
                 .environmentObject(appState)
         }
-        .navigationTitle("Mac Organizer")
     }
 }

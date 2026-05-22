@@ -53,7 +53,7 @@ actor ThumbnailLoader {
             imageManager.requestImage(
                 for: asset,
                 targetSize: thumbnailSize,
-                contentMode: .aspectFill,
+                contentMode: .aspectFit,
                 options: options
             ) { image, info in
                 let isDegraded = (info?[PHImageResultIsDegradedKey] as? Bool) ?? false

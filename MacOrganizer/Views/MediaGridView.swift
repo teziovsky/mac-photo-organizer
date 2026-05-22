@@ -3,7 +3,9 @@ import SwiftUI
 
 struct MediaGridView: View {
     @EnvironmentObject private var appState: AppState
-    @State private var columns = [GridItem(.adaptive(minimum: 140, maximum: 200), spacing: 8)]
+
+    private let cellSpacing: CGFloat = 2
+    private let minimumCellSize: CGFloat = 160
 
     var body: some View {
         VStack(spacing: 0) {
@@ -84,22 +86,36 @@ struct MediaGridView: View {
         } else if appState.mediaItems.isEmpty {
             ContentUnavailableView("No Media", systemImage: "photo", description: Text("This album has no photos or videos."))
         } else {
-            ScrollView {
-                LazyVGrid(columns: columns, spacing: 8) {
-                    ForEach(appState.mediaItems) { item in
-                        MediaThumbnailCell(
-                            item: item,
-                            album: appState.selectedAlbum!,
-                            isSelected: appState.selectedMediaID == item.id
-                        )
-                        .onTapGesture {
-                            appState.selectedMediaID = item.id
+            GeometryReader { geometry in
+                let layout = gridLayout(for: geometry.size.width)
+                ScrollView {
+                    LazyVGrid(columns: layout.columns, spacing: cellSpacing) {
+                        ForEach(appState.mediaItems) { item in
+                            MediaThumbnailCell(
+                                item: item,
+                                album: appState.selectedAlbum!,
+                                isSelected: appState.selectedMediaID == item.id,
+                                displayMode: appState.thumbnailDisplayMode,
+                                cellSize: layout.cellSize
+                            )
+                            .onTapGesture {
+                                appState.selectedMediaID = item.id
+                            }
                         }
                     }
+                    .padding(cellSpacing)
                 }
-                .padding(12)
             }
+            .background(Color.black.opacity(0.92))
         }
+    }
+
+    private func gridLayout(for width: CGFloat) -> (columns: [GridItem], cellSize: CGFloat) {
+        let availableWidth = max(width - cellSpacing * 2, minimumCellSize)
+        let columnCount = max(1, Int((availableWidth + cellSpacing) / (minimumCellSize + cellSpacing)))
+        let cellSize = (availableWidth - cellSpacing * CGFloat(columnCount - 1)) / CGFloat(columnCount)
+        let columns = Array(repeating: GridItem(.fixed(cellSize), spacing: cellSpacing), count: columnCount)
+        return (columns, cellSize)
     }
 
     private func chooseExportDirectory(thenOrganize: Bool = false) {
@@ -123,51 +139,38 @@ private struct MediaThumbnailCell: View {
     let item: MediaItem
     let album: PhotoAlbum
     let isSelected: Bool
+    let displayMode: ThumbnailDisplayMode
+    let cellSize: CGFloat
 
     @State private var image: NSImage?
     @State private var loadFailed = false
 
+    private var imageContentMode: ContentMode {
+        displayMode == .square ? .fill : .fit
+    }
+
     var body: some View {
-        VStack(spacing: 4) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color(nsColor: .controlBackgroundColor))
-                    .aspectRatio(1, contentMode: .fit)
+        ZStack {
+            Rectangle()
+                .fill(Color.black)
 
-                if let image {
-                    Image(nsImage: image)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                } else if loadFailed {
-                    Image(systemName: item.isVideo ? "video" : "photo")
-                        .font(.largeTitle)
-                        .foregroundStyle(.secondary)
-                } else {
-                    ProgressView()
-                        .controlSize(.small)
-                }
-
-                if item.isVideo {
-                    Image(systemName: "play.circle.fill")
-                        .font(.title2)
-                        .symbolRenderingMode(.palette)
-                        .foregroundStyle(.white, .black.opacity(0.35))
-                        .padding(6)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-                }
+            if let image {
+                thumbnailImage(image)
+            } else if loadFailed {
+                Image(systemName: item.isVideo ? "video" : "photo")
+                    .font(.title)
+                    .foregroundStyle(.secondary)
+            } else {
+                ProgressView()
+                    .controlSize(.small)
             }
-            .overlay {
-                RoundedRectangle(cornerRadius: 8)
-                    .strokeBorder(isSelected ? Color.accentColor : .clear, lineWidth: 3)
-            }
-
-            Text(item.filename)
-                .font(.caption2)
-                .lineLimit(1)
-                .truncationMode(.middle)
-                .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .frame(width: cellSize, height: cellSize)
+        .overlay {
+            Rectangle()
+                .strokeBorder(isSelected ? Color.accentColor : .clear, lineWidth: 3)
+        }
+        .contentShape(Rectangle())
         .task(id: item.id) {
             loadFailed = false
             image = await ThumbnailLoader.shared.thumbnail(for: item, album: album)
@@ -175,5 +178,46 @@ private struct MediaThumbnailCell: View {
                 loadFailed = true
             }
         }
+    }
+
+    @ViewBuilder
+    private func thumbnailImage(_ image: NSImage) -> some View {
+        let dimensions = displayedImageDimensions(for: image)
+        Image(nsImage: image)
+            .resizable()
+            .aspectRatio(contentMode: imageContentMode)
+            .frame(width: dimensions.width, height: dimensions.height)
+            .clipped()
+            .overlay(alignment: .bottomTrailing) {
+                if item.isVideo {
+                    videoPlayIndicator
+                }
+            }
+    }
+
+    private var videoPlayIndicator: some View {
+        Image(systemName: "play.circle.fill")
+            .font(.title2)
+            .symbolRenderingMode(.palette)
+            .foregroundStyle(.white, .black.opacity(0.35))
+            .padding(6)
+    }
+
+    private func displayedImageDimensions(for image: NSImage) -> CGSize {
+        if displayMode == .square {
+            return CGSize(width: cellSize, height: cellSize)
+        }
+
+        let width = image.size.width
+        let height = image.size.height
+        guard width > 0, height > 0 else {
+            return CGSize(width: cellSize, height: cellSize)
+        }
+
+        let aspect = width / height
+        if aspect >= 1 {
+            return CGSize(width: cellSize, height: cellSize / aspect)
+        }
+        return CGSize(width: cellSize * aspect, height: cellSize)
     }
 }

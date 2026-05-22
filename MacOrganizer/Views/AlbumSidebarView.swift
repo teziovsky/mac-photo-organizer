@@ -2,13 +2,6 @@ import SwiftUI
 
 struct AlbumSidebarView: View {
     @EnvironmentObject private var appState: AppState
-    @State private var searchText = ""
-
-    private var filteredAlbums: [PhotoAlbum] {
-        let albums = appState.photosService.albums
-        guard !searchText.isEmpty else { return albums }
-        return albums.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
-    }
 
     var body: some View {
         Group {
@@ -29,22 +22,6 @@ struct AlbumSidebarView: View {
         }
         .frame(minWidth: 320, maxHeight: .infinity)
         .navigationSplitViewColumnWidth(min: 320, ideal: 340)
-        .toolbar {
-            ToolbarItem(placement: .automatic) {
-                SettingsLink {
-                    Label("Settings", systemImage: "gear")
-                }
-            }
-            ToolbarItem(placement: .automatic) {
-                Button {
-                    Task { await appState.photosService.reloadAlbums() }
-                } label: {
-                    Label("Refresh", systemImage: "arrow.clockwise")
-                }
-                .disabled(appState.photosService.isLoadingAlbums)
-            }
-        }
-        .searchable(text: $searchText, prompt: "Search albums")
         .overlay {
             if appState.photosService.isLoadingAlbums {
                 ProgressView()
@@ -55,7 +32,7 @@ struct AlbumSidebarView: View {
 
     @ViewBuilder
     private var albumList: some View {
-        if filteredAlbums.isEmpty && !appState.photosService.isLoadingAlbums {
+        if appState.selectableAlbums.isEmpty && !appState.photosService.isLoadingAlbums {
             ContentUnavailableView(
                 "No Albums",
                 systemImage: "folder",
@@ -63,33 +40,27 @@ struct AlbumSidebarView: View {
             )
             .frame(minWidth: 320, maxWidth: .infinity, maxHeight: .infinity)
         } else {
-            List(
-                selection: Binding(
-                    get: { appState.selectedAlbum?.id },
-                    set: { newID in
-                        guard let newID else {
-                            Task { await appState.selectAlbum(nil) }
-                            return
-                        }
-                        guard let album = filteredAlbums.first(where: { $0.id == newID }) else {
-                            return
-                        }
-                        Task { await appState.selectAlbum(album) }
+            List {
+                ForEach(Array(appState.selectableAlbums.enumerated()), id: \.element.id) {
+                    index, album in
+                    Button {
+                        Task { await appState.toggleAlbumSelection(album) }
+                    } label: {
+                        AlbumSidebarRow(album: album, shortcutIndex: index < 9 ? index + 1 : nil)
                     }
-                )
-            ) {
-                ForEach(filteredAlbums) { album in
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(album.name)
-                            .lineLimit(1)
-                        Text(album.mediaSummary)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    .tag(album.id)
+                    .buttonStyle(.plain)
+                    .listRowBackground(rowBackground(for: album))
                 }
             }
             .frame(minWidth: 320, maxHeight: .infinity)
+        }
+    }
+
+    @ViewBuilder
+    private func rowBackground(for album: PhotoAlbum) -> some View {
+        if appState.selectedAlbum?.id == album.id {
+            RoundedRectangle(cornerRadius: 6)
+                .fill(Color.accentColor.opacity(0.2))
         }
     }
 
@@ -99,5 +70,30 @@ struct AlbumSidebarView: View {
             return "No non-empty albums were found in Photos."
         }
         return "No non-empty albums without the \"\(suffix)\" suffix were found in Photos."
+    }
+}
+
+private struct AlbumSidebarRow: View {
+    let album: PhotoAlbum
+    let shortcutIndex: Int?
+
+    var body: some View {
+        HStack(spacing: 8) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(album.name)
+                    .lineLimit(1)
+                Text(album.mediaSummary)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 0)
+            if let shortcutIndex {
+                Text("\(shortcutIndex)")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                    .monospacedDigit()
+            }
+        }
+        .contentShape(Rectangle())
     }
 }

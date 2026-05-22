@@ -2,8 +2,22 @@ import Foundation
 
 enum AppSettings {
     private static let excludedSuffixKey = "excludedAlbumSuffix"
+    private static let thumbnailDisplayModeKey = "thumbnailDisplayMode"
     private static let exportDirectoryBookmarkKey = "exportDirectoryBookmark"
     private static let exportDirectoryPathKey = "exportDirectoryPath"
+
+    static var thumbnailDisplayMode: ThumbnailDisplayMode {
+        get {
+            guard let raw = UserDefaults.standard.string(forKey: thumbnailDisplayModeKey),
+                  let mode = ThumbnailDisplayMode(rawValue: raw) else {
+                return .square
+            }
+            return mode
+        }
+        set {
+            UserDefaults.standard.set(newValue.rawValue, forKey: thumbnailDisplayModeKey)
+        }
+    }
 
     static var excludedAlbumSuffix: String {
         get {
