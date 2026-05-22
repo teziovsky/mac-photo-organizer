@@ -3,6 +3,7 @@ import SwiftUI
 
 struct MediaGridView: View {
     @EnvironmentObject private var appState: AppState
+    @FocusState private var isGridFocused: Bool
 
     private let cellSpacing: CGFloat = 2
     private let minimumCellSize: CGFloat = 160
@@ -13,21 +14,16 @@ struct MediaGridView: View {
             Divider()
             gridContent
         }
-        .onChange(of: appState.selectedMediaID) { _, newID in
-            guard let newID, let item = appState.mediaItems.first(where: { $0.id == newID }) else { return }
-            Task { await QuickLookHelper.preview(item: item) }
-        }
         .onExitCommand {
             QuickLookHelper.closePreview()
         }
         .background {
             Button("") {
-                guard let id = appState.selectedMediaID,
-                      let item = appState.mediaItems.first(where: { $0.id == id }) else { return }
-                Task { await QuickLookHelper.preview(item: item) }
+                Task { await appState.previewSelectedMedia() }
             }
-            .keyboardShortcut(.space, modifiers: [])
+            .keyboardShortcut("y", modifiers: .command)
             .hidden()
+            .disabled(appState.selectedMediaID == nil)
         }
     }
 
@@ -88,35 +84,72 @@ struct MediaGridView: View {
         } else {
             GeometryReader { geometry in
                 let layout = gridLayout(for: geometry.size.width)
-                ScrollView {
-                    LazyVGrid(columns: layout.columns, spacing: cellSpacing) {
-                        ForEach(appState.mediaItems) { item in
-                            MediaThumbnailCell(
-                                item: item,
-                                album: appState.selectedAlbum!,
-                                isSelected: appState.selectedMediaID == item.id,
-                                displayMode: appState.thumbnailDisplayMode,
-                                cellSize: layout.cellSize
-                            )
-                            .onTapGesture {
-                                appState.selectedMediaID = item.id
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVGrid(columns: layout.columns, spacing: cellSpacing) {
+                            ForEach(appState.mediaItems) { item in
+                                MediaThumbnailCell(
+                                    item: item,
+                                    album: appState.selectedAlbum!,
+                                    isSelected: appState.selectedMediaID == item.id,
+                                    displayMode: appState.thumbnailDisplayMode,
+                                    cellSize: layout.cellSize
+                                )
+                                .id(item.id)
+                                .onTapGesture {
+                                    appState.selectedMediaID = item.id
+                                    isGridFocused = true
+                                }
                             }
                         }
+                        .padding(cellSpacing)
+                        .animation(.smooth(duration: 0.35), value: appState.thumbnailDisplayMode)
                     }
-                    .padding(cellSpacing)
+                    .focusable()
+                    .focused($isGridFocused)
+                    .focusEffectDisabled()
+                    .onKeyPress(.leftArrow) {
+                        appState.moveMediaSelection(.left)
+                        return .handled
+                    }
+                    .onKeyPress(.rightArrow) {
+                        appState.moveMediaSelection(.right)
+                        return .handled
+                    }
+                    .onKeyPress(.upArrow) {
+                        appState.moveMediaSelection(.up)
+                        return .handled
+                    }
+                    .onKeyPress(.downArrow) {
+                        appState.moveMediaSelection(.down)
+                        return .handled
+                    }
+                    .onAppear {
+                        appState.updateMediaGridColumnCount(layout.columnCount)
+                    }
+                    .onChange(of: geometry.size.width) { _, width in
+                        appState.updateMediaGridColumnCount(gridLayout(for: width).columnCount)
+                    }
+                    .onChange(of: appState.selectedMediaID) { _, newID in
+                        guard let newID else { return }
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            proxy.scrollTo(newID, anchor: .center)
+                        }
+                    }
                 }
             }
             .background(Color.black.opacity(0.92))
             .id(appState.selectedAlbum?.id)
+            .onAppear { isGridFocused = true }
         }
     }
 
-    private func gridLayout(for width: CGFloat) -> (columns: [GridItem], cellSize: CGFloat) {
+    private func gridLayout(for width: CGFloat) -> (columns: [GridItem], cellSize: CGFloat, columnCount: Int) {
         let availableWidth = max(width - cellSpacing * 2, minimumCellSize)
         let columnCount = max(1, Int((availableWidth + cellSpacing) / (minimumCellSize + cellSpacing)))
         let cellSize = (availableWidth - cellSpacing * CGFloat(columnCount - 1)) / CGFloat(columnCount)
         let columns = Array(repeating: GridItem(.fixed(cellSize), spacing: cellSpacing), count: columnCount)
-        return (columns, cellSize)
+        return (columns, cellSize, columnCount)
     }
 
     private func chooseExportDirectory(thenOrganize: Bool = false) {
@@ -146,10 +179,6 @@ private struct MediaThumbnailCell: View {
     @State private var image: NSImage?
     @State private var loadFailed = false
 
-    private var imageContentMode: ContentMode {
-        displayMode == .square ? .fill : .fit
-    }
-
     var body: some View {
         ZStack {
             Rectangle()
@@ -174,6 +203,10 @@ private struct MediaThumbnailCell: View {
         .contentShape(Rectangle())
         .task(id: item.id) {
             loadFailed = false
+            if let cached = await ThumbnailLoader.shared.cachedImage(for: item.id) {
+                image = cached
+                return
+            }
             image = await ThumbnailLoader.shared.thumbnail(for: item, album: album)
             if image == nil {
                 loadFailed = true
@@ -186,12 +219,13 @@ private struct MediaThumbnailCell: View {
         let dimensions = displayedImageDimensions(for: image)
         Image(nsImage: image)
             .resizable()
-            .aspectRatio(contentMode: imageContentMode)
-            .frame(width: dimensions.width, height: dimensions.height)
-            .clipped()
+            .scaledToFill()
+            .modifier(AnimatableThumbnailFrame(width: dimensions.width, height: dimensions.height))
+            .clipShape(Rectangle())
             .overlay(alignment: .bottomTrailing) {
                 if item.isVideo {
                     videoPlayIndicator
+                        .transition(.opacity)
                 }
             }
     }
@@ -220,5 +254,22 @@ private struct MediaThumbnailCell: View {
             return CGSize(width: cellSize, height: cellSize / aspect)
         }
         return CGSize(width: cellSize * aspect, height: cellSize)
+    }
+}
+
+private struct AnimatableThumbnailFrame: AnimatableModifier {
+    var width: CGFloat
+    var height: CGFloat
+
+    var animatableData: AnimatablePair<CGFloat, CGFloat> {
+        get { AnimatablePair(width, height) }
+        set {
+            width = newValue.first
+            height = newValue.second
+        }
+    }
+
+    func body(content: Content) -> some View {
+        content.frame(width: width, height: height)
     }
 }

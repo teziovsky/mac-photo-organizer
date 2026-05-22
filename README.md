@@ -7,7 +7,7 @@ Native macOS app for reviewing Photos albums and exporting them to a folder.
 - Browse non-empty albums (hide albums ending with a configurable suffix, default `_zgrane`)
 - Lazy thumbnail grid for large albums (PhotoKit, no full-library export upfront)
 - Choose an export folder and **Organize** to copy originals with progress and cancel
-- Quick Look preview for the selected item (Space / selection)
+- Quick Look preview for the selected item (⌘Y)
 
 ## Requirements
 

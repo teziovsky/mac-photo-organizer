@@ -15,6 +15,10 @@ actor ThumbnailLoader {
         return appSupport.appendingPathComponent("MacOrganizer/Thumbnails", isDirectory: true)
     }
 
+    func cachedImage(for itemID: String) -> NSImage? {
+        memoryCache[itemID]
+    }
+
     func thumbnail(for item: MediaItem, album: PhotoAlbum) async -> NSImage? {
         if let cached = memoryCache[item.id] {
             return cached

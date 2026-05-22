@@ -148,7 +148,7 @@ final class PhotosService: ObservableObject {
 
     nonisolated private static func fetchMediaItems(in collection: PHAssetCollection) -> [MediaItem] {
         let options = PHFetchOptions()
-        options.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
+        options.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: true)]
         let assets = PHAsset.fetchAssets(in: collection, options: options)
         var items: [MediaItem] = []
         items.reserveCapacity(assets.count)

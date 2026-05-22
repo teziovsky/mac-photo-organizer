@@ -3,6 +3,10 @@ import Combine
 import Foundation
 import SwiftUI
 
+enum MediaGridMoveDirection: Sendable {
+    case left, right, up, down
+}
+
 @MainActor
 final class AppState: ObservableObject {
     let photosService = PhotosService()
@@ -19,6 +23,7 @@ final class AppState: ObservableObject {
     @Published var thumbnailDisplayMode: ThumbnailDisplayMode = AppSettings.thumbnailDisplayMode
     @Published var albumSearchText = ""
     @Published var exportDirectoryPath: String? = AppSettings.exportDirectoryPath
+    @Published var mediaGridColumnCount = 1
 
     var selectableAlbums: [PhotoAlbum] {
         let albums = photosService.albums
@@ -125,13 +130,55 @@ final class AppState: ObservableObject {
     }
 
     func toggleThumbnailDisplayMode() {
-        thumbnailDisplayMode.toggle()
-        AppSettings.thumbnailDisplayMode = thumbnailDisplayMode
+        withAnimation(.smooth(duration: 0.35)) {
+            thumbnailDisplayMode.toggle()
+            AppSettings.thumbnailDisplayMode = thumbnailDisplayMode
+        }
     }
 
     func setExportDirectory(_ url: URL) {
         AppSettings.setExportDirectory(url)
         exportDirectoryPath = url.path
+    }
+
+    func previewSelectedMedia() async {
+        guard let id = selectedMediaID,
+              let item = mediaItems.first(where: { $0.id == id }) else { return }
+        await QuickLookHelper.preview(item: item)
+    }
+
+    func updateMediaGridColumnCount(_ count: Int) {
+        mediaGridColumnCount = max(1, count)
+    }
+
+    func moveMediaSelection(_ direction: MediaGridMoveDirection) {
+        let items = mediaItems
+        guard !items.isEmpty else { return }
+
+        let columns = max(1, mediaGridColumnCount)
+        let currentIndex: Int
+        if let selectedMediaID,
+           let index = items.firstIndex(where: { $0.id == selectedMediaID }) {
+            currentIndex = index
+        } else {
+            selectedMediaID = items[0].id
+            return
+        }
+
+        let newIndex: Int
+        switch direction {
+        case .left:
+            newIndex = max(currentIndex - 1, 0)
+        case .right:
+            newIndex = min(currentIndex + 1, items.count - 1)
+        case .up:
+            newIndex = max(currentIndex - columns, 0)
+        case .down:
+            newIndex = min(currentIndex + columns, items.count - 1)
+        }
+
+        guard newIndex != currentIndex else { return }
+        selectedMediaID = items[newIndex].id
     }
 
     func startOrganize() {

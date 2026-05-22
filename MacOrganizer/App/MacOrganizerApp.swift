@@ -25,6 +25,7 @@ struct MacOrganizerApp: App {
                 .keyboardShortcut("s", modifiers: .command)
             }
             MacOrganizerAlbumCommands(appState: appState)
+            MacOrganizerMediaCommands(appState: appState)
         }
 
         Settings {
@@ -64,5 +65,19 @@ private struct MacOrganizerAlbumCommands: Commands {
 
     private func albumShortcutKey(_ index: Int) -> KeyEquivalent {
         KeyEquivalent(Character(String(index + 1)))
+    }
+}
+
+private struct MacOrganizerMediaCommands: Commands {
+    @ObservedObject var appState: AppState
+
+    var body: some Commands {
+        CommandGroup(after: .sidebar) {
+            Button("Quick Look") {
+                Task { await appState.previewSelectedMedia() }
+            }
+            .keyboardShortcut("y", modifiers: .command)
+            .disabled(appState.selectedMediaID == nil)
+        }
     }
 }
