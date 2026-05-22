@@ -18,7 +18,6 @@ struct MacOrganizerApp: App {
             CommandGroup(replacing: .newItem) {}
             SidebarCommands()
             MacOrganizerAlbumCommands(appState: appState)
-            MacOrganizerSettingsCommands(appState: appState)
         }
 
         Settings {
@@ -58,18 +57,5 @@ private struct MacOrganizerAlbumCommands: Commands {
 
     private func albumShortcutKey(_ index: Int) -> KeyEquivalent {
         KeyEquivalent(Character(String(index + 1)))
-    }
-}
-
-private struct MacOrganizerSettingsCommands: Commands {
-    @ObservedObject var appState: AppState
-
-    var body: some Commands {
-        CommandGroup(replacing: .appSettings) {
-            Button("Settings…") {
-                appState.openSettings()
-            }
-            .keyboardShortcut(",", modifiers: .command)
-        }
     }
 }

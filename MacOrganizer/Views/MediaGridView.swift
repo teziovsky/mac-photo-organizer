@@ -45,7 +45,7 @@ struct MediaGridView: View {
 
             Spacer()
 
-            if let path = AppSettings.exportDirectoryPath {
+            if let path = appState.exportDirectoryPath {
                 Text(path)
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -128,7 +128,7 @@ struct MediaGridView: View {
         panel.message = "Photos and videos will be copied into this folder when you organize."
 
         if panel.runModal() == .OK, let url = panel.url {
-            AppSettings.setExportDirectory(url)
+            appState.setExportDirectory(url)
             if thenOrganize {
                 appState.startOrganize()
             }

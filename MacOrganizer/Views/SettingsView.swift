@@ -15,7 +15,7 @@ struct SettingsView: View {
             }
 
             Section("Export") {
-                if let path = AppSettings.exportDirectoryPath {
+                if let path = appState.exportDirectoryPath {
                     Text(path)
                         .font(.caption)
                         .lineLimit(2)
@@ -42,7 +42,7 @@ struct SettingsView: View {
         panel.canChooseFiles = false
         panel.allowsMultipleSelection = false
         if panel.runModal() == .OK, let url = panel.url {
-            AppSettings.setExportDirectory(url)
+            appState.setExportDirectory(url)
         }
     }
 }

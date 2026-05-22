@@ -18,6 +18,7 @@ final class AppState: ObservableObject {
     @Published var showOrganizeSheet = false
     @Published var thumbnailDisplayMode: ThumbnailDisplayMode = AppSettings.thumbnailDisplayMode
     @Published var albumSearchText = ""
+    @Published var exportDirectoryPath: String? = AppSettings.exportDirectoryPath
 
     var selectableAlbums: [PhotoAlbum] {
         let albums = photosService.albums
@@ -128,8 +129,9 @@ final class AppState: ObservableObject {
         AppSettings.thumbnailDisplayMode = thumbnailDisplayMode
     }
 
-    func openSettings() {
-        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+    func setExportDirectory(_ url: URL) {
+        AppSettings.setExportDirectory(url)
+        exportDirectoryPath = url.path
     }
 
     func startOrganize() {
