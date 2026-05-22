@@ -12,6 +12,7 @@ struct OrganizeProgressView: View {
 
             if let album = appState.selectedAlbum {
                 Text(album.name)
+                    .font(AlbumListRowStyle.nameFont)
                     .foregroundStyle(.secondary)
             }
 
@@ -34,7 +35,7 @@ struct OrganizeProgressView: View {
                             .foregroundStyle(.orange)
                     }
                 }
-                .font(.caption)
+                .font(AlbumListRowStyle.detailFont)
 
                 if progress.isComplete {
                     completionMessage(progress: progress)
@@ -83,10 +84,10 @@ struct OrganizeProgressView: View {
                     ForEach(appState.organizeExporter.failures.prefix(50)) { failure in
                         VStack(alignment: .leading, spacing: 2) {
                             Text(failure.filename)
-                                .font(.caption)
+                                .font(AlbumListRowStyle.detailFont)
                                 .bold()
                             Text(failure.message)
-                                .font(.caption2)
+                                .font(AlbumListRowStyle.detailFont)
                                 .foregroundStyle(.secondary)
                         }
                     }

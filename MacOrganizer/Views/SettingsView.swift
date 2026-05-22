@@ -18,7 +18,7 @@ struct SettingsView: View {
                     Label("Albums", systemImage: "photo.on.rectangle.angled")
                 }
         }
-        .frame(width: 480, height: 520)
+        .frame(width: 520, height: 560)
         .onAppear {
             excludedSuffix = AppSettings.excludedAlbumSuffix
             omittedAlbumIDs = AppSettings.omittedFromOrganizeAlbumIDs
@@ -51,17 +51,18 @@ private struct GeneralSettingsTab: View {
                 TextField("Excluded album suffix", text: $excludedSuffix)
                     .help("Albums whose names end with this suffix are hidden from the list.")
                 Text("Default: _zgrane")
-                    .font(.caption)
+                    .font(AlbumListRowStyle.detailFont)
                     .foregroundStyle(.secondary)
             }
 
             Section("Export") {
                 if let path = appState.exportDirectoryPath {
                     Text(path)
-                        .font(.caption)
+                        .font(AlbumListRowStyle.detailFont)
                         .lineLimit(2)
                 } else {
                     Text("No folder selected")
+                        .font(AlbumListRowStyle.detailFont)
                         .foregroundStyle(.secondary)
                 }
                 Button("Choose Export Folder…") {
@@ -98,7 +99,7 @@ private struct AlbumsSettingsTab: View {
         Form {
             Section("Omit from Organize") {
                 Text("Omitted albums are hidden from the sidebar and cannot use Organize.")
-                    .font(.caption)
+                    .font(AlbumListRowStyle.detailFont)
                     .foregroundStyle(.secondary)
 
                 organizeAlbumList
@@ -160,25 +161,13 @@ private struct OmitAlbumSettingsRow: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(album.name)
-                    .lineLimit(1)
-                Text(album.mediaSummary)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            AlbumListRowLabels(album: album, shortcutIndex: nil)
 
             Toggle("Omit", isOn: omitBinding)
                 .toggleStyle(.checkbox)
+                .font(AlbumListRowStyle.detailFont)
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
-        .background {
-            RoundedRectangle(cornerRadius: 6)
-                .fill(isHovered ? SettingsRowStyle.hoverFill : Color.clear)
-        }
-        .contentShape(RoundedRectangle(cornerRadius: 6))
+        .albumListRowChrome(backgroundFill: isHovered ? AlbumListRowStyle.hoverFill : .clear)
         .onTapGesture {
             toggleOmit()
         }
@@ -204,11 +193,5 @@ private struct OmitAlbumSettingsRow: View {
         } else {
             omittedAlbumIDs.insert(album.id)
         }
-    }
-}
-
-private enum SettingsRowStyle {
-    static var hoverFill: Color {
-        Color(nsColor: .quaternarySystemFill)
     }
 }

@@ -17,9 +17,11 @@
 		D988F41E5889443783213B93 /* QuickLookHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C7141389BA741AA8E197C48 /* QuickLookHelper.swift */; };
 		950A5883EA1547A794907F5F /* ThumbnailLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8E91EBDB1C849DBBCB91309 /* ThumbnailLoader.swift */; };
 		43FC5DB48FDF4016A45C899E /* AlbumNameFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45613F36B23F480EA04A4A49 /* AlbumNameFilter.swift */; };
+		D4E5F6A7B8C94D0A1B2C3D5E /* AlbumListRowStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F6A7B8C9D04E1A2B3C4D6F /* AlbumListRowStyle.swift */; };
 		C06BBDDEA43E475C929DAC5A /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 610DCC74556F49B4987BC016 /* AppSettings.swift */; };
 		E196206AD6D64E458CF84E2F /* AlbumSidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A80FE1B411B441C8CEB3CD8 /* AlbumSidebarView.swift */; };
 		817DB072A49F4EA692D8C2EB /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EE8B27A54424CF2B6F0C643 /* ContentView.swift */; };
+		C3D4E5F6A7B84990A1B2C3D4 /* MainWindowKeyboardShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6A7498091A2B3C4 /* MainWindowKeyboardShortcuts.swift */; };
 		FDA1FFB081CD4AF180526F7A /* MediaGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8542DD10E74489281F31F8C /* MediaGridView.swift */; };
 		38F287CD62414D72A3E35796 /* OrganizeProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCE88D550AA147A2A10449DB /* OrganizeProgressView.swift */; };
 		7ECD01CA2B604C1290A9B7DA /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E58F090FFBE4CD68111AA5E /* SettingsView.swift */; };
@@ -41,9 +43,11 @@
 		0C7141389BA741AA8E197C48 /* QuickLookHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickLookHelper.swift; sourceTree = "<group>"; };
 		F8E91EBDB1C849DBBCB91309 /* ThumbnailLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThumbnailLoader.swift; sourceTree = "<group>"; };
 		45613F36B23F480EA04A4A49 /* AlbumNameFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumNameFilter.swift; sourceTree = "<group>"; };
+		E5F6A7B8C9D04E1A2B3C4D6F /* AlbumListRowStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumListRowStyle.swift; sourceTree = "<group>"; };
 		610DCC74556F49B4987BC016 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		7A80FE1B411B441C8CEB3CD8 /* AlbumSidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumSidebarView.swift; sourceTree = "<group>"; };
 		4EE8B27A54424CF2B6F0C643 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		B2C3D4E5F6A7498091A2B3C4 /* MainWindowKeyboardShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainWindowKeyboardShortcuts.swift; sourceTree = "<group>"; };
 		C8542DD10E74489281F31F8C /* MediaGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaGridView.swift; sourceTree = "<group>"; };
 		CCE88D550AA147A2A10449DB /* OrganizeProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrganizeProgressView.swift; sourceTree = "<group>"; };
 		0E58F090FFBE4CD68111AA5E /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -103,6 +107,7 @@
 			isa = PBXGroup;
 			children = (
 				45613F36B23F480EA04A4A49 /* AlbumNameFilter.swift */,
+				E5F6A7B8C9D04E1A2B3C4D6F /* AlbumListRowStyle.swift */,
 				610DCC74556F49B4987BC016 /* AppSettings.swift */,
 			);
 			path = Utilities;
@@ -113,6 +118,7 @@
 			children = (
 				7A80FE1B411B441C8CEB3CD8 /* AlbumSidebarView.swift */,
 				4EE8B27A54424CF2B6F0C643 /* ContentView.swift */,
+				B2C3D4E5F6A7498091A2B3C4 /* MainWindowKeyboardShortcuts.swift */,
 				C8542DD10E74489281F31F8C /* MediaGridView.swift */,
 				CCE88D550AA147A2A10449DB /* OrganizeProgressView.swift */,
 				0E58F090FFBE4CD68111AA5E /* SettingsView.swift */,
@@ -217,9 +223,11 @@
 				D988F41E5889443783213B93 /* QuickLookHelper.swift in Sources */,
 				950A5883EA1547A794907F5F /* ThumbnailLoader.swift in Sources */,
 				43FC5DB48FDF4016A45C899E /* AlbumNameFilter.swift in Sources */,
+				D4E5F6A7B8C94D0A1B2C3D5E /* AlbumListRowStyle.swift in Sources */,
 				C06BBDDEA43E475C929DAC5A /* AppSettings.swift in Sources */,
 				E196206AD6D64E458CF84E2F /* AlbumSidebarView.swift in Sources */,
 				817DB072A49F4EA692D8C2EB /* ContentView.swift in Sources */,
+				C3D4E5F6A7B84990A1B2C3D4 /* MainWindowKeyboardShortcuts.swift in Sources */,
 				FDA1FFB081CD4AF180526F7A /* MediaGridView.swift in Sources */,
 				38F287CD62414D72A3E35796 /* OrganizeProgressView.swift in Sources */,
 				7ECD01CA2B604C1290A9B7DA /* SettingsView.swift in Sources */,

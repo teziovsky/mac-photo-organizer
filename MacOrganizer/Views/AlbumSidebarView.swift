@@ -21,7 +21,7 @@ struct AlbumSidebarView: View {
             }
         }
         .frame(minWidth: 320, maxHeight: .infinity)
-        .navigationSplitViewColumnWidth(min: 320, ideal: 340)
+        .navigationSplitViewColumnWidth(min: 340, ideal: 360)
         .overlay {
             if appState.photosService.isLoadingAlbums {
                 ProgressView()
@@ -40,27 +40,23 @@ struct AlbumSidebarView: View {
             )
             .frame(minWidth: 320, maxWidth: .infinity, maxHeight: .infinity)
         } else {
-            List {
-                ForEach(Array(appState.selectableAlbums.enumerated()), id: \.element.id) {
-                    index, album in
-                    Button {
-                        Task { await appState.toggleAlbumSelection(album) }
-                    } label: {
-                        AlbumSidebarRow(album: album, shortcutIndex: index < 9 ? index + 1 : nil)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 2) {
+                    ForEach(Array(appState.selectableAlbums.enumerated()), id: \.element.id) {
+                        index, album in
+                        AlbumSidebarListRow(
+                            album: album,
+                            shortcutIndex: index < 9 ? index + 1 : nil,
+                            isSelected: appState.selectedAlbum?.id == album.id
+                        ) {
+                            Task { await appState.toggleAlbumSelection(album) }
+                        }
                     }
-                    .buttonStyle(.plain)
-                    .listRowBackground(rowBackground(for: album))
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 4)
             }
             .frame(minWidth: 320, maxHeight: .infinity)
-        }
-    }
-
-    @ViewBuilder
-    private func rowBackground(for album: PhotoAlbum) -> some View {
-        if appState.selectedAlbum?.id == album.id {
-            RoundedRectangle(cornerRadius: 6)
-                .fill(Color.accentColor.opacity(0.2))
         }
     }
 
@@ -73,27 +69,29 @@ struct AlbumSidebarView: View {
     }
 }
 
-private struct AlbumSidebarRow: View {
+private struct AlbumSidebarListRow: View {
     let album: PhotoAlbum
     let shortcutIndex: Int?
+    let isSelected: Bool
+    let onSelect: () -> Void
+    @State private var isHovered = false
 
     var body: some View {
-        HStack(spacing: 8) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(album.name)
-                    .lineLimit(1)
-                Text(album.mediaSummary)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            Spacer(minLength: 0)
-            if let shortcutIndex {
-                Text("\(shortcutIndex)")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-                    .monospacedDigit()
-            }
+        AlbumListRowLabels(album: album, shortcutIndex: shortcutIndex)
+            .albumListRowChrome(backgroundFill: rowBackgroundFill)
+            .onTapGesture(perform: onSelect)
+            .onHover { isHovered = $0 }
+            .accessibilityElement(children: .combine)
+            .accessibilityAddTraits(.isButton)
+    }
+
+    private var rowBackgroundFill: Color {
+        if isSelected {
+            return AlbumListRowStyle.selectionFill
         }
-        .contentShape(Rectangle())
+        if isHovered {
+            return AlbumListRowStyle.hoverFill
+        }
+        return .clear
     }
 }

@@ -17,24 +17,16 @@ struct MediaGridView: View {
         .onExitCommand {
             QuickLookHelper.closePreview()
         }
-        .background {
-            Button("") {
-                Task { await appState.previewSelectedMedia() }
-            }
-            .keyboardShortcut("y", modifiers: .command)
-            .hidden()
-            .disabled(appState.selectedMediaID == nil)
-        }
     }
 
     private var toolbar: some View {
         HStack(spacing: 12) {
             if let album = appState.selectedAlbum {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: AlbumListRowStyle.labelSpacing) {
                     Text(album.name)
-                        .font(.headline)
+                        .font(AlbumListRowStyle.toolbarTitleFont)
                     Text(album.mediaSummary)
-                        .font(.caption)
+                        .font(AlbumListRowStyle.detailFont)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -43,14 +35,14 @@ struct MediaGridView: View {
 
             if let path = appState.exportDirectoryPath {
                 Text(path)
-                    .font(.caption)
+                    .font(AlbumListRowStyle.detailFont)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
                     .frame(maxWidth: 280)
             } else {
                 Text("No export folder")
-                    .font(.caption)
+                    .font(AlbumListRowStyle.detailFont)
                     .foregroundStyle(.secondary)
             }
 

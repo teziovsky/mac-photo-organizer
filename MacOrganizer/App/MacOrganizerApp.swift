@@ -19,13 +19,16 @@ struct MacOrganizerApp: App {
             CommandGroup(replacing: .newItem) {}
             CommandGroup(replacing: .sidebar) {
                 Button("Toggle Sidebar") {
-                    NSApp.keyWindow?.firstResponder?
-                        .tryToPerform(#selector(NSSplitViewController.toggleSidebar(_:)), with: nil)
+                    toggleSidebar()
                 }
-                .keyboardShortcut("s", modifiers: .command)
             }
             MacOrganizerAlbumCommands(appState: appState)
-            MacOrganizerMediaCommands(appState: appState)
+            CommandGroup(after: .sidebar) {
+                Button("Quick Look") {
+                    Task { await appState.previewSelectedMedia() }
+                }
+                .disabled(appState.selectedMediaID == nil)
+            }
         }
 
         Settings {
@@ -44,7 +47,6 @@ private struct MacOrganizerAlbumCommands: Commands {
                 Button(album.name) {
                     Task { await appState.selectAlbum(at: index) }
                 }
-                .keyboardShortcut(albumShortcutKey(index), modifiers: .command)
             }
 
             Divider()
@@ -52,32 +54,17 @@ private struct MacOrganizerAlbumCommands: Commands {
             Button("Next Album") {
                 Task { await appState.selectNextAlbum() }
             }
-            .keyboardShortcut(.downArrow, modifiers: .command)
             .disabled(!appState.canSelectNextAlbum)
 
             Button("Previous Album") {
                 Task { await appState.selectPreviousAlbum() }
             }
-            .keyboardShortcut(.upArrow, modifiers: .command)
             .disabled(!appState.canSelectPreviousAlbum)
         }
     }
-
-    private func albumShortcutKey(_ index: Int) -> KeyEquivalent {
-        KeyEquivalent(Character(String(index + 1)))
-    }
 }
 
-private struct MacOrganizerMediaCommands: Commands {
-    @ObservedObject var appState: AppState
-
-    var body: some Commands {
-        CommandGroup(after: .sidebar) {
-            Button("Quick Look") {
-                Task { await appState.previewSelectedMedia() }
-            }
-            .keyboardShortcut("y", modifiers: .command)
-            .disabled(appState.selectedMediaID == nil)
-        }
-    }
+private func toggleSidebar() {
+    NSApp.keyWindow?.firstResponder?
+        .tryToPerform(#selector(NSSplitViewController.toggleSidebar(_:)), with: nil)
 }

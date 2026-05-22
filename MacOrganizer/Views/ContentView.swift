@@ -54,5 +54,8 @@ struct ContentView: View {
             OrganizeProgressView()
                 .environmentObject(appState)
         }
+        .background {
+            MainWindowKeyboardShortcuts()
+        }
     }
 }
