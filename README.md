@@ -61,6 +61,7 @@ Set your development team in Xcode for signed release builds outside this repo (
 ## Settings
 
 - **Excluded album suffix** — albums whose names end with this suffix are hidden (default: `_zgrane`)
+- **Omit from Organize** — hide albums from the sidebar and disable Organize for them
 - **Export folder** — destination for the Organize action
 
 ## Notes

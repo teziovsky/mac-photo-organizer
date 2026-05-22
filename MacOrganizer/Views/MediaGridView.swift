@@ -66,7 +66,17 @@ struct MediaGridView: View {
                 }
             }
             .buttonStyle(.borderedProminent)
-            .disabled(appState.selectedAlbum == nil || appState.mediaItems.isEmpty || appState.organizeExporter.isRunning)
+            .disabled(
+                appState.selectedAlbum == nil
+                    || appState.mediaItems.isEmpty
+                    || appState.organizeExporter.isRunning
+                    || !appState.canOrganizeSelectedAlbum
+            )
+            .help(
+                appState.canOrganizeSelectedAlbum
+                    ? "Copy album media to the export folder"
+                    : "This album is omitted from Organize in Settings"
+            )
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)

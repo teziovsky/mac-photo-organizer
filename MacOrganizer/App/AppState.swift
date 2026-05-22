@@ -23,10 +23,11 @@ final class AppState: ObservableObject {
     @Published var thumbnailDisplayMode: ThumbnailDisplayMode = AppSettings.thumbnailDisplayMode
     @Published var albumSearchText = ""
     @Published var exportDirectoryPath: String? = AppSettings.exportDirectoryPath
+    @Published var omittedFromOrganizeAlbumIDs: Set<String> = AppSettings.omittedFromOrganizeAlbumIDs
     @Published var mediaGridColumnCount = 1
 
     var selectableAlbums: [PhotoAlbum] {
-        let albums = photosService.albums
+        let albums = photosService.albums.filter { !omittedFromOrganizeAlbumIDs.contains($0.id) }
         let query = albumSearchText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else { return albums }
         return albums.filter { $0.name.localizedCaseInsensitiveContains(query) }
@@ -181,8 +182,26 @@ final class AppState: ObservableObject {
         selectedMediaID = items[newIndex].id
     }
 
+    func isAlbumOmittedFromOrganize(_ album: PhotoAlbum) -> Bool {
+        omittedFromOrganizeAlbumIDs.contains(album.id)
+    }
+
+    func syncOmittedFromOrganizeAlbums(_ ids: Set<String>) {
+        omittedFromOrganizeAlbumIDs = ids
+        AppSettings.omittedFromOrganizeAlbumIDs = ids
+
+        guard let selected = selectedAlbum, ids.contains(selected.id) else { return }
+        Task { await selectAlbum(nil) }
+    }
+
+    var canOrganizeSelectedAlbum: Bool {
+        guard let album = selectedAlbum else { return false }
+        return !isAlbumOmittedFromOrganize(album)
+    }
+
     func startOrganize() {
-        guard selectedAlbum != nil, !mediaItems.isEmpty else { return }
+        guard let album = selectedAlbum, !isAlbumOmittedFromOrganize(album) else { return }
+        guard !mediaItems.isEmpty else { return }
         guard AppSettings.resolveExportDirectory() != nil else { return }
         showOrganizeSheet = true
         guard let exportURL = AppSettings.resolveExportDirectory() else { return }

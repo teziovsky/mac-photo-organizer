@@ -2,6 +2,7 @@ import Foundation
 
 enum AppSettings {
     private static let excludedSuffixKey = "excludedAlbumSuffix"
+    private static let omittedFromOrganizeAlbumIDsKey = "omittedFromOrganizeAlbumIDs"
     private static let thumbnailDisplayModeKey = "thumbnailDisplayMode"
     private static let exportDirectoryBookmarkKey = "exportDirectoryBookmark"
     private static let exportDirectoryPathKey = "exportDirectoryPath"
@@ -27,6 +28,19 @@ enum AppSettings {
         set {
             UserDefaults.standard.set(newValue, forKey: excludedSuffixKey)
         }
+    }
+
+    static var omittedFromOrganizeAlbumIDs: Set<String> {
+        get {
+            Set(UserDefaults.standard.stringArray(forKey: omittedFromOrganizeAlbumIDsKey) ?? [])
+        }
+        set {
+            UserDefaults.standard.set(Array(newValue), forKey: omittedFromOrganizeAlbumIDsKey)
+        }
+    }
+
+    static func isAlbumOmittedFromOrganize(albumID: String) -> Bool {
+        omittedFromOrganizeAlbumIDs.contains(albumID)
     }
 
     static var exportDirectoryPath: String? {

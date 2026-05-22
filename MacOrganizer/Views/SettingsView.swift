@@ -1,8 +1,49 @@
+import AppKit
 import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject private var appState: AppState
     @State private var excludedSuffix: String = AppSettings.excludedAlbumSuffix
+    @State private var omittedAlbumIDs: Set<String> = AppSettings.omittedFromOrganizeAlbumIDs
+
+    var body: some View {
+        TabView {
+            GeneralSettingsTab(excludedSuffix: $excludedSuffix)
+                .tabItem {
+                    Label("General", systemImage: "gearshape")
+                }
+
+            AlbumsSettingsTab(omittedAlbumIDs: $omittedAlbumIDs)
+                .tabItem {
+                    Label("Albums", systemImage: "photo.on.rectangle.angled")
+                }
+        }
+        .frame(width: 480, height: 520)
+        .onAppear {
+            excludedSuffix = AppSettings.excludedAlbumSuffix
+            omittedAlbumIDs = AppSettings.omittedFromOrganizeAlbumIDs
+            loadAlbumsIfNeeded()
+        }
+        .onChange(of: omittedAlbumIDs) { _, newValue in
+            appState.syncOmittedFromOrganizeAlbums(newValue)
+        }
+        .onDisappear {
+            AppSettings.excludedAlbumSuffix = excludedSuffix
+            appState.syncOmittedFromOrganizeAlbums(omittedAlbumIDs)
+            Task { await appState.photosService.reloadAlbums() }
+        }
+    }
+
+    private func loadAlbumsIfNeeded() {
+        guard appState.photosService.authorizationState == .authorized,
+              appState.photosService.albums.isEmpty else { return }
+        Task { await appState.photosService.reloadAlbums() }
+    }
+}
+
+private struct GeneralSettingsTab: View {
+    @EnvironmentObject private var appState: AppState
+    @Binding var excludedSuffix: String
 
     var body: some View {
         Form {
@@ -29,11 +70,7 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 420)
-        .onDisappear {
-            AppSettings.excludedAlbumSuffix = excludedSuffix
-            Task { await appState.photosService.reloadAlbums() }
-        }
+        .padding()
     }
 
     private func chooseFolder() {
@@ -44,5 +81,134 @@ struct SettingsView: View {
         if panel.runModal() == .OK, let url = panel.url {
             appState.setExportDirectory(url)
         }
+    }
+}
+
+private struct AlbumsSettingsTab: View {
+    @EnvironmentObject private var appState: AppState
+    @Binding var omittedAlbumIDs: Set<String>
+
+    private var sortedAlbums: [PhotoAlbum] {
+        appState.photosService.albums.sorted {
+            $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+        }
+    }
+
+    var body: some View {
+        Form {
+            Section("Omit from Organize") {
+                Text("Omitted albums are hidden from the sidebar and cannot use Organize.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                organizeAlbumList
+            }
+        }
+        .formStyle(.grouped)
+        .padding()
+        .onAppear { loadAlbumsIfNeeded() }
+    }
+
+    @ViewBuilder
+    private var organizeAlbumList: some View {
+        switch appState.photosService.authorizationState {
+        case .notDetermined:
+            ProgressView("Connecting to Photos…")
+                .controlSize(.small)
+        case .denied, .restricted:
+            Text("Photos access is required to list albums.")
+                .foregroundStyle(.secondary)
+        case .authorized:
+            if appState.photosService.isLoadingAlbums {
+                ProgressView("Loading albums…")
+                    .controlSize(.small)
+            } else if sortedAlbums.isEmpty {
+                Text("No albums available.")
+                    .foregroundStyle(.secondary)
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 2) {
+                        ForEach(sortedAlbums) { album in
+                            OmitAlbumSettingsRow(
+                                album: album,
+                                omittedAlbumIDs: $omittedAlbumIDs
+                            )
+                        }
+                    }
+                    .padding(.horizontal, 4)
+                }
+                .frame(maxHeight: 320)
+            }
+        }
+    }
+
+    private func loadAlbumsIfNeeded() {
+        guard appState.photosService.authorizationState == .authorized,
+              appState.photosService.albums.isEmpty else { return }
+        Task { await appState.photosService.reloadAlbums() }
+    }
+}
+
+private struct OmitAlbumSettingsRow: View {
+    let album: PhotoAlbum
+    @Binding var omittedAlbumIDs: Set<String>
+    @State private var isHovered = false
+
+    private var isOmitted: Bool {
+        omittedAlbumIDs.contains(album.id)
+    }
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(album.name)
+                    .lineLimit(1)
+                Text(album.mediaSummary)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Toggle("Omit", isOn: omitBinding)
+                .toggleStyle(.checkbox)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background {
+            RoundedRectangle(cornerRadius: 6)
+                .fill(isHovered ? SettingsRowStyle.hoverFill : Color.clear)
+        }
+        .contentShape(RoundedRectangle(cornerRadius: 6))
+        .onTapGesture {
+            toggleOmit()
+        }
+        .onHover { isHovered = $0 }
+    }
+
+    private var omitBinding: Binding<Bool> {
+        Binding(
+            get: { isOmitted },
+            set: { omit in
+                if omit {
+                    omittedAlbumIDs.insert(album.id)
+                } else {
+                    omittedAlbumIDs.remove(album.id)
+                }
+            }
+        )
+    }
+
+    private func toggleOmit() {
+        if isOmitted {
+            omittedAlbumIDs.remove(album.id)
+        } else {
+            omittedAlbumIDs.insert(album.id)
+        }
+    }
+}
+
+private enum SettingsRowStyle {
+    static var hoverFill: Color {
+        Color(nsColor: .quaternarySystemFill)
     }
 }
