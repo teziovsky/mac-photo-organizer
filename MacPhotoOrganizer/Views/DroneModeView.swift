@@ -3,9 +3,6 @@ import SwiftUI
 
 struct DroneModeView: View {
     @EnvironmentObject private var appState: AppState
-    @State private var projectDirectory: URL?
-    @State private var showConfirm = false
-    @State private var showProgress = false
 
     private var finalizer: DroneFinalizer { appState.droneFinalizer }
     private var config: DroneFinalizeConfig { AppSettings.droneFinalizeConfig }
@@ -15,23 +12,30 @@ struct DroneModeView: View {
             VStack(alignment: .leading, spacing: 20) {
                 header
                 folderSection
+
                 if let error = finalizer.previewError {
                     Label(error, systemImage: "exclamationmark.triangle.fill")
                         .foregroundStyle(.orange)
                         .font(.callout)
                 }
-                if let plan = finalizer.previewPlan {
-                    DroneFinalizePreview(plan: plan, config: config)
+
+                if finalizer.hasProject && finalizer.previewError == nil {
+                    DroneStepIndicator(current: finalizer.step)
+                    stepCard
+                    if !finalizer.failures.isEmpty {
+                        DroneNotesBox(failures: finalizer.failures)
+                    }
                 }
             }
             .padding(24)
-            .frame(maxWidth: 760, alignment: .leading)
+            .frame(maxWidth: 820, alignment: .leading)
             .frame(maxWidth: .infinity)
         }
         .navigationTitle(AppBranding.droneModeTitle)
         .toolbar {
             ToolbarItem(placement: .navigation) {
                 Button {
+                    finalizer.reset()
                     appState.goHome()
                 } label: {
                     Label("Home", systemImage: "house")
@@ -39,28 +43,15 @@ struct DroneModeView: View {
                 .help("Back to the home screen")
             }
 
-            ToolbarItem(placement: .primaryAction) {
-                Button("Finalize") {
-                    showConfirm = true
+            ToolbarItem(placement: .navigation) {
+                Button {
+                    finalizer.goBack()
+                } label: {
+                    Label("Go Back", systemImage: "arrow.uturn.backward")
                 }
-                .buttonStyle(.borderedProminent)
-                .disabled(!canFinalize)
-                .help("Merge metadata, drop the compressed suffix, and flatten into one folder")
+                .help("Undo the last step and restore the changed files")
+                .disabled(!finalizer.canUndo || finalizer.isRunning)
             }
-        }
-        .confirmationDialog(
-            "Finalize this project?",
-            isPresented: $showConfirm,
-            titleVisibility: .visible
-        ) {
-            Button("Finalize", role: .destructive) { runFinalize() }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("This permanently deletes the source originals and removes the “\(config.rawDirectoryName)” and “\(config.exportDirectoryName)” folders. Review the planned actions first.")
-        }
-        .sheet(isPresented: $showProgress) {
-            DroneFinalizeProgressView()
-                .environmentObject(appState)
         }
         .onDisappear {
             if !finalizer.isRunning {
@@ -73,7 +64,7 @@ struct DroneModeView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(AppBranding.droneModeTitle)
                 .font(.largeTitle.bold())
-            Text(AppBranding.droneModeSubtitle)
+            Text("Finalize a graded project in three steps. Each step is reversible with Go Back.")
                 .font(.body)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -82,32 +73,64 @@ struct DroneModeView: View {
 
     private var folderSection: some View {
         GroupBox {
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Project folder")
-                    .font(.headline)
-                Text("Pick the folder that contains your “\(config.rawDirectoryName)” and “\(config.exportDirectoryName)” subfolders.")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-
-                HStack(spacing: 12) {
-                    Button("Choose Project Folder…") { chooseFolder() }
-                    if let path = projectDirectory?.path {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Project folder")
+                        .font(.headline)
+                    if let path = finalizer.projectDirectoryPath {
                         Text(path)
                             .font(.callout)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                             .truncationMode(.middle)
+                    } else {
+                        Text("Pick the folder that contains your “\(config.rawDirectoryName)” and “\(config.exportDirectoryName)” subfolders.")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
                     }
                 }
+                Spacer()
+                Button(finalizer.hasProject ? "Change…" : "Choose Project Folder…") {
+                    chooseFolder()
+                }
+                .disabled(finalizer.isRunning)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(8)
         }
     }
 
-    private var canFinalize: Bool {
-        guard !finalizer.isRunning, projectDirectory != nil else { return false }
-        return finalizer.previewPlan?.hasWork == true
+    @ViewBuilder
+    private var stepCard: some View {
+        switch finalizer.step {
+        case .merge:
+            DroneMergeStepView(
+                pairs: finalizer.pairMetadata,
+                isRunning: finalizer.isRunning,
+                statusMessage: finalizer.statusMessage,
+                action: { finalizer.performCurrentStep() }
+            )
+        case .cleanup:
+            DroneCleanupStepView(
+                plan: finalizer.plan,
+                config: config,
+                isRunning: finalizer.isRunning,
+                statusMessage: finalizer.statusMessage,
+                action: { finalizer.performCurrentStep() }
+            )
+        case .flatten:
+            DroneFlattenStepView(
+                plan: finalizer.plan,
+                config: config,
+                isRunning: finalizer.isRunning,
+                statusMessage: finalizer.statusMessage,
+                action: { finalizer.performCurrentStep() }
+            )
+        case .done:
+            DroneDoneStepView(
+                projectPath: finalizer.projectDirectoryPath,
+                onChooseAnother: { chooseFolder() }
+            )
+        }
     }
 
     private func chooseFolder() {
@@ -118,90 +141,404 @@ struct DroneModeView: View {
         panel.prompt = "Choose"
         panel.message = "Select the drone project folder."
         guard panel.runModal() == .OK, let url = panel.url else { return }
-        projectDirectory = url
-        finalizer.loadPreview(projectDirectory: url, config: config)
-    }
-
-    private func runFinalize() {
-        guard let url = projectDirectory else { return }
-        showProgress = true
-        finalizer.finalize(projectDirectory: url, config: config)
+        finalizer.loadProject(projectDirectory: url, config: config)
     }
 }
 
-private struct DroneFinalizePreview: View {
-    let plan: DroneFinalizePlan
-    let config: DroneFinalizeConfig
+// MARK: - Step indicator
+
+private struct DroneStepIndicator: View {
+    let current: DroneFinalizeStep
+
+    private let steps: [DroneFinalizeStep] = [.merge, .cleanup, .flatten]
 
     var body: some View {
-        GroupBox("Planned actions") {
-            VStack(alignment: .leading, spacing: 14) {
-                if !plan.hasWork && plan.leftoverFiles.isEmpty && plan.conflicts.isEmpty {
-                    Text("Nothing to finalize in “\(config.exportDirectoryName)”.")
-                        .foregroundStyle(.secondary)
+        HStack(spacing: 8) {
+            ForEach(Array(steps.enumerated()), id: \.element) { index, step in
+                let state = state(for: step)
+                HStack(spacing: 8) {
+                    ZStack {
+                        Circle()
+                            .fill(state == .upcoming ? Color.secondary.opacity(0.2) : Color.accentColor)
+                            .frame(width: 26, height: 26)
+                        if state == .done {
+                            Image(systemName: "checkmark")
+                                .font(.caption.bold())
+                                .foregroundStyle(.white)
+                        } else {
+                            Text("\(step.stepNumber)")
+                                .font(.caption.bold())
+                                .foregroundStyle(state == .upcoming ? Color.secondary : .white)
+                        }
+                    }
+                    Text(step.shortTitle)
+                        .font(.subheadline)
+                        .fontWeight(state == .current ? .semibold : .regular)
+                        .foregroundStyle(state == .upcoming ? Color.secondary : .primary)
                 }
-
-                section(
-                    "Merge metadata & drop suffix",
-                    icon: "wand.and.stars",
-                    tint: .green,
-                    items: plan.matchedPairs.map { "\($0.compressedName)  →  \($0.finalName)  (delete \($0.sourceName))" }
-                )
-                section(
-                    "Rename without source (no metadata copy)",
-                    icon: "questionmark.circle",
-                    tint: .orange,
-                    items: plan.unmatchedCompressed.map { "\($0.originalName)  →  \($0.finalName)" }
-                )
-                section(
-                    "Keep & move up",
-                    icon: "arrow.up.doc",
-                    tint: .blue,
-                    items: plan.passthroughMedia
-                )
-                section(
-                    "Skipped (name conflict)",
-                    icon: "exclamationmark.triangle",
-                    tint: .red,
-                    items: plan.conflicts
-                )
-                section(
-                    "Will be removed with “\(config.exportDirectoryName)”",
-                    icon: "trash",
-                    tint: .secondary,
-                    items: plan.leftoverFiles
-                )
-
-                Divider()
-                Text("Then “\(config.rawDirectoryName)” and “\(config.exportDirectoryName)” are removed; the media above ends up directly in the project folder.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                if index < steps.count - 1 {
+                    Rectangle()
+                        .fill(Color.secondary.opacity(0.2))
+                        .frame(height: 1)
+                        .frame(maxWidth: 40)
+                }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(8)
         }
     }
 
-    @ViewBuilder
-    private func section(_ title: String, icon: String, tint: Color, items: [String]) -> some View {
+    private enum State { case done, current, upcoming }
+
+    private func state(for step: DroneFinalizeStep) -> State {
+        if current == .done { return .done }
+        if step.rawValue < current.rawValue { return .done }
+        if step == current { return .current }
+        return .upcoming
+    }
+}
+
+// MARK: - Step container
+
+private struct DroneStepContainer<Content: View>: View {
+    let step: DroneFinalizeStep
+    let description: String
+    let isRunning: Bool
+    let statusMessage: String?
+    let actionTitle: String
+    let actionRole: ButtonRole?
+    let actionDisabled: Bool
+    let action: () -> Void
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        GroupBox {
+            VStack(alignment: .leading, spacing: 14) {
+                Label(step.title, systemImage: step.systemImage)
+                    .font(.title3.weight(.semibold))
+                Text(description)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                content()
+
+                HStack {
+                    if isRunning {
+                        ProgressView()
+                            .controlSize(.small)
+                        Text(statusMessage ?? "Working…")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Button(actionTitle, role: actionRole, action: action)
+                        .buttonStyle(.borderedProminent)
+                        .disabled(isRunning || actionDisabled)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(10)
+        }
+    }
+}
+
+// MARK: - Merge step
+
+private struct DroneMergeStepView: View {
+    let pairs: [DronePairMetadata]
+    let isRunning: Bool
+    let statusMessage: String?
+    let action: () -> Void
+
+    var body: some View {
+        DroneStepContainer(
+            step: .merge,
+            description: "Copy each original's creation/modification dates and (for video) its container metadata onto the matching compressed file. Nothing is deleted in this step.",
+            isRunning: isRunning,
+            statusMessage: statusMessage,
+            actionTitle: pairs.isEmpty ? "Continue" : "Merge",
+            actionRole: nil,
+            actionDisabled: false,
+            action: action
+        ) {
+            if pairs.isEmpty {
+                Text("No compressed/original pairs found to merge. You can continue to the next step.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            } else {
+                VStack(spacing: 12) {
+                    ForEach(pairs) { pair in
+                        DronePairMetadataCard(pair: pair)
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct DronePairMetadataCard: View {
+    let pair: DronePairMetadata
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 6) {
+                Image(systemName: pair.isVideo ? "film" : "photo")
+                    .foregroundStyle(.tint)
+                Text(pair.finalName)
+                    .font(.headline)
+            }
+
+            HStack(alignment: .top, spacing: 16) {
+                MetadataColumn(title: "Original", subtitle: pair.sourceName, snapshot: pair.original)
+                Image(systemName: "arrow.right")
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 28)
+                MetadataColumn(title: "Compressed", subtitle: pair.compressedName, snapshot: pair.compressed)
+            }
+
+            Text("After merge: the compressed file inherits the original's Created, Modified, and embedded creation date.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(.quaternary)
+        )
+    }
+}
+
+private struct MetadataColumn: View {
+    let title: String
+    let subtitle: String
+    let snapshot: MediaMetadataSnapshot?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+            Text(subtitle)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+
+            if let snapshot {
+                metadataRow("Size", DroneFormat.size(snapshot.fileSizeBytes))
+                metadataRow("Created", DroneFormat.date(snapshot.creationDate))
+                metadataRow("Modified", DroneFormat.date(snapshot.modificationDate))
+                metadataRow("Embedded", DroneFormat.date(snapshot.containerCreationDate))
+                if let dimensions = snapshot.dimensions {
+                    metadataRow("Size px", dimensions)
+                }
+                if let duration = snapshot.duration {
+                    metadataRow("Duration", duration)
+                }
+            } else {
+                ProgressView()
+                    .controlSize(.small)
+                    .padding(.top, 4)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func metadataRow(_ label: String, _ value: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(width: 70, alignment: .leading)
+            Text(value)
+                .font(.caption.monospaced())
+                .lineLimit(1)
+                .truncationMode(.middle)
+        }
+    }
+}
+
+// MARK: - Cleanup step
+
+private struct DroneCleanupStepView: View {
+    let plan: DroneFinalizePlan?
+    let config: DroneFinalizeConfig
+    let isRunning: Bool
+    let statusMessage: String?
+    let action: () -> Void
+
+    var body: some View {
+        DroneStepContainer(
+            step: .cleanup,
+            description: "Move each original to the Trash and remove the “\(config.normalizedSuffix)” suffix from the compressed file names.",
+            isRunning: isRunning,
+            statusMessage: statusMessage,
+            actionTitle: DroneFinalizeStep.cleanup.actionTitle,
+            actionRole: .destructive,
+            actionDisabled: false,
+            action: action
+        ) {
+            VStack(alignment: .leading, spacing: 10) {
+                DroneFileList(
+                    title: "Delete original → rename compressed",
+                    icon: "trash",
+                    tint: .red,
+                    items: (plan?.matchedPairs ?? []).map { "\($0.sourceName)  →  Trash,  \($0.compressedName)  →  \($0.finalName)" }
+                )
+                DroneFileList(
+                    title: "Rename (no original)",
+                    icon: "pencil",
+                    tint: .orange,
+                    items: (plan?.unmatchedCompressed ?? []).map { "\($0.originalName)  →  \($0.finalName)" }
+                )
+            }
+        }
+    }
+}
+
+// MARK: - Flatten step
+
+private struct DroneFlattenStepView: View {
+    let plan: DroneFinalizePlan?
+    let config: DroneFinalizeConfig
+    let isRunning: Bool
+    let statusMessage: String?
+    let action: () -> Void
+
+    var body: some View {
+        DroneStepContainer(
+            step: .flatten,
+            description: "Move the finished media up into the project folder, then move the “\(config.rawDirectoryName)” and “\(config.exportDirectoryName)” folders to the Trash. The result is a flat project folder.",
+            isRunning: isRunning,
+            statusMessage: statusMessage,
+            actionTitle: DroneFinalizeStep.flatten.actionTitle,
+            actionRole: .destructive,
+            actionDisabled: false,
+            action: action
+        ) {
+            VStack(alignment: .leading, spacing: 10) {
+                DroneFileList(
+                    title: "Move up into project folder",
+                    icon: "arrow.up.doc",
+                    tint: .blue,
+                    items: (plan?.finalMediaNames ?? []).sorted()
+                )
+                DroneFileList(
+                    title: "Move to Trash",
+                    icon: "trash",
+                    tint: .red,
+                    items: ["\(config.rawDirectoryName)/", "\(config.exportDirectoryName)/"]
+                )
+            }
+        }
+    }
+}
+
+// MARK: - Done step
+
+private struct DroneDoneStepView: View {
+    let projectPath: String?
+    let onChooseAnother: () -> Void
+
+    var body: some View {
+        GroupBox {
+            VStack(alignment: .leading, spacing: 14) {
+                Label("Finished", systemImage: "checkmark.seal.fill")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.green)
+                Text("The project folder now holds the finished media with no subfolders. Use Go Back to undo the last step, or choose another project.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                HStack {
+                    if let projectPath {
+                        Button("Reveal in Finder") {
+                            NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: projectPath)])
+                        }
+                    }
+                    Spacer()
+                    Button("Choose Another Folder", action: onChooseAnother)
+                        .buttonStyle(.borderedProminent)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(10)
+        }
+    }
+}
+
+// MARK: - Shared pieces
+
+private struct DroneFileList: View {
+    let title: String
+    let icon: String
+    let tint: Color
+    let items: [String]
+
+    var body: some View {
         if !items.isEmpty {
             VStack(alignment: .leading, spacing: 6) {
                 Label("\(title) (\(items.count))", systemImage: icon)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(tint)
-                ForEach(items.prefix(50), id: \.self) { item in
+                ForEach(items.prefix(60), id: \.self) { item in
                     Text(item)
                         .font(.callout.monospaced())
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .truncationMode(.middle)
                 }
-                if items.count > 50 {
-                    Text("And \(items.count - 50) more…")
+                if items.count > 60 {
+                    Text("And \(items.count - 60) more…")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
             }
         }
+    }
+}
+
+private struct DroneNotesBox: View {
+    let failures: [OrganizeFailure]
+
+    var body: some View {
+        GroupBox("Notes") {
+            VStack(alignment: .leading, spacing: 6) {
+                ForEach(failures.prefix(50)) { failure in
+                    VStack(alignment: .leading, spacing: 2) {
+                        if !failure.filename.isEmpty {
+                            Text(failure.filename)
+                                .font(.callout)
+                                .bold()
+                        }
+                        Text(failure.message)
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(8)
+        }
+    }
+}
+
+enum DroneFormat {
+    private static let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter
+    }()
+
+    static func date(_ date: Date?) -> String {
+        guard let date else { return "—" }
+        return dateFormatter.string(from: date)
+    }
+
+    static func size(_ bytes: Int64?) -> String {
+        guard let bytes else { return "—" }
+        return ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
     }
 }
