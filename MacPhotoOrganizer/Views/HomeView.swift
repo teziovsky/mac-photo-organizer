@@ -39,6 +39,8 @@ struct HomeView: View {
 }
 
 private struct HomeModeCard: View {
+    static let cardHeight: CGFloat = 210
+
     let title: String
     let subtitle: String
     let systemImage: String
@@ -75,8 +77,8 @@ private struct HomeModeCard: View {
                 .font(.callout.weight(.semibold))
                 .foregroundStyle(.tint)
             }
+            .frame(maxWidth: .infinity, height: Self.cardHeight, alignment: .topLeading)
             .padding(24)
-            .frame(maxWidth: .infinity, minHeight: 240, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
                     .fill(.quaternary)
