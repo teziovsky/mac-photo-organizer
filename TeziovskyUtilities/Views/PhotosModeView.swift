@@ -24,7 +24,7 @@ struct PhotosModeView: View {
                 )
             }
         }
-        .onExitCommand(perform: handleEscape)
+        .onEscape(perform: handleEscape)
         .navigationTitle(mainToolbarTitle)
         .toolbar {
             ToolbarItem(placement: .navigation) {
@@ -182,10 +182,6 @@ struct PhotosModeView: View {
             QuickLookHelper.closePreview()
             return
         }
-        guard appState.selectedAlbum != nil else {
-            appState.goHome()
-            return
-        }
-        Task { await appState.selectAlbum(nil) }
+        appState.photosEscapeBack()
     }
 }

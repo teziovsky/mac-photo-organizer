@@ -89,6 +89,7 @@ private struct AlbumSidebarListRow: View {
                 .albumSidebarRowChrome(backgroundFill: rowBackgroundFill)
         }
         .buttonStyle(.plain)
+        .keyboardFocusRing(cornerRadius: AlbumListRowStyle.sidebarCornerRadius)
         .onHover { isHovered = $0 }
         .accessibilityLabel(album.name)
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)

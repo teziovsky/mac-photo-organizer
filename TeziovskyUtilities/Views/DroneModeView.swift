@@ -40,7 +40,8 @@ struct DroneModeView: View {
                 } label: {
                     Label("Home", systemImage: "house")
                 }
-                .help("Back to the home screen")
+                .help("Back to the home screen (⇧⌘H)")
+                .keyboardShortcut("h", modifiers: [.command, .shift])
             }
 
             ToolbarItem(placement: .navigation) {
@@ -49,10 +50,12 @@ struct DroneModeView: View {
                 } label: {
                     Label("Go Back", systemImage: "arrow.uturn.backward")
                 }
-                .help("Undo the last step and restore the changed files")
+                .help("Undo the last step and restore the changed files (⌘[ or Esc)")
+                .keyboardShortcut("[", modifiers: .command)
                 .disabled(!finalizer.canUndo || finalizer.isRunning)
             }
         }
+        .onEscape(perform: handleEscape)
         .onDisappear {
             if !finalizer.isRunning {
                 finalizer.reset()
@@ -72,7 +75,7 @@ struct DroneModeView: View {
     }
 
     private var folderSection: some View {
-        GroupBox {
+        GlassCard {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Project folder")
@@ -93,9 +96,11 @@ struct DroneModeView: View {
                 Button(finalizer.hasProject ? "Change…" : "Choose Project Folder…") {
                     chooseFolder()
                 }
+                .pillActionButton()
+                .help("Choose the drone project folder (⌘O)")
+                .keyboardShortcut("o", modifiers: .command)
                 .disabled(finalizer.isRunning)
             }
-            .padding(8)
         }
     }
 
@@ -142,6 +147,18 @@ struct DroneModeView: View {
         panel.message = "Select the drone project folder."
         guard panel.runModal() == .OK, let url = panel.url else { return }
         finalizer.loadProject(projectDirectory: url, config: config)
+    }
+
+    /// Escape steps back: undo the last completed step, or return to the home screen
+    /// once there is nothing left to undo.
+    private func handleEscape() {
+        guard !finalizer.isRunning else { return }
+        if finalizer.canUndo {
+            finalizer.goBack()
+        } else {
+            finalizer.reset()
+            appState.goHome()
+        }
     }
 }
 
@@ -210,7 +227,7 @@ private struct DroneStepContainer<Content: View>: View {
     @ViewBuilder let content: () -> Content
 
     var body: some View {
-        GroupBox {
+        GlassCard {
             VStack(alignment: .leading, spacing: 14) {
                 Label(step.title, systemImage: step.systemImage)
                     .font(.title3.weight(.semibold))
@@ -231,12 +248,13 @@ private struct DroneStepContainer<Content: View>: View {
                     }
                     Spacer()
                     Button(actionTitle, role: actionRole, action: action)
-                        .buttonStyle(.borderedProminent)
+                        .pillActionButton(prominent: true)
+                        .keyboardShortcut(.defaultAction)
+                        .help("\(actionTitle) (↩)")
                         .disabled(isRunning || actionDisabled)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(10)
         }
     }
 }
@@ -489,7 +507,7 @@ private struct DroneDoneStepView: View {
     }
 
     var body: some View {
-        GroupBox {
+        GlassCard {
             VStack(alignment: .leading, spacing: 14) {
                 Label("Finished", systemImage: "checkmark.seal.fill")
                     .font(.title3.weight(.semibold))
@@ -503,14 +521,18 @@ private struct DroneDoneStepView: View {
                         Button("Reveal in Finder") {
                             NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: projectPath)])
                         }
+                        .pillActionButton()
+                        .help("Reveal the project folder in Finder (⌘R)")
+                        .keyboardShortcut("r", modifiers: .command)
                     }
                     Spacer()
                     Button("Choose Another Folder", action: onChooseAnother)
-                        .buttonStyle(.borderedProminent)
+                        .pillActionButton(prominent: true)
+                        .help("Choose another project folder (⌘O)")
+                        .keyboardShortcut("o", modifiers: .command)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(10)
         }
     }
 }
@@ -550,7 +572,7 @@ private struct DroneNotesBox: View {
     let failures: [OrganizeFailure]
 
     var body: some View {
-        GroupBox("Notes") {
+        GlassCard(title: "Notes") {
             VStack(alignment: .leading, spacing: 6) {
                 ForEach(failures.prefix(50)) { failure in
                     VStack(alignment: .leading, spacing: 2) {
@@ -567,7 +589,6 @@ private struct DroneNotesBox: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(8)
         }
     }
 }

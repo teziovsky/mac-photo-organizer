@@ -1,8 +1,14 @@
 import SwiftUI
 
+private enum HomeCardKind: Hashable {
+    case photos
+    case drone
+}
+
 /// Landing screen letting the user pick a workflow.
 struct HomeView: View {
     @EnvironmentObject private var appState: AppState
+    @FocusState private var focusedCard: HomeCardKind?
 
     var body: some View {
         VStack(spacing: 32) {
@@ -16,37 +22,48 @@ struct HomeView: View {
 
             HStack(spacing: 24) {
                 HomeModeCard(
+                    kind: .photos,
                     title: AppBranding.photosModeTitle,
                     subtitle: AppBranding.photosModeSubtitle,
-                    systemImage: AppBranding.photosModeIcon
+                    systemImage: AppBranding.photosModeIcon,
+                    focus: $focusedCard
                 ) {
                     appState.enterPhotosMode()
                 }
 
                 HomeModeCard(
+                    kind: .drone,
                     title: AppBranding.droneModeTitle,
                     subtitle: AppBranding.droneModeSubtitle,
-                    systemImage: AppBranding.droneModeIcon
+                    systemImage: AppBranding.droneModeIcon,
+                    focus: $focusedCard
                 ) {
                     appState.enterDroneMode()
                 }
             }
             .frame(maxWidth: 760)
+            .defaultFocus($focusedCard, nil)
         }
         .padding(48)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .task { focusedCard = nil }
     }
 }
 
 private struct HomeModeCard: View {
     static let cardHeight: CGFloat = 210
 
+    let kind: HomeCardKind
     let title: String
     let subtitle: String
     let systemImage: String
+    var focus: FocusState<HomeCardKind?>.Binding
     let action: () -> Void
 
     @State private var isHovered = false
+
+    private var isFocused: Bool { focus.wrappedValue == kind }
+    private var isActive: Bool { isHovered || isFocused }
 
     var body: some View {
         Button(action: action) {
@@ -80,20 +97,29 @@ private struct HomeModeCard: View {
             .frame(maxWidth: .infinity, alignment: .topLeading)
             .frame(height: Self.cardHeight, alignment: .topLeading)
             .padding(24)
-            .background(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(.quaternary)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .strokeBorder(isHovered ? Color.accentColor.opacity(0.6) : Color.secondary.opacity(0.15), lineWidth: 1)
-            )
-            .scaleEffect(isHovered ? 1.02 : 1.0)
+            .liquidGlassCard(cornerRadius: 18, interactive: true)
+            .overlay(ring)
+            .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
         .buttonStyle(.plain)
+        .focused(focus, equals: kind)
+        .focusEffectDisabled()
+        .scaleEffect(isActive ? 1.02 : 1.0)
         .onHover { isHovered = $0 }
-        .animation(.smooth(duration: 0.18), value: isHovered)
+        .animation(.smooth(duration: 0.18), value: isActive)
         .accessibilityLabel(title)
         .accessibilityHint(subtitle)
+    }
+
+    private var ring: some View {
+        RoundedRectangle(cornerRadius: 18, style: .continuous)
+            .strokeBorder(ringColor, lineWidth: isFocused ? 3 : 1.5)
+            .shadow(color: isFocused ? Color.accentColor.opacity(0.45) : .clear, radius: 5)
+    }
+
+    private var ringColor: Color {
+        if isFocused { return .accentColor }
+        if isHovered { return .accentColor.opacity(0.4) }
+        return .clear
     }
 }

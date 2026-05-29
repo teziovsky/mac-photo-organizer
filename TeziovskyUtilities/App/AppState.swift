@@ -87,6 +87,19 @@ final class AppState: ObservableObject {
         route = .drone
     }
 
+    /// Steps back one level in Photos mode: deselect photo → deselect album → home.
+    func photosEscapeBack() {
+        if selectedAlbum != nil, selectedMediaID != nil {
+            selectedMediaID = nil
+            return
+        }
+        if selectedAlbum != nil {
+            Task { await selectAlbum(nil) }
+            return
+        }
+        goHome()
+    }
+
     func asset(for item: MediaItem) -> PHAsset? {
         currentAlbumAssets[item.id]
     }

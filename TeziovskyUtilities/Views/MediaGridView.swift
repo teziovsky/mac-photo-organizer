@@ -75,6 +75,10 @@ struct MediaGridView: View {
                         appState.moveMediaSelection(.down)
                         return .handled
                     }
+                    .onKeyPress(.escape) {
+                        appState.photosEscapeBack()
+                        return .handled
+                    }
                     .onChange(of: appState.selectedMediaID) { _, newID in
                         guard let newID else { return }
                         withAnimation(.easeInOut(duration: 0.2)) {

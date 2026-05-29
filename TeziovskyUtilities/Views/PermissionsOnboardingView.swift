@@ -57,19 +57,20 @@ struct PermissionsOnboardingView: View {
                     }
                     .frame(maxWidth: 280)
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
+                .pillActionButton(prominent: true)
                 .disabled(isRequesting)
 
                 Button("Continue Without Photos") {
                     appState.continueWithoutPhotosAccess()
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
+                .pillActionButton()
                 .disabled(isRequesting)
             }
         }
-        .padding(40)
+        .padding(32)
+        .frame(maxWidth: 520)
+        .liquidGlassCard(cornerRadius: 24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(40)
     }
 }
