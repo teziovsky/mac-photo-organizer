@@ -1,4 +1,3 @@
-import AppKit
 import SwiftUI
 
 struct SettingsView: View {
@@ -11,15 +10,13 @@ struct SettingsView: View {
 
     var body: some View {
         TabView {
-            GeneralSettingsTab(excludedSuffix: $excludedSuffix)
-                .tabItem {
-                    Label("General", systemImage: "gearshape")
-                }
-
-            AlbumsSettingsTab(omittedAlbumIDs: $omittedAlbumIDs)
-                .tabItem {
-                    Label("Albums", systemImage: "photo.on.rectangle.angled")
-                }
+            PhotosSettingsTab(
+                excludedSuffix: $excludedSuffix,
+                omittedAlbumIDs: $omittedAlbumIDs
+            )
+            .tabItem {
+                Label("Photos", systemImage: "photo.on.rectangle.angled")
+            }
 
             DroneSettingsTab(
                 compressedSuffix: $droneCompressedSuffix,
@@ -59,50 +56,6 @@ struct SettingsView: View {
     }
 }
 
-private struct GeneralSettingsTab: View {
-    @EnvironmentObject private var appState: AppState
-    @Binding var excludedSuffix: String
-
-    var body: some View {
-        Form {
-            Section("Albums") {
-                TextField("Excluded album suffix", text: $excludedSuffix)
-                    .help("Albums whose names end with this suffix are hidden from the list.")
-                Text("Default: _zgrane")
-                    .font(AlbumListRowStyle.detailFont)
-                    .foregroundStyle(.secondary)
-            }
-
-            Section("Export") {
-                if let path = appState.exportDirectoryPath {
-                    Text(path)
-                        .font(AlbumListRowStyle.detailFont)
-                        .lineLimit(2)
-                } else {
-                    Text("No folder selected")
-                        .font(AlbumListRowStyle.detailFont)
-                        .foregroundStyle(.secondary)
-                }
-                Button("Choose Export Folder…") {
-                    chooseFolder()
-                }
-            }
-        }
-        .formStyle(.grouped)
-        .padding()
-    }
-
-    private func chooseFolder() {
-        let panel = NSOpenPanel()
-        panel.canChooseDirectories = true
-        panel.canChooseFiles = false
-        panel.allowsMultipleSelection = false
-        if panel.runModal() == .OK, let url = panel.url {
-            appState.setExportDirectory(url)
-        }
-    }
-}
-
 private struct DroneSettingsTab: View {
     @Binding var compressedSuffix: String
     @Binding var rawDirectoryName: String
@@ -133,8 +86,9 @@ private struct DroneSettingsTab: View {
     }
 }
 
-private struct AlbumsSettingsTab: View {
+private struct PhotosSettingsTab: View {
     @EnvironmentObject private var appState: AppState
+    @Binding var excludedSuffix: String
     @Binding var omittedAlbumIDs: Set<String>
 
     private var sortedAlbums: [PhotoAlbum] {
@@ -145,6 +99,14 @@ private struct AlbumsSettingsTab: View {
 
     var body: some View {
         Form {
+            Section("Album list") {
+                TextField("Excluded album suffix", text: $excludedSuffix)
+                    .help("Albums whose names end with this suffix are hidden from the list.")
+                Text("Default: _zgrane")
+                    .font(AlbumListRowStyle.detailFont)
+                    .foregroundStyle(.secondary)
+            }
+
             Section("Omit from Organize") {
                 Text("Omitted albums are hidden from the sidebar and cannot use Organize.")
                     .font(AlbumListRowStyle.detailFont)

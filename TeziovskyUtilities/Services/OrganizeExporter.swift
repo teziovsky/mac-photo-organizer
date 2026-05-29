@@ -196,7 +196,7 @@ final class OrganizeExporter: ObservableObject {
         failures = [
             OrganizeFailure(
                 filename: "",
-                message: "Could not access the export folder. Choose it again in Settings."
+                message: "Could not access the export folder. Choose it again when organizing."
             )
         ]
         progress = OrganizeProgress(

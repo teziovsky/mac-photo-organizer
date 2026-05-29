@@ -21,6 +21,7 @@ struct DroneModeView: View {
 
                 if finalizer.hasProject && finalizer.previewError == nil {
                     DroneStepIndicator(current: finalizer.step)
+                        .frame(maxWidth: .infinity)
                     stepCard
                     if !finalizer.failures.isEmpty {
                         DroneNotesBox(failures: finalizer.failures)
@@ -80,20 +81,21 @@ struct DroneModeView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Project folder")
                         .font(.headline)
-                    if let path = finalizer.projectDirectoryPath {
-                        Text(path)
-                            .font(.callout)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                    } else {
+                    if !finalizer.hasProject {
                         Text("Pick the folder that contains your “\(config.rawDirectoryName)” and “\(config.exportDirectoryName)” subfolders.")
                             .font(.callout)
                             .foregroundStyle(.secondary)
                     }
                 }
-                Spacer()
-                Button(finalizer.hasProject ? "Change…" : "Choose Project Folder…") {
+                Spacer(minLength: 12)
+                if let path = finalizer.projectDirectoryPath {
+                    Text(DroneFormat.abbreviatedPath(path))
+                        .font(.callout.monospaced())
+                        .foregroundStyle(Color.green.opacity(0.9))
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+                Button(finalizer.hasProject ? "Change" : "Choose") {
                     chooseFolder()
                 }
                 .pillActionButton()
@@ -201,6 +203,7 @@ private struct DroneStepIndicator: View {
                 }
             }
         }
+        .frame(maxWidth: .infinity, alignment: .center)
     }
 
     private enum State { case done, current, upcoming }
@@ -292,118 +295,197 @@ private struct DroneMergeStepView: View {
                     ForEach(pairs) { pair in
                         DronePairMetadataCard(pair: pair)
                     }
+                    DroneMergeLegend()
                 }
             }
         }
+    }
+}
+
+private struct DroneMergeLegend: View {
+    var body: some View {
+        HStack(spacing: 20) {
+            HStack(spacing: 6) {
+                Circle()
+                    .fill(Color.green.opacity(0.9))
+                    .frame(width: 7, height: 7)
+                Text("Values that will be updated")
+            }
+            HStack(spacing: 6) {
+                Image(systemName: "arrow.right")
+                    .font(.callout.weight(.semibold))
+                    .foregroundStyle(Color.green.opacity(0.9))
+                Text("Copied from original")
+            }
+        }
+        .font(.callout)
+        .foregroundStyle(.secondary.opacity(0.85))
     }
 }
 
 private struct DronePairMetadataCard: View {
     let pair: DronePairMetadata
 
+    private var sizeReductionLabel: String? {
+        guard let originalBytes = pair.original?.fileSizeBytes,
+              let compressedBytes = pair.compressed?.fileSizeBytes,
+              originalBytes > 0,
+              compressedBytes < originalBytes else { return nil }
+        let percent = Int((Double(originalBytes - compressedBytes) / Double(originalBytes) * 100).rounded())
+        guard percent > 0 else { return nil }
+        return "-\(percent)% size"
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 6) {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 8) {
                 Image(systemName: pair.isVideo ? "film" : "photo")
-                    .foregroundStyle(.tint)
+                    .foregroundStyle(.secondary.opacity(0.8))
                 Text(pair.finalName)
-                    .font(.headline)
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(.primary.opacity(0.9))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                Spacer(minLength: 8)
+                if let sizeReductionLabel {
+                    Text(sizeReductionLabel)
+                        .font(.callout.weight(.medium))
+                        .foregroundStyle(Color.green.opacity(0.9))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(Capsule().fill(Color.green.opacity(0.14)))
+                }
             }
 
-            HStack(alignment: .top, spacing: 16) {
-                MetadataColumn(title: "Original", subtitle: pair.sourceName, snapshot: pair.original)
-                Image(systemName: "arrow.right")
-                    .foregroundStyle(.secondary)
-                    .padding(.top, 28)
-                MetadataColumn(
-                    title: "Compressed",
-                    subtitle: pair.compressedName,
-                    snapshot: pair.compressed,
-                    after: pair.original
-                )
+            if let original = pair.original, let compressed = pair.compressed {
+                DroneMetadataCompareTable(original: original, compressed: compressed)
+            } else {
+                ProgressView()
+                    .controlSize(.small)
+                    .padding(.vertical, 8)
             }
-
-            Text("After merge, the highlighted values are copied from the original onto the compressed file.")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
+        .padding(14)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(.quaternary)
+                .fill(.quaternary.opacity(0.55))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.07), lineWidth: 1)
         )
     }
 }
 
-private struct MetadataColumn: View {
-    let title: String
-    let subtitle: String
-    let snapshot: MediaMetadataSnapshot?
-    /// When set (the Compressed column), date fields show how they change after merge.
-    var after: MediaMetadataSnapshot?
+private struct DroneMetadataCompareTable: View {
+    let original: MediaMetadataSnapshot
+    let compressed: MediaMetadataSnapshot
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-            Text(subtitle)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .truncationMode(.middle)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 0) {
+                Text("Property")
+                    .frame(width: 88, alignment: .leading)
+                Text("Original")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Color.clear
+                    .frame(width: 28)
+                Text("After merge")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.secondary.opacity(0.7))
+            .textCase(.uppercase)
 
-            if let snapshot {
-                metadataRow("Size", DroneFormat.size(snapshot.fileSizeBytes))
-                metadataRow(
+            Divider().opacity(0.35)
+
+            VStack(spacing: 7) {
+                compareRow(
+                    "Size",
+                    original: DroneFormat.size(original.fileSizeBytes),
+                    after: DroneFormat.size(compressed.fileSizeBytes)
+                )
+                compareRow(
                     "Created",
-                    DroneFormat.date(snapshot.creationDate),
-                    newValue: after.map { DroneFormat.date($0.creationDate) }
+                    original: DroneFormat.date(original.creationDate),
+                    after: DroneFormat.date(compressed.creationDate),
+                    copiedFromOriginal: DroneFormat.date(original.creationDate)
                 )
-                metadataRow(
+                compareRow(
                     "Modified",
-                    DroneFormat.date(snapshot.modificationDate),
-                    newValue: after.map { DroneFormat.date($0.modificationDate) }
+                    original: DroneFormat.date(original.modificationDate),
+                    after: DroneFormat.date(compressed.modificationDate),
+                    copiedFromOriginal: DroneFormat.date(original.modificationDate)
                 )
-                if let dimensions = snapshot.dimensions {
-                    metadataRow("Size px", dimensions)
+                if original.dimensions != nil || compressed.dimensions != nil {
+                    compareRow(
+                        "Resolution",
+                        original: original.dimensions ?? "—",
+                        after: compressed.dimensions ?? "—"
+                    )
                 }
-                if let duration = snapshot.duration {
-                    metadataRow("Duration", duration)
+                if original.duration != nil || compressed.duration != nil {
+                    compareRow(
+                        "Duration",
+                        original: original.duration ?? "—",
+                        after: compressed.duration ?? "—"
+                    )
                 }
-            } else {
-                ProgressView()
-                    .controlSize(.small)
-                    .padding(.top, 4)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func metadataRow(_ label: String, _ value: String, newValue: String? = nil) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Text(label)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize()
-            Spacer(minLength: 8)
-            valueText(current: value, newValue: newValue)
-                .font(.caption.monospaced())
+    private func compareRow(
+        _ property: String,
+        original: String,
+        after: String,
+        copiedFromOriginal: String? = nil
+    ) -> some View {
+        let willUpdate = copiedFromOriginal.map { after != $0 } ?? false
+
+        return HStack(alignment: .firstTextBaseline, spacing: 0) {
+            Text(property)
+                .font(.callout)
+                .foregroundStyle(.secondary.opacity(0.85))
+                .frame(width: 88, alignment: .leading)
+
+            Text(original)
+                .font(.body.monospaced())
+                .foregroundStyle(.primary.opacity(0.85))
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .lineLimit(1)
-                .minimumScaleFactor(0.55)
-                .multilineTextAlignment(.trailing)
+                .minimumScaleFactor(0.65)
+
+            Group {
+                if willUpdate {
+                    Image(systemName: "arrow.right")
+                        .font(.callout.weight(.semibold))
+                        .foregroundStyle(Color.green.opacity(0.9))
+                }
+            }
+            .frame(width: 28)
+
+            afterMergeValue(current: after, newValue: willUpdate ? copiedFromOriginal : nil)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(maxWidth: .infinity)
     }
 
-    private func valueText(current: String, newValue: String?) -> Text {
-        guard let newValue, newValue != current else {
-            return Text(current)
+    private func afterMergeValue(current: String, newValue: String?) -> some View {
+        Group {
+            if let newValue {
+                (Text(current).strikethrough().foregroundColor(.secondary.opacity(0.65))
+                    + Text("  ")
+                    + Text(newValue).foregroundColor(.green.opacity(0.92)))
+                    .font(.body.monospaced())
+            } else {
+                Text(current)
+                    .font(.body.monospaced())
+                    .foregroundStyle(.primary.opacity(0.85))
+            }
         }
-        return Text(current).strikethrough().foregroundColor(.secondary)
-            + Text("  →  ").foregroundColor(.secondary)
-            + Text(newValue).foregroundColor(.green)
+        .lineLimit(1)
+        .minimumScaleFactor(0.65)
     }
 }
 
@@ -432,23 +514,220 @@ private struct DroneCleanupStepView: View {
             actionDisabled: false,
             action: action
         ) {
-            VStack(alignment: .leading, spacing: 10) {
-                DroneFileList(
-                    title: "Delete original → rename compressed",
-                    icon: "trash",
-                    tint: .red,
-                    items: (plan?.matchedPairs ?? []).map {
-                        "\($0.sourceName)  →  Trash,  \($0.compressedName)  →  \($0.finalName)"
+            DroneCleanupChangesView(
+                matchedPairs: plan?.matchedPairs ?? [],
+                unmatched: plan?.unmatchedCompressed ?? []
+            )
+        }
+    }
+}
+
+private struct DroneCleanupChangesView: View {
+    let matchedPairs: [DroneMatchedPair]
+    let unmatched: [DroneRenameOnly]
+
+    private var renameCount: Int { matchedPairs.count + unmatched.count }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            if !matchedPairs.isEmpty || !unmatched.isEmpty {
+                DroneCleanupSummaryBadges(
+                    trashCount: matchedPairs.count,
+                    renameCount: renameCount
+                )
+
+                VStack(spacing: 10) {
+                    ForEach(matchedPairs, id: \.compressedName) { pair in
+                        DroneCleanupMatchedPairCard(pair: pair)
                     }
-                )
-                DroneFileList(
-                    title: "Rename (no original)",
-                    icon: "pencil",
-                    tint: .orange,
-                    items: (plan?.unmatchedCompressed ?? []).map { "\($0.originalName)  →  \($0.finalName)" }
-                )
+                    ForEach(unmatched, id: \.originalName) { item in
+                        DroneCleanupRenameOnlyCard(item: item)
+                    }
+                }
+
+                DroneCleanupLegend()
             }
         }
+    }
+}
+
+private enum DroneCleanupStyle {
+    static let delete = Color.red
+    static let rename = Color.teal
+}
+
+private struct DroneCleanupSummaryBadges: View {
+    let trashCount: Int
+    let renameCount: Int
+
+    var body: some View {
+        HStack(spacing: 10) {
+            if trashCount > 0 {
+                summaryBadge(icon: "trash", label: fileCountLabel(trashCount, noun: "Trash"), tint: DroneCleanupStyle.delete)
+            }
+            if renameCount > 0 {
+                summaryBadge(icon: "doc", label: fileCountLabel(renameCount, noun: "rename"), tint: DroneCleanupStyle.rename)
+            }
+        }
+    }
+
+    private func fileCountLabel(_ count: Int, noun: String) -> String {
+        "\(count) file\(count == 1 ? "" : "s") to \(noun)"
+    }
+
+    private func summaryBadge(icon: String, label: String, tint: Color) -> some View {
+        Label(label, systemImage: icon)
+            .font(.callout.weight(.medium))
+            .foregroundStyle(tint.opacity(0.92))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(Capsule().fill(tint.opacity(0.14)))
+    }
+}
+
+private struct DroneCleanupLegend: View {
+    var body: some View {
+        HStack(spacing: 20) {
+            legendItem(color: DroneCleanupStyle.delete, text: "File will be moved to Trash")
+            legendItem(color: DroneCleanupStyle.rename, text: "File will be renamed (suffix removed)")
+        }
+        .font(.callout)
+        .foregroundStyle(.secondary.opacity(0.85))
+    }
+
+    private func legendItem(color: Color, text: String) -> some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(color.opacity(0.9))
+                .frame(width: 7, height: 7)
+            Text(text)
+        }
+    }
+}
+
+private struct DroneCleanupMatchedPairCard: View {
+    let pair: DroneMatchedPair
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: "doc")
+                    .foregroundStyle(.secondary.opacity(0.8))
+                Text(pair.finalName)
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(.primary.opacity(0.9))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+
+            DroneCleanupActionRow(
+                kind: .delete,
+                from: pair.sourceName,
+                to: "Trash"
+            )
+            DroneCleanupActionRow(
+                kind: .rename,
+                from: pair.compressedName,
+                to: pair.finalName
+            )
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(.quaternary.opacity(0.55))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.07), lineWidth: 1)
+        )
+    }
+}
+
+private struct DroneCleanupRenameOnlyCard: View {
+    let item: DroneRenameOnly
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: "doc")
+                    .foregroundStyle(.secondary.opacity(0.8))
+                Text(item.finalName)
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(.primary.opacity(0.9))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+
+            DroneCleanupActionRow(
+                kind: .rename,
+                from: item.originalName,
+                to: item.finalName
+            )
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(.quaternary.opacity(0.55))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.07), lineWidth: 1)
+        )
+    }
+}
+
+private struct DroneCleanupActionRow: View {
+    enum Kind {
+        case delete
+        case rename
+
+        var badge: String {
+            switch self {
+            case .delete: return "DELETE"
+            case .rename: return "RENAME"
+            }
+        }
+
+        var tint: Color {
+            switch self {
+            case .delete: return DroneCleanupStyle.delete
+            case .rename: return DroneCleanupStyle.rename
+            }
+        }
+    }
+
+    let kind: Kind
+    let from: String
+    let to: String
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Text(kind.badge)
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(kind.tint.opacity(0.95))
+                .padding(.horizontal, 7)
+                .padding(.vertical, 3)
+                .background(
+                    RoundedRectangle(cornerRadius: 4, style: .continuous)
+                        .fill(kind.tint.opacity(0.14))
+                )
+
+            actionText
+                .font(.body.monospaced())
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var actionText: Text {
+        Text(from)
+            .foregroundColor(.secondary.opacity(0.85))
+        + Text("  →  ")
+            .foregroundColor(.secondary.opacity(0.55))
+        + Text(to)
+            .foregroundColor(kind.tint.opacity(0.92))
     }
 }
 
@@ -477,20 +756,224 @@ private struct DroneFlattenStepView: View {
             actionDisabled: false,
             action: action
         ) {
-            VStack(alignment: .leading, spacing: 10) {
-                DroneFileList(
-                    title: "Move up into project folder",
-                    icon: "arrow.up.doc",
-                    tint: .blue,
-                    items: (plan?.finalMediaNames ?? []).sorted()
+            DroneFlattenChangesView(
+                mediaNames: plan?.finalMediaNames.sorted() ?? [],
+                config: config
+            )
+        }
+    }
+}
+
+private enum DroneFlattenStyle {
+    static let moveUp = Color.teal
+    static let trash = Color.red
+    static let result = Color.green
+}
+
+private struct DroneFlattenChangesView: View {
+    let mediaNames: [String]
+    let config: DroneFinalizeConfig
+
+    private var trashFolders: [String] {
+        [config.rawDirectoryName, config.exportDirectoryName]
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            DroneFlattenSummaryBar(
+                fileCount: mediaNames.count,
+                folderCount: trashFolders.count
+            )
+
+            VStack(alignment: .leading, spacing: 0) {
+                DroneFlattenMoveUpSection(
+                    mediaNames: mediaNames,
+                    exportDirectoryName: config.exportDirectoryName
                 )
-                DroneFileList(
-                    title: "Move to Trash",
-                    icon: "trash",
-                    tint: .red,
-                    items: ["\(config.rawDirectoryName)/", "\(config.exportDirectoryName)/"]
-                )
+
+                Divider()
+                    .opacity(0.35)
+                    .padding(.vertical, 12)
+
+                DroneFlattenTrashSection(folders: trashFolders)
             }
+            .padding(14)
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(.quaternary.opacity(0.55))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(0.07), lineWidth: 1)
+            )
+        }
+    }
+}
+
+private struct DroneFlattenSummaryBar: View {
+    let fileCount: Int
+    let folderCount: Int
+
+    var body: some View {
+        HStack(spacing: 10) {
+            summaryPill(
+                icon: "arrow.up",
+                label: "\(fileCount) file\(fileCount == 1 ? "" : "s") move up",
+                tint: DroneFlattenStyle.moveUp
+            )
+            Text("+")
+                .font(.callout.weight(.semibold))
+                .foregroundStyle(.secondary.opacity(0.7))
+            summaryPill(
+                icon: "trash",
+                label: "\(folderCount) folders removed",
+                tint: DroneFlattenStyle.trash
+            )
+            Text("=")
+                .font(.callout.weight(.semibold))
+                .foregroundStyle(.secondary.opacity(0.7))
+            summaryPill(
+                icon: "folder",
+                label: "Flat project folder",
+                tint: DroneFlattenStyle.result
+            )
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func summaryPill(icon: String, label: String, tint: Color) -> some View {
+        Label(label, systemImage: icon)
+            .font(.callout.weight(.medium))
+            .foregroundStyle(tint.opacity(0.92))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(Capsule().fill(tint.opacity(0.14)))
+    }
+}
+
+private struct DroneFlattenMoveUpSection: View {
+    let mediaNames: [String]
+    let exportDirectoryName: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionHeader(
+                title: "Move up into project folder",
+                icon: "arrow.up",
+                tint: DroneFlattenStyle.moveUp,
+                count: mediaNames.count
+            )
+
+            if mediaNames.isEmpty {
+                Text("No media files to move.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary.opacity(0.85))
+            } else {
+                VStack(spacing: 8) {
+                    ForEach(mediaNames.prefix(60), id: \.self) { name in
+                        DroneFlattenMoveUpRow(
+                            from: "\(exportDirectoryName)/\(name)",
+                            to: name
+                        )
+                    }
+                    if mediaNames.count > 60 {
+                        Text("And \(mediaNames.count - 60) more…")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary.opacity(0.85))
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct DroneFlattenTrashSection: View {
+    let folders: [String]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            sectionHeader(
+                title: "Move to Trash",
+                icon: "trash",
+                tint: DroneFlattenStyle.trash,
+                count: folders.count
+            )
+
+            VStack(spacing: 8) {
+                ForEach(folders, id: \.self) { folder in
+                    DroneFlattenTrashRow(folderName: folder)
+                }
+            }
+        }
+    }
+}
+
+private func sectionHeader(title: String, icon: String, tint: Color, count: Int) -> some View {
+    HStack {
+        Label(title, systemImage: icon)
+            .font(.body.weight(.semibold))
+            .foregroundStyle(tint.opacity(0.9))
+        Spacer()
+        Text("\(count) item\(count == 1 ? "" : "s")")
+            .font(.callout)
+            .foregroundStyle(.secondary.opacity(0.85))
+    }
+}
+
+private struct DroneFlattenMoveUpRow: View {
+    let from: String
+    let to: String
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Image(systemName: "doc")
+                .foregroundStyle(.secondary.opacity(0.75))
+
+            (Text(from)
+                .foregroundColor(.secondary.opacity(0.85))
+                + Text("  →  ")
+                .foregroundColor(.secondary.opacity(0.55))
+                + Text(to)
+                .foregroundColor(DroneFlattenStyle.moveUp.opacity(0.92)))
+                .font(.body.monospaced())
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Spacer(minLength: 8)
+
+            Image(systemName: "checkmark.circle.fill")
+                .font(.body)
+                .foregroundStyle(DroneFlattenStyle.moveUp.opacity(0.85))
+        }
+    }
+}
+
+private struct DroneFlattenTrashRow: View {
+    let folderName: String
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "folder.fill")
+                .foregroundStyle(DroneFlattenStyle.trash.opacity(0.85))
+
+            Text("\(folderName)/")
+                .font(.body.monospaced())
+                .foregroundStyle(.primary.opacity(0.85))
+
+            Spacer(minLength: 8)
+
+            Text("Empty folder")
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.secondary.opacity(0.85))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .background(
+                    Capsule().fill(Color.primary.opacity(0.08))
+                )
+
+            Image(systemName: "checkmark.circle.fill")
+                .font(.body)
+                .foregroundStyle(DroneFlattenStyle.trash.opacity(0.85))
         }
     }
 }
@@ -539,35 +1022,6 @@ private struct DroneDoneStepView: View {
 
 // MARK: - Shared pieces
 
-private struct DroneFileList: View {
-    let title: String
-    let icon: String
-    let tint: Color
-    let items: [String]
-
-    var body: some View {
-        if !items.isEmpty {
-            VStack(alignment: .leading, spacing: 6) {
-                Label("\(title) (\(items.count))", systemImage: icon)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(tint)
-                ForEach(items.prefix(60), id: \.self) { item in
-                    Text(item)
-                        .font(.callout.monospaced())
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                }
-                if items.count > 60 {
-                    Text("And \(items.count - 60) more…")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-            }
-        }
-    }
-}
-
 private struct DroneNotesBox: View {
     let failures: [OrganizeFailure]
 
@@ -609,5 +1063,14 @@ enum DroneFormat {
     static func size(_ bytes: Int64?) -> String {
         guard let bytes else { return "—" }
         return ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
+    }
+
+    static func abbreviatedPath(_ path: String) -> String {
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        if path == home { return "~" }
+        if path.hasPrefix(home + "/") {
+            return "~" + path.dropFirst(home.count)
+        }
+        return path
     }
 }

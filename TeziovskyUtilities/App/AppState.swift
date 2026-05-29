@@ -28,7 +28,6 @@ final class AppState: ObservableObject {
     @Published var quickLookError: String?
     @Published var showOrganizeSheet = false
     @Published var thumbnailDisplayMode: ThumbnailDisplayMode = AppSettings.thumbnailDisplayMode
-    @Published var exportDirectoryPath: String? = AppSettings.exportDirectoryPath
     @Published var omittedFromOrganizeAlbumIDs: Set<String> = AppSettings.omittedFromOrganizeAlbumIDs
     @Published var mediaGridColumnCount = AppSettings.mediaGridColumnCount
     @Published var columnVisibility: NavigationSplitViewVisibility = .all
@@ -222,7 +221,6 @@ final class AppState: ObservableObject {
 
     func setExportDirectory(_ url: URL) {
         AppSettings.setExportDirectory(url)
-        exportDirectoryPath = url.path
     }
 
     func previewSelectedMedia() async {

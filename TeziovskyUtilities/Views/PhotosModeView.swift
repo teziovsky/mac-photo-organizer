@@ -97,7 +97,7 @@ struct PhotosModeView: View {
                     .help(
                         appState.canOrganizeSelectedAlbum
                             ? "Export, move to album with suffix, and remove from source (⌘E)"
-                            : "This album is omitted from Organize in Settings"
+                            : "This album is omitted from Organize in Photos settings"
                     )
                 }
             }

@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 private enum HomeCardKind: Hashable {
@@ -9,6 +10,8 @@ private enum HomeCardKind: Hashable {
 struct HomeView: View {
     @EnvironmentObject private var appState: AppState
     @FocusState private var focusedCard: HomeCardKind?
+    @Namespace private var homeFocusScope
+    @State private var cardsAcceptFocus = false
 
     var body: some View {
         VStack(spacing: 32) {
@@ -26,27 +29,48 @@ struct HomeView: View {
                     title: AppBranding.photosModeTitle,
                     subtitle: AppBranding.photosModeSubtitle,
                     systemImage: AppBranding.photosModeIcon,
+                    acceptsFocus: cardsAcceptFocus,
                     focus: $focusedCard
                 ) {
                     appState.enterPhotosMode()
                 }
+                .prefersDefaultFocus(false, in: homeFocusScope)
 
                 HomeModeCard(
                     kind: .drone,
                     title: AppBranding.droneModeTitle,
                     subtitle: AppBranding.droneModeSubtitle,
                     systemImage: AppBranding.droneModeIcon,
+                    acceptsFocus: cardsAcceptFocus,
                     focus: $focusedCard
                 ) {
                     appState.enterDroneMode()
                 }
+                .prefersDefaultFocus(false, in: homeFocusScope)
             }
+            .focusScope(homeFocusScope)
             .frame(maxWidth: 760)
-            .defaultFocus($focusedCard, nil)
         }
         .padding(48)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .task { focusedCard = nil }
+        .onAppear(perform: clearInitialFocus)
+        .onChange(of: focusedCard) { _, newValue in
+            guard !cardsAcceptFocus, newValue != nil else { return }
+            clearInitialFocus()
+        }
+        .task {
+            clearInitialFocus()
+            try? await Task.sleep(for: .milliseconds(100))
+            clearInitialFocus()
+            cardsAcceptFocus = true
+        }
+    }
+
+    private func clearInitialFocus() {
+        focusedCard = nil
+        DispatchQueue.main.async {
+            NSApp.keyWindow?.makeFirstResponder(nil)
+        }
     }
 }
 
@@ -57,6 +81,7 @@ private struct HomeModeCard: View {
     let title: String
     let subtitle: String
     let systemImage: String
+    let acceptsFocus: Bool
     var focus: FocusState<HomeCardKind?>.Binding
     let action: () -> Void
 
@@ -66,49 +91,57 @@ private struct HomeModeCard: View {
     private var isActive: Bool { isHovered || isFocused }
 
     var body: some View {
-        Button(action: action) {
-            VStack(alignment: .leading, spacing: 16) {
-                Image(systemName: systemImage)
-                    .font(.system(size: 40))
-                    .foregroundStyle(.tint)
-                    .symbolRenderingMode(.hierarchical)
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(title)
-                        .font(.title2)
-                        .bold()
-                        .foregroundStyle(.primary)
-                    Text(subtitle)
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.leading)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                Spacer(minLength: 0)
-
-                HStack(spacing: 6) {
-                    Text("Open")
-                    Image(systemName: "arrow.right")
-                }
-                .font(.callout.weight(.semibold))
+        VStack(alignment: .leading, spacing: 16) {
+            Image(systemName: systemImage)
+                .font(.system(size: 40))
                 .foregroundStyle(.tint)
+                .symbolRenderingMode(.hierarchical)
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text(title)
+                    .font(.title2)
+                    .bold()
+                    .foregroundStyle(.primary)
+                Text(subtitle)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            .frame(maxWidth: .infinity, alignment: .topLeading)
-            .frame(height: Self.cardHeight, alignment: .topLeading)
-            .padding(24)
-            .liquidGlassCard(cornerRadius: 18, interactive: true)
-            .overlay(ring)
-            .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+
+            Spacer(minLength: 0)
+
+            HStack(spacing: 6) {
+                Text("Open")
+                Image(systemName: "arrow.right")
+            }
+            .font(.callout.weight(.semibold))
+            .foregroundStyle(.tint)
         }
-        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .frame(height: Self.cardHeight, alignment: .topLeading)
+        .padding(24)
+        .liquidGlassCard(cornerRadius: 18, interactive: isActive)
+        .overlay(ring)
+        .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .focusable(acceptsFocus, interactions: .activate)
         .focused(focus, equals: kind)
         .focusEffectDisabled()
+        .onTapGesture(perform: action)
+        .onKeyPress(.return) {
+            action()
+            return .handled
+        }
+        .onKeyPress(.space) {
+            action()
+            return .handled
+        }
         .scaleEffect(isActive ? 1.02 : 1.0)
         .onHover { isHovered = $0 }
         .animation(.smooth(duration: 0.18), value: isActive)
         .accessibilityLabel(title)
         .accessibilityHint(subtitle)
+        .accessibilityAddTraits(.isButton)
     }
 
     private var ring: some View {

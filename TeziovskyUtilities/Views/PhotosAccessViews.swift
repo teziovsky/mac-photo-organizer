@@ -62,7 +62,7 @@ enum OrganizeCompleteMessaging {
         if !allAlbums.isEmpty && selectableAlbums.isEmpty {
             return (
                 "Good Job!",
-                "Every album in the sidebar is hidden under Omit from Organize. Turn one back on in Settings when you want to process more."
+                "Every album in the sidebar is hidden under Omit from Organize. Turn one back on in Photos settings when you want to process more."
             )
         }
 
