@@ -333,7 +333,6 @@ private struct MetadataColumn: View {
                 metadataRow("Size", DroneFormat.size(snapshot.fileSizeBytes))
                 metadataRow("Created", DroneFormat.date(snapshot.creationDate))
                 metadataRow("Modified", DroneFormat.date(snapshot.modificationDate))
-                metadataRow("Embedded", DroneFormat.date(snapshot.containerCreationDate))
                 if let dimensions = snapshot.dimensions {
                     metadataRow("Size px", dimensions)
                 }
