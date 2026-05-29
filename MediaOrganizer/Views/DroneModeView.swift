@@ -297,10 +297,15 @@ private struct DronePairMetadataCard: View {
                 Image(systemName: "arrow.right")
                     .foregroundStyle(.secondary)
                     .padding(.top, 28)
-                MetadataColumn(title: "Compressed", subtitle: pair.compressedName, snapshot: pair.compressed)
+                MetadataColumn(
+                    title: "Compressed",
+                    subtitle: pair.compressedName,
+                    snapshot: pair.compressed,
+                    after: pair.original
+                )
             }
 
-            Text("After merge: the compressed file inherits the original's Created, Modified, and embedded creation date.")
+            Text("After merge, the highlighted values are copied from the original onto the compressed file.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -318,6 +323,8 @@ private struct MetadataColumn: View {
     let title: String
     let subtitle: String
     let snapshot: MediaMetadataSnapshot?
+    /// When set (the Compressed column), date fields show how they change after merge.
+    var after: MediaMetadataSnapshot?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -331,8 +338,16 @@ private struct MetadataColumn: View {
 
             if let snapshot {
                 metadataRow("Size", DroneFormat.size(snapshot.fileSizeBytes))
-                metadataRow("Created", DroneFormat.date(snapshot.creationDate))
-                metadataRow("Modified", DroneFormat.date(snapshot.modificationDate))
+                metadataRow(
+                    "Created",
+                    DroneFormat.date(snapshot.creationDate),
+                    newValue: after.map { DroneFormat.date($0.creationDate) }
+                )
+                metadataRow(
+                    "Modified",
+                    DroneFormat.date(snapshot.modificationDate),
+                    newValue: after.map { DroneFormat.date($0.modificationDate) }
+                )
                 if let dimensions = snapshot.dimensions {
                     metadataRow("Size px", dimensions)
                 }
@@ -348,17 +363,25 @@ private struct MetadataColumn: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func metadataRow(_ label: String, _ value: String) -> some View {
+    private func metadataRow(_ label: String, _ value: String, newValue: String? = nil) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
             Text(label)
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .frame(width: 70, alignment: .leading)
-            Text(value)
+            valueText(current: value, newValue: newValue)
                 .font(.caption.monospaced())
-                .lineLimit(1)
-                .truncationMode(.middle)
+                .lineLimit(2)
         }
+    }
+
+    private func valueText(current: String, newValue: String?) -> Text {
+        guard let newValue, newValue != current else {
+            return Text(current)
+        }
+        return Text(current).strikethrough().foregroundColor(.secondary)
+            + Text("  →  ").foregroundColor(.secondary)
+            + Text(newValue).foregroundColor(.green)
     }
 }
 
