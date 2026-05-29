@@ -36,6 +36,19 @@ On first launch (before Photos access is granted) the app shows a short explaine
 - Xcode 15+
 - Photos library access (only for the Organize Photos workflow)
 
+## SwiftLint
+
+Style and conventions are enforced with [SwiftLint](https://realm.github.io/SwiftLint/). Configuration lives in [`.swiftlint.yml`](.swiftlint.yml).
+
+| Command | Description |
+|---------|-------------|
+| `npm run lint` | Lint `MacPhotoOrganizer/` and `Tests/` |
+| `npm run lint:fix` | Auto-fix correctable issues, then lint again |
+
+SwiftLint also runs during **Xcode** builds (Run Script phase after compile) and **SPM** builds via the [SwiftLintPlugins](https://github.com/SimplyDanny/SwiftLintPlugins) build-tool plugin (version **0.63.3**). The Xcode script uses the package’s bundled `swiftlint` binary when available, otherwise Homebrew’s.
+
+For CI / unattended `xcodebuild`, pass `-skipPackagePluginValidation` when using the SPM plugin.
+
 ## Build & run
 
 ### Xcode

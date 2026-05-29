@@ -77,7 +77,8 @@ private struct HomeModeCard: View {
                 .font(.callout.weight(.semibold))
                 .foregroundStyle(.tint)
             }
-            .frame(maxWidth: .infinity, height: Self.cardHeight, alignment: .topLeading)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+            .frame(height: Self.cardHeight, alignment: .topLeading)
             .padding(24)
             .background(
                 RoundedRectangle(cornerRadius: 18, style: .continuous)

@@ -7,6 +7,9 @@ let package = Package(
     products: [
         .executable(name: "MacPhotoOrganizer", targets: ["MacPhotoOrganizer"]),
     ],
+    dependencies: [
+        .package(url: "https://github.com/SimplyDanny/SwiftLintPlugins", from: "0.63.3"),
+    ],
     targets: [
         .executableTarget(
             name: "MacPhotoOrganizer",
@@ -22,6 +25,9 @@ let package = Package(
                 .linkedFramework("AppKit"),
                 .linkedFramework("QuickLookUI"),
                 .linkedFramework("Quartz"),
+            ],
+            plugins: [
+                .plugin(name: "SwiftLintBuildToolPlugin", package: "SwiftLintPlugins"),
             ]
         ),
         .testTarget(

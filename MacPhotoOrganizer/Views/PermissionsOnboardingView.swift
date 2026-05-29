@@ -19,7 +19,13 @@ struct PermissionsOnboardingView: View {
                     .bold()
                     .multilineTextAlignment(.center)
 
-                Text("To organize your iCloud Photos albums, \(AppBranding.appName) needs access to your Photos library. It uses this to list albums, show thumbnails, export originals to a folder, and move items between albums.")
+                Text(
+                    """
+                    To organize your iCloud Photos albums, \(AppBranding.appName) needs access to your \
+                    Photos library. It uses this to list albums, show thumbnails, export originals to a folder, \
+                    and move items between albums.
+                    """
+                )
                     .font(.body)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
