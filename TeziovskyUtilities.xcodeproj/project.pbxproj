@@ -1,0 +1,368 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		9C795D2769CD4500B193EF0C /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BF803B324DB4B12919B1402 /* AppState.swift */; };
+		13420944E3E4445E8A034E05 /* TeziovskyUtilitiesApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B67B14C17024B3E8407CCCE /* TeziovskyUtilitiesApp.swift */; };
+		166D2A828251492495D9CF73 /* MediaItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C7A00AAFB3B4075B2D47ED5 /* MediaItem.swift */; };
+		16B4F10D882242B684686880 /* OrganizeProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 530AEEFA19934A4FA829453C /* OrganizeProgress.swift */; };
+		AAA573756E5843DAA8B4F485 /* PhotoAlbum.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C3088853AA6439AA0F74AB0 /* PhotoAlbum.swift */; };
+		B1C2D3E4F5A6478990ABCDEF /* ThumbnailDisplayMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6478990ABCDEF0 /* ThumbnailDisplayMode.swift */; };
+		4E2AFA3C045C47319CE7EACD /* OrganizeExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 022028CA8C2845F68A209161 /* OrganizeExporter.swift */; };
+		7B93AC732F16455E829ABC2A /* PhotosService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AB1CE809E09479BB2E18552 /* PhotosService.swift */; };
+		D988F41E5889443783213B93 /* QuickLookHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C7141389BA741AA8E197C48 /* QuickLookHelper.swift */; };
+		950A5883EA1547A794907F5F /* ThumbnailLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8E91EBDB1C849DBBCB91309 /* ThumbnailLoader.swift */; };
+		667788990011223344556677 /* PhotoAssetExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 778899001122334455667788 /* PhotoAssetExporter.swift */; };
+		43FC5DB48FDF4016A45C899E /* AlbumNameFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45613F36B23F480EA04A4A49 /* AlbumNameFilter.swift */; };
+		D4E5F6A7B8C94D0A1B2C3D5E /* AlbumListRowStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F6A7B8C9D04E1A2B3C4D6F /* AlbumListRowStyle.swift */; };
+		C06BBDDEA43E475C929DAC5A /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 610DCC74556F49B4987BC016 /* AppSettings.swift */; };
+		889900112233445566778899 /* FileDatePreservation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 990011223344556677889900 /* FileDatePreservation.swift */; };
+		AABBCCDDEEFF001122334455 /* SleepAssertion.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBCCDDEEFF00112233445566 /* SleepAssertion.swift */; };
+		E196206AD6D64E458CF84E2F /* AlbumSidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A80FE1B411B441C8CEB3CD8 /* AlbumSidebarView.swift */; };
+		C3D4E5F6A7B84990A1B2C3D4 /* MainWindowKeyboardShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6A7498091A2B3C4 /* MainWindowKeyboardShortcuts.swift */; };
+		E3F4A5B6C7D84990A1B2C3D5 /* AlbumNumberKeyboardShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4A5B6C7D8E94901A2B3C4D6 /* AlbumNumberKeyboardShortcuts.swift */; };
+		FDA1FFB081CD4AF180526F7A /* MediaGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8542DD10E74489281F31F8C /* MediaGridView.swift */; };
+		38F287CD62414D72A3E35796 /* OrganizeProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCE88D550AA147A2A10449DB /* OrganizeProgressView.swift */; };
+		7ECD01CA2B604C1290A9B7DA /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E58F090FFBE4CD68111AA5E /* SettingsView.swift */; };
+		A1F2B3C4D5E6478990112233 /* SafeFilename.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6A7488990112234 /* SafeFilename.swift */; };
+		C3D4E5F6A7B8499001122334 /* MediaSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9499001122335 /* MediaSummary.swift */; };
+		E5F6A7B8C9D0499001122336 /* ExportDirectoryAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6A7B8C9D0E1499001122337 /* ExportDirectoryAccess.swift */; };
+		112233445566778899001122 /* PhotosAccessViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 223344556677889900112233 /* PhotosAccessViews.swift */; };
+		A00100000000000000000001 /* AppBranding.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00100000000000000000001 /* AppBranding.swift */; };
+		A00100000000000000000002 /* AppRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00100000000000000000002 /* AppRoute.swift */; };
+		A00100000000000000000010 /* DroneStepModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00100000000000000000010 /* DroneStepModels.swift */; };
+		A00100000000000000000004 /* DroneFinalizePlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00100000000000000000004 /* DroneFinalizePlan.swift */; };
+		A00100000000000000000005 /* DroneFinalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00100000000000000000005 /* DroneFinalizer.swift */; };
+		A00100000000000000000006 /* VideoMetadataTransfer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00100000000000000000006 /* VideoMetadataTransfer.swift */; };
+		A00100000000000000000011 /* MediaMetadataReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00100000000000000000011 /* MediaMetadataReader.swift */; };
+		A00100000000000000000007 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00100000000000000000007 /* RootView.swift */; };
+		A00100000000000000000008 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00100000000000000000008 /* HomeView.swift */; };
+		A00100000000000000000009 /* PermissionsOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00100000000000000000009 /* PermissionsOnboardingView.swift */; };
+		A0010000000000000000000A /* PhotosModeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010000000000000000000A /* PhotosModeView.swift */; };
+		A0010000000000000000000B /* DroneModeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010000000000000000000B /* DroneModeView.swift */; };
+		0FF1B5869E37421096AD477E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CCEC6AF34D2A457CA48F3ED4 /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		34B5C4B0A1734D6E9FABAC79 /* TeziovskyUtilities.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TeziovskyUtilities.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CFB453D98264CF289BB3BBF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		CCEC6AF34D2A457CA48F3ED4 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		7BF803B324DB4B12919B1402 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		4B67B14C17024B3E8407CCCE /* TeziovskyUtilitiesApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeziovskyUtilitiesApp.swift; sourceTree = "<group>"; };
+		6C7A00AAFB3B4075B2D47ED5 /* MediaItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaItem.swift; sourceTree = "<group>"; };
+		530AEEFA19934A4FA829453C /* OrganizeProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrganizeProgress.swift; sourceTree = "<group>"; };
+		0C3088853AA6439AA0F74AB0 /* PhotoAlbum.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoAlbum.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F6478990ABCDEF0 /* ThumbnailDisplayMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThumbnailDisplayMode.swift; sourceTree = "<group>"; };
+		022028CA8C2845F68A209161 /* OrganizeExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrganizeExporter.swift; sourceTree = "<group>"; };
+		9AB1CE809E09479BB2E18552 /* PhotosService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotosService.swift; sourceTree = "<group>"; };
+		0C7141389BA741AA8E197C48 /* QuickLookHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickLookHelper.swift; sourceTree = "<group>"; };
+		F8E91EBDB1C849DBBCB91309 /* ThumbnailLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThumbnailLoader.swift; sourceTree = "<group>"; };
+		778899001122334455667788 /* PhotoAssetExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoAssetExporter.swift; sourceTree = "<group>"; };
+		45613F36B23F480EA04A4A49 /* AlbumNameFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumNameFilter.swift; sourceTree = "<group>"; };
+		E5F6A7B8C9D04E1A2B3C4D6F /* AlbumListRowStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumListRowStyle.swift; sourceTree = "<group>"; };
+		610DCC74556F49B4987BC016 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
+		990011223344556677889900 /* FileDatePreservation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileDatePreservation.swift; sourceTree = "<group>"; };
+		BBCCDDEEFF00112233445566 /* SleepAssertion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepAssertion.swift; sourceTree = "<group>"; };
+		7A80FE1B411B441C8CEB3CD8 /* AlbumSidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumSidebarView.swift; sourceTree = "<group>"; };
+		B2C3D4E5F6A7498091A2B3C4 /* MainWindowKeyboardShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainWindowKeyboardShortcuts.swift; sourceTree = "<group>"; };
+		F4A5B6C7D8E94901A2B3C4D6 /* AlbumNumberKeyboardShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumNumberKeyboardShortcuts.swift; sourceTree = "<group>"; };
+		C8542DD10E74489281F31F8C /* MediaGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaGridView.swift; sourceTree = "<group>"; };
+		CCE88D550AA147A2A10449DB /* OrganizeProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrganizeProgressView.swift; sourceTree = "<group>"; };
+		0E58F090FFBE4CD68111AA5E /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		B2C3D4E5F6A7488990112234 /* SafeFilename.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeFilename.swift; sourceTree = "<group>"; };
+		D4E5F6A7B8C9499001122335 /* MediaSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaSummary.swift; sourceTree = "<group>"; };
+		F6A7B8C9D0E1499001122337 /* ExportDirectoryAccess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportDirectoryAccess.swift; sourceTree = "<group>"; };
+		223344556677889900112233 /* PhotosAccessViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotosAccessViews.swift; sourceTree = "<group>"; };
+		B00100000000000000000001 /* AppBranding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBranding.swift; sourceTree = "<group>"; };
+		B00100000000000000000002 /* AppRoute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRoute.swift; sourceTree = "<group>"; };
+		B00100000000000000000010 /* DroneStepModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DroneStepModels.swift; sourceTree = "<group>"; };
+		B00100000000000000000004 /* DroneFinalizePlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DroneFinalizePlan.swift; sourceTree = "<group>"; };
+		B00100000000000000000005 /* DroneFinalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DroneFinalizer.swift; sourceTree = "<group>"; };
+		B00100000000000000000006 /* VideoMetadataTransfer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoMetadataTransfer.swift; sourceTree = "<group>"; };
+		B00100000000000000000011 /* MediaMetadataReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaMetadataReader.swift; sourceTree = "<group>"; };
+		B00100000000000000000007 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		B00100000000000000000008 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		B00100000000000000000009 /* PermissionsOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionsOnboardingView.swift; sourceTree = "<group>"; };
+		B0010000000000000000000A /* PhotosModeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotosModeView.swift; sourceTree = "<group>"; };
+		B0010000000000000000000B /* DroneModeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DroneModeView.swift; sourceTree = "<group>"; };
+		334455667788990011223344 /* TeziovskyUtilities.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TeziovskyUtilities.entitlements; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		19098EA2A350455486BBB3E0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		7053E6AD45144FC3BE686725 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				34B5C4B0A1734D6E9FABAC79 /* TeziovskyUtilities.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		5982603DBB044DE39769C2B3 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				7BF803B324DB4B12919B1402 /* AppState.swift */,
+				4B67B14C17024B3E8407CCCE /* TeziovskyUtilitiesApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		F93BA27968F545659A7F0432 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				6C7A00AAFB3B4075B2D47ED5 /* MediaItem.swift */,
+				530AEEFA19934A4FA829453C /* OrganizeProgress.swift */,
+				0C3088853AA6439AA0F74AB0 /* PhotoAlbum.swift */,
+				A1B2C3D4E5F6478990ABCDEF0 /* ThumbnailDisplayMode.swift */,
+				B00100000000000000000002 /* AppRoute.swift */,
+				B00100000000000000000010 /* DroneStepModels.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		CF5854CF439F4816937DA449 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				022028CA8C2845F68A209161 /* OrganizeExporter.swift */,
+				9AB1CE809E09479BB2E18552 /* PhotosService.swift */,
+				0C7141389BA741AA8E197C48 /* QuickLookHelper.swift */,
+				F8E91EBDB1C849DBBCB91309 /* ThumbnailLoader.swift */,
+				778899001122334455667788 /* PhotoAssetExporter.swift */,
+				B00100000000000000000005 /* DroneFinalizer.swift */,
+				B00100000000000000000006 /* VideoMetadataTransfer.swift */,
+				B00100000000000000000011 /* MediaMetadataReader.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		C1E0218640A34641AFA10F00 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				45613F36B23F480EA04A4A49 /* AlbumNameFilter.swift */,
+				E5F6A7B8C9D04E1A2B3C4D6F /* AlbumListRowStyle.swift */,
+				610DCC74556F49B4987BC016 /* AppSettings.swift */,
+				990011223344556677889900 /* FileDatePreservation.swift */,
+				BBCCDDEEFF00112233445566 /* SleepAssertion.swift */,
+				B2C3D4E5F6A7488990112234 /* SafeFilename.swift */,
+				D4E5F6A7B8C9499001122335 /* MediaSummary.swift */,
+				F6A7B8C9D0E1499001122337 /* ExportDirectoryAccess.swift */,
+				B00100000000000000000001 /* AppBranding.swift */,
+				B00100000000000000000004 /* DroneFinalizePlan.swift */,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
+		007CBEF38E6D498999500B4B /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				7A80FE1B411B441C8CEB3CD8 /* AlbumSidebarView.swift */,
+				B2C3D4E5F6A7498091A2B3C4 /* MainWindowKeyboardShortcuts.swift */,
+				F4A5B6C7D8E94901A2B3C4D6 /* AlbumNumberKeyboardShortcuts.swift */,
+				C8542DD10E74489281F31F8C /* MediaGridView.swift */,
+				CCE88D550AA147A2A10449DB /* OrganizeProgressView.swift */,
+				0E58F090FFBE4CD68111AA5E /* SettingsView.swift */,
+				223344556677889900112233 /* PhotosAccessViews.swift */,
+				B00100000000000000000007 /* RootView.swift */,
+				B00100000000000000000008 /* HomeView.swift */,
+				B00100000000000000000009 /* PermissionsOnboardingView.swift */,
+				B0010000000000000000000A /* PhotosModeView.swift */,
+				B0010000000000000000000B /* DroneModeView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		7E97D5175DBD4D33AC959FBB /* TeziovskyUtilities */ = {
+			isa = PBXGroup;
+			children = (
+				8CFB453D98264CF289BB3BBF /* Info.plist */,
+				334455667788990011223344 /* TeziovskyUtilities.entitlements */,
+				CCEC6AF34D2A457CA48F3ED4 /* Assets.xcassets */,
+				5982603DBB044DE39769C2B3 /* App */,
+				F93BA27968F545659A7F0432 /* Models */,
+				CF5854CF439F4816937DA449 /* Services */,
+				C1E0218640A34641AFA10F00 /* Utilities */,
+				007CBEF38E6D498999500B4B /* Views */,
+			);
+			path = TeziovskyUtilities;
+			sourceTree = "<group>";
+		};
+		76CB2111043F4E3CAF7CF08C = {
+			isa = PBXGroup;
+			children = (
+				7E97D5175DBD4D33AC959FBB /* TeziovskyUtilities */,
+				7053E6AD45144FC3BE686725 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		DDCA7B284FAE47B894E4F7F3 /* TeziovskyUtilities */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CF23A07885BD4BFD886F45A3 /* Build configuration list for PBXNativeTarget "TeziovskyUtilities" */;
+			buildPhases = (
+				D2FCF6CDCFFA4F5FB37316EE /* Sources */,
+				19098EA2A350455486BBB3E0 /* Frameworks */,
+				6C07445700A54477A31C9EAE /* Resources */,
+				F7A8B9C0D1E24356A7B8C9D2 /* SwiftLint */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TeziovskyUtilities;
+			productName = TeziovskyUtilities;
+			productReference = 34B5C4B0A1734D6E9FABAC79 /* TeziovskyUtilities.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		FA4A3D028F5F4257A58F2621 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+			};
+			buildConfigurationList = 38CB0A3263FD42C08938B9A7 /* Build configuration list for PBXProject "TeziovskyUtilities" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 76CB2111043F4E3CAF7CF08C;
+			packageReferences = (
+				F7A8B9C0D1E24356A7B8C9D0 /* XCRemoteSwiftPackageReference "SwiftLintPlugins" */,
+			);
+			productRefGroup = 7053E6AD45144FC3BE686725 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				DDCA7B284FAE47B894E4F7F3 /* TeziovskyUtilities */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		6C07445700A54477A31C9EAE /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0FF1B5869E37421096AD477E /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		D2FCF6CDCFFA4F5FB37316EE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9C795D2769CD4500B193EF0C /* AppState.swift in Sources */,
+				13420944E3E4445E8A034E05 /* TeziovskyUtilitiesApp.swift in Sources */,
+				166D2A828251492495D9CF73 /* MediaItem.swift in Sources */,
+				16B4F10D882242B684686880 /* OrganizeProgress.swift in Sources */,
+				AAA573756E5843DAA8B4F485 /* PhotoAlbum.swift in Sources */,
+				B1C2D3E4F5A6478990ABCDEF /* ThumbnailDisplayMode.swift in Sources */,
+				4E2AFA3C045C47319CE7EACD /* OrganizeExporter.swift in Sources */,
+				7B93AC732F16455E829ABC2A /* PhotosService.swift in Sources */,
+				D988F41E5889443783213B93 /* QuickLookHelper.swift in Sources */,
+				950A5883EA1547A794907F5F /* ThumbnailLoader.swift in Sources */,
+				667788990011223344556677 /* PhotoAssetExporter.swift in Sources */,
+				43FC5DB48FDF4016A45C899E /* AlbumNameFilter.swift in Sources */,
+				D4E5F6A7B8C94D0A1B2C3D5E /* AlbumListRowStyle.swift in Sources */,
+				C06BBDDEA43E475C929DAC5A /* AppSettings.swift in Sources */,
+				889900112233445566778899 /* FileDatePreservation.swift in Sources */,
+				AABBCCDDEEFF001122334455 /* SleepAssertion.swift in Sources */,
+				E196206AD6D64E458CF84E2F /* AlbumSidebarView.swift in Sources */,
+				C3D4E5F6A7B84990A1B2C3D4 /* MainWindowKeyboardShortcuts.swift in Sources */,
+				E3F4A5B6C7D84990A1B2C3D5 /* AlbumNumberKeyboardShortcuts.swift in Sources */,
+				FDA1FFB081CD4AF180526F7A /* MediaGridView.swift in Sources */,
+				38F287CD62414D72A3E35796 /* OrganizeProgressView.swift in Sources */,
+				7ECD01CA2B604C1290A9B7DA /* SettingsView.swift in Sources */,
+				A1F2B3C4D5E6478990112233 /* SafeFilename.swift in Sources */,
+				C3D4E5F6A7B8499001122334 /* MediaSummary.swift in Sources */,
+				E5F6A7B8C9D0499001122336 /* ExportDirectoryAccess.swift in Sources */,
+				112233445566778899001122 /* PhotosAccessViews.swift in Sources */,
+				A00100000000000000000001 /* AppBranding.swift in Sources */,
+				A00100000000000000000002 /* AppRoute.swift in Sources */,
+				A00100000000000000000010 /* DroneStepModels.swift in Sources */,
+				A00100000000000000000004 /* DroneFinalizePlan.swift in Sources */,
+				A00100000000000000000005 /* DroneFinalizer.swift in Sources */,
+				A00100000000000000000006 /* VideoMetadataTransfer.swift in Sources */,
+				A00100000000000000000011 /* MediaMetadataReader.swift in Sources */,
+				A00100000000000000000007 /* RootView.swift in Sources */,
+				A00100000000000000000008 /* HomeView.swift in Sources */,
+				A00100000000000000000009 /* PermissionsOnboardingView.swift in Sources */,
+				A0010000000000000000000A /* PhotosModeView.swift in Sources */,
+				A0010000000000000000000B /* DroneModeView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		F7A8B9C0D1E24356A7B8C9D2 /* SwiftLint */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = SwiftLint;
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "SWIFT_PACKAGE_DIR=\"${SWIFT_PACKAGE_DIR:-${BUILD_DIR%Build/*}SourcePackages}\"\nSWIFTLINT_CMD=\"$SWIFT_PACKAGE_DIR/artifacts/swiftlintplugins/SwiftLintBinary/SwiftLintBinary.artifactbundle/macos/swiftlint\"\n\nif [[ \"$(uname -m)\" == arm64 ]]; then\n  export PATH=\"/opt/homebrew/bin:$PATH\"\nfi\n\nif test -f \"$SWIFTLINT_CMD\"; then\n  \"$SWIFTLINT_CMD\"\nelif command -v swiftlint >/dev/null 2>&1; then\n  swiftlint\nelse\n  echo \"warning: swiftlint not found — install via Homebrew or resolve SwiftLintPlugins in Xcode\"\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		8E2FE48FAA6D4118B74173A8 /* Debug */ = { isa = XCBuildConfiguration; buildSettings = { ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; COPY_PHASE_STRIP = NO; DEBUG_INFORMATION_FORMAT = dwarf; GCC_DYNAMIC_NO_PIC = NO; GCC_OPTIMIZATION_LEVEL = 0; MACOSX_DEPLOYMENT_TARGET = 14.0; SDKROOT = macosx; SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG; SWIFT_OPTIMIZATION_LEVEL = "-Onone"; }; name = Debug; };
+		3AC4BF0363FF405EBB3FFAA3 /* Release */ = { isa = XCBuildConfiguration; buildSettings = { ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; COPY_PHASE_STRIP = NO; DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym"; MACOSX_DEPLOYMENT_TARGET = 14.0; SDKROOT = macosx; SWIFT_COMPILATION_MODE = wholemodule; SWIFT_OPTIMIZATION_LEVEL = "-O"; }; name = Release; };
+		50F8E5EDF5FC4F1DA671B1DA /* Debug */ = { isa = XCBuildConfiguration; buildSettings = { ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_ENTITLEMENTS = TeziovskyUtilities/TeziovskyUtilities.entitlements; CODE_SIGN_STYLE = Automatic; COMBINE_HIDPI_IMAGES = YES; CURRENT_PROJECT_VERSION = 1; ENABLE_APP_SANDBOX = YES; ENABLE_HARDENED_RUNTIME = YES; ENABLE_USER_SCRIPT_SANDBOXING = NO; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = TeziovskyUtilities/Info.plist; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/../Frameworks"); MARKETING_VERSION = 1.0; PRODUCT_BUNDLE_IDENTIFIER = com.teziovsky.utilities; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_VERSION = 5.0; }; name = Debug; };
+		B09F66805AE74C5DAE319563 /* Release */ = { isa = XCBuildConfiguration; buildSettings = { ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_ENTITLEMENTS = TeziovskyUtilities/TeziovskyUtilities.entitlements; CODE_SIGN_STYLE = Automatic; COMBINE_HIDPI_IMAGES = YES; CURRENT_PROJECT_VERSION = 1; ENABLE_APP_SANDBOX = YES; ENABLE_HARDENED_RUNTIME = YES; ENABLE_USER_SCRIPT_SANDBOXING = NO; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = TeziovskyUtilities/Info.plist; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/../Frameworks"); MARKETING_VERSION = 1.0; PRODUCT_BUNDLE_IDENTIFIER = com.teziovsky.utilities; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_VERSION = 5.0; }; name = Release; };
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		38CB0A3263FD42C08938B9A7 /* Build configuration list for PBXProject "TeziovskyUtilities" */ = { isa = XCConfigurationList; buildConfigurations = (8E2FE48FAA6D4118B74173A8 /* Debug */, 3AC4BF0363FF405EBB3FFAA3 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		CF23A07885BD4BFD886F45A3 /* Build configuration list for PBXNativeTarget "TeziovskyUtilities" */ = { isa = XCConfigurationList; buildConfigurations = (50F8E5EDF5FC4F1DA671B1DA /* Debug */, B09F66805AE74C5DAE319563 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		F7A8B9C0D1E24356A7B8C9D0 /* XCRemoteSwiftPackageReference "SwiftLintPlugins" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SimplyDanny/SwiftLintPlugins";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.63.3;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+	};
+	rootObject = FA4A3D028F5F4257A58F2621 /* Project object */;
+}

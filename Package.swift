@@ -2,32 +2,38 @@
 import PackageDescription
 
 let package = Package(
-    name: "MacPhotoOrganizer",
+    name: "TeziovskyUtilities",
     platforms: [.macOS(.v14)],
     products: [
-        .executable(name: "MacPhotoOrganizer", targets: ["MacPhotoOrganizer"]),
+        .executable(name: "TeziovskyUtilities", targets: ["TeziovskyUtilities"]),
+    ],
+    dependencies: [
+        .package(url: "https://github.com/SimplyDanny/SwiftLintPlugins", from: "0.63.3"),
     ],
     targets: [
         .executableTarget(
-            name: "MacPhotoOrganizer",
-            path: "MacPhotoOrganizer",
+            name: "TeziovskyUtilities",
+            path: "TeziovskyUtilities",
             exclude: [
                 "Info.plist",
                 "Assets.xcassets",
                 "Resources",
-                "MacPhotoOrganizer.entitlements",
+                "TeziovskyUtilities.entitlements",
             ],
             linkerSettings: [
                 .linkedFramework("Photos"),
                 .linkedFramework("AppKit"),
                 .linkedFramework("QuickLookUI"),
                 .linkedFramework("Quartz"),
+            ],
+            plugins: [
+                .plugin(name: "SwiftLintBuildToolPlugin", package: "SwiftLintPlugins"),
             ]
         ),
         .testTarget(
-            name: "MacPhotoOrganizerTests",
-            dependencies: ["MacPhotoOrganizer"],
-            path: "Tests/MacPhotoOrganizerTests"
+            name: "TeziovskyUtilitiesTests",
+            dependencies: ["TeziovskyUtilities"],
+            path: "Tests/TeziovskyUtilitiesTests"
         ),
     ]
 )
