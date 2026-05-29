@@ -217,6 +217,7 @@
 				D2FCF6CDCFFA4F5FB37316EE /* Sources */,
 				19098EA2A350455486BBB3E0 /* Frameworks */,
 				6C07445700A54477A31C9EAE /* Resources */,
+				F7A8B9C0D1E24356A7B8C9D2 /* SwiftLint */,
 			);
 			buildRules = (
 			);
@@ -246,6 +247,9 @@
 				Base,
 			);
 			mainGroup = 76CB2111043F4E3CAF7CF08C;
+			packageReferences = (
+				F7A8B9C0D1E24356A7B8C9D0 /* XCRemoteSwiftPackageReference "SwiftLintPlugins" */,
+			);
 			productRefGroup = 7053E6AD45144FC3BE686725 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -314,17 +318,51 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		F7A8B9C0D1E24356A7B8C9D2 /* SwiftLint */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = SwiftLint;
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "SWIFT_PACKAGE_DIR=\"${SWIFT_PACKAGE_DIR:-${BUILD_DIR%Build/*}SourcePackages}\"\nSWIFTLINT_CMD=\"$SWIFT_PACKAGE_DIR/artifacts/swiftlintplugins/SwiftLintBinary/SwiftLintBinary.artifactbundle/macos/swiftlint\"\n\nif [[ \"$(uname -m)\" == arm64 ]]; then\n  export PATH=\"/opt/homebrew/bin:$PATH\"\nfi\n\nif test -f \"$SWIFTLINT_CMD\"; then\n  \"$SWIFTLINT_CMD\"\nelif command -v swiftlint >/dev/null 2>&1; then\n  swiftlint\nelse\n  echo \"warning: swiftlint not found — install via Homebrew or resolve SwiftLintPlugins in Xcode\"\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin XCBuildConfiguration section */
 		8E2FE48FAA6D4118B74173A8 /* Debug */ = { isa = XCBuildConfiguration; buildSettings = { ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; COPY_PHASE_STRIP = NO; DEBUG_INFORMATION_FORMAT = dwarf; GCC_DYNAMIC_NO_PIC = NO; GCC_OPTIMIZATION_LEVEL = 0; MACOSX_DEPLOYMENT_TARGET = 14.0; SDKROOT = macosx; SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG; SWIFT_OPTIMIZATION_LEVEL = "-Onone"; }; name = Debug; };
 		3AC4BF0363FF405EBB3FFAA3 /* Release */ = { isa = XCBuildConfiguration; buildSettings = { ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; COPY_PHASE_STRIP = NO; DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym"; MACOSX_DEPLOYMENT_TARGET = 14.0; SDKROOT = macosx; SWIFT_COMPILATION_MODE = wholemodule; SWIFT_OPTIMIZATION_LEVEL = "-O"; }; name = Release; };
-		50F8E5EDF5FC4F1DA671B1DA /* Debug */ = { isa = XCBuildConfiguration; buildSettings = { ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_ENTITLEMENTS = MacPhotoOrganizer/MacPhotoOrganizer.entitlements; CODE_SIGN_STYLE = Automatic; COMBINE_HIDPI_IMAGES = YES; CURRENT_PROJECT_VERSION = 1; ENABLE_APP_SANDBOX = YES; ENABLE_HARDENED_RUNTIME = YES; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = MacPhotoOrganizer/Info.plist; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/../Frameworks"); MARKETING_VERSION = 1.0; PRODUCT_BUNDLE_IDENTIFIER = com.teziovsky.media-organizer; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_VERSION = 5.0; }; name = Debug; };
-		B09F66805AE74C5DAE319563 /* Release */ = { isa = XCBuildConfiguration; buildSettings = { ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_ENTITLEMENTS = MacPhotoOrganizer/MacPhotoOrganizer.entitlements; CODE_SIGN_STYLE = Automatic; COMBINE_HIDPI_IMAGES = YES; CURRENT_PROJECT_VERSION = 1; ENABLE_APP_SANDBOX = YES; ENABLE_HARDENED_RUNTIME = YES; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = MacPhotoOrganizer/Info.plist; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/../Frameworks"); MARKETING_VERSION = 1.0; PRODUCT_BUNDLE_IDENTIFIER = com.teziovsky.media-organizer; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_VERSION = 5.0; }; name = Release; };
+		50F8E5EDF5FC4F1DA671B1DA /* Debug */ = { isa = XCBuildConfiguration; buildSettings = { ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_ENTITLEMENTS = MacPhotoOrganizer/MacPhotoOrganizer.entitlements; CODE_SIGN_STYLE = Automatic; COMBINE_HIDPI_IMAGES = YES; CURRENT_PROJECT_VERSION = 1; ENABLE_APP_SANDBOX = YES; ENABLE_HARDENED_RUNTIME = YES; ENABLE_USER_SCRIPT_SANDBOXING = NO; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = MacPhotoOrganizer/Info.plist; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/../Frameworks"); MARKETING_VERSION = 1.0; PRODUCT_BUNDLE_IDENTIFIER = com.teziovsky.media-organizer; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_VERSION = 5.0; }; name = Debug; };
+		B09F66805AE74C5DAE319563 /* Release */ = { isa = XCBuildConfiguration; buildSettings = { ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_ENTITLEMENTS = MacPhotoOrganizer/MacPhotoOrganizer.entitlements; CODE_SIGN_STYLE = Automatic; COMBINE_HIDPI_IMAGES = YES; CURRENT_PROJECT_VERSION = 1; ENABLE_APP_SANDBOX = YES; ENABLE_HARDENED_RUNTIME = YES; ENABLE_USER_SCRIPT_SANDBOXING = NO; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = MacPhotoOrganizer/Info.plist; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/../Frameworks"); MARKETING_VERSION = 1.0; PRODUCT_BUNDLE_IDENTIFIER = com.teziovsky.media-organizer; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_VERSION = 5.0; }; name = Release; };
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
 		38CB0A3263FD42C08938B9A7 /* Build configuration list for PBXProject "MacPhotoOrganizer" */ = { isa = XCConfigurationList; buildConfigurations = (8E2FE48FAA6D4118B74173A8 /* Debug */, 3AC4BF0363FF405EBB3FFAA3 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
 		CF23A07885BD4BFD886F45A3 /* Build configuration list for PBXNativeTarget "MacPhotoOrganizer" */ = { isa = XCConfigurationList; buildConfigurations = (50F8E5EDF5FC4F1DA671B1DA /* Debug */, B09F66805AE74C5DAE319563 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		F7A8B9C0D1E24356A7B8C9D0 /* XCRemoteSwiftPackageReference "SwiftLintPlugins" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SimplyDanny/SwiftLintPlugins";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.63.3;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 	};
 	rootObject = FA4A3D028F5F4257A58F2621 /* Project object */;
 }
