@@ -18,6 +18,15 @@ enum FileDatePreservation {
         return asset.creationDate ?? asset.modificationDate ?? Date()
     }
 
+    /// Copies the source file's creation (birth) and modification dates onto the destination file.
+    /// Used by the drone finalize step so a compressed file inherits its original's Finder dates.
+    static func copyFileDates(from sourceURL: URL, to destinationURL: URL) throws {
+        let values = try sourceURL.resourceValues(forKeys: [.creationDateKey, .contentModificationDateKey])
+        let created = values.creationDate ?? values.contentModificationDate ?? Date()
+        let modified = values.contentModificationDate ?? created
+        try applyFileDates(to: destinationURL, created: created, modified: modified)
+    }
+
     private static func readExifOriginalDate(from url: URL) -> Date? {
         guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
               let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any] else {

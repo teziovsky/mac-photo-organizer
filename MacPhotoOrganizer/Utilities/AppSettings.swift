@@ -10,6 +10,9 @@ enum AppSettings {
     private static let defaultMediaGridColumnCount = 6
     private static let exportDirectoryBookmarkKey = "exportDirectoryBookmark"
     private static let exportDirectoryPathKey = "exportDirectoryPath"
+    private static let droneCompressedSuffixKey = "droneCompressedSuffix"
+    private static let droneRawDirectoryNameKey = "droneRawDirectoryName"
+    private static let droneExportDirectoryNameKey = "droneExportDirectoryName"
 
     static var mediaGridColumnCount: Int {
         get {
@@ -62,6 +65,40 @@ enum AppSettings {
     static var exportDirectoryPath: String? {
         get { UserDefaults.standard.string(forKey: exportDirectoryPathKey) }
         set { UserDefaults.standard.set(newValue, forKey: exportDirectoryPathKey) }
+    }
+
+    // MARK: - Drone finalize
+
+    static var droneCompressedSuffix: String {
+        get {
+            let value = UserDefaults.standard.string(forKey: droneCompressedSuffixKey)
+            return (value?.isEmpty == false) ? value! : DroneFinalizeConfig.default.compressedSuffix
+        }
+        set { UserDefaults.standard.set(newValue, forKey: droneCompressedSuffixKey) }
+    }
+
+    static var droneRawDirectoryName: String {
+        get {
+            let value = UserDefaults.standard.string(forKey: droneRawDirectoryNameKey)
+            return (value?.isEmpty == false) ? value! : DroneFinalizeConfig.default.rawDirectoryName
+        }
+        set { UserDefaults.standard.set(newValue, forKey: droneRawDirectoryNameKey) }
+    }
+
+    static var droneExportDirectoryName: String {
+        get {
+            let value = UserDefaults.standard.string(forKey: droneExportDirectoryNameKey)
+            return (value?.isEmpty == false) ? value! : DroneFinalizeConfig.default.exportDirectoryName
+        }
+        set { UserDefaults.standard.set(newValue, forKey: droneExportDirectoryNameKey) }
+    }
+
+    static var droneFinalizeConfig: DroneFinalizeConfig {
+        DroneFinalizeConfig(
+            compressedSuffix: droneCompressedSuffix,
+            rawDirectoryName: droneRawDirectoryName,
+            exportDirectoryName: droneExportDirectoryName
+        )
     }
 
     static var exportDirectoryURL: URL? {

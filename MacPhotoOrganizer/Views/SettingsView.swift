@@ -5,6 +5,9 @@ struct SettingsView: View {
     @EnvironmentObject private var appState: AppState
     @State private var excludedSuffix: String = AppSettings.excludedAlbumSuffix
     @State private var omittedAlbumIDs: Set<String> = AppSettings.omittedFromOrganizeAlbumIDs
+    @State private var droneCompressedSuffix: String = AppSettings.droneCompressedSuffix
+    @State private var droneRawDirectoryName: String = AppSettings.droneRawDirectoryName
+    @State private var droneExportDirectoryName: String = AppSettings.droneExportDirectoryName
 
     var body: some View {
         TabView {
@@ -17,11 +20,23 @@ struct SettingsView: View {
                 .tabItem {
                     Label("Albums", systemImage: "photo.on.rectangle.angled")
                 }
+
+            DroneSettingsTab(
+                compressedSuffix: $droneCompressedSuffix,
+                rawDirectoryName: $droneRawDirectoryName,
+                exportDirectoryName: $droneExportDirectoryName
+            )
+            .tabItem {
+                Label("Drone", systemImage: "airplane")
+            }
         }
         .frame(width: 520, height: 560)
         .onAppear {
             excludedSuffix = AppSettings.excludedAlbumSuffix
             omittedAlbumIDs = AppSettings.omittedFromOrganizeAlbumIDs
+            droneCompressedSuffix = AppSettings.droneCompressedSuffix
+            droneRawDirectoryName = AppSettings.droneRawDirectoryName
+            droneExportDirectoryName = AppSettings.droneExportDirectoryName
             loadAlbumsIfNeeded()
         }
         .onChange(of: omittedAlbumIDs) { _, newValue in
@@ -29,6 +44,9 @@ struct SettingsView: View {
         }
         .onDisappear {
             AppSettings.excludedAlbumSuffix = excludedSuffix
+            AppSettings.droneCompressedSuffix = droneCompressedSuffix
+            AppSettings.droneRawDirectoryName = droneRawDirectoryName
+            AppSettings.droneExportDirectoryName = droneExportDirectoryName
             appState.syncOmittedFromOrganizeAlbums(omittedAlbumIDs)
             Task { await appState.photosService.reloadAlbums() }
         }
@@ -82,6 +100,36 @@ private struct GeneralSettingsTab: View {
         if panel.runModal() == .OK, let url = panel.url {
             appState.setExportDirectory(url)
         }
+    }
+}
+
+private struct DroneSettingsTab: View {
+    @Binding var compressedSuffix: String
+    @Binding var rawDirectoryName: String
+    @Binding var exportDirectoryName: String
+
+    var body: some View {
+        Form {
+            Section("Compressed files") {
+                TextField("Compressed suffix", text: $compressedSuffix)
+                    .help("Suffix HandBrake adds to compressed files; removed during finalize.")
+                Text("Default: _COMPRESSED")
+                    .font(AlbumListRowStyle.detailFont)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Project folders") {
+                TextField("Raw folder name", text: $rawDirectoryName)
+                    .help("Subfolder holding raw source media; removed during finalize.")
+                TextField("Export folder name", text: $exportDirectoryName)
+                    .help("Subfolder holding graded/compressed media; flattened during finalize.")
+                Text("Defaults: raw, export")
+                    .font(AlbumListRowStyle.detailFont)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+        .padding()
     }
 }
 
