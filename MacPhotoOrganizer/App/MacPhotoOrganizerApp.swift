@@ -7,7 +7,7 @@ struct MacPhotoOrganizerApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootView()
                 .environmentObject(appState)
                 .frame(minWidth: 800, minHeight: 700)
                 .task {

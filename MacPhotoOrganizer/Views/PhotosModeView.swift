@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct ContentView: View {
+struct PhotosModeView: View {
     @EnvironmentObject private var appState: AppState
 
     var body: some View {
@@ -27,6 +27,15 @@ struct ContentView: View {
         .onExitCommand(perform: handleEscape)
         .navigationTitle(mainToolbarTitle)
         .toolbar {
+            ToolbarItem(placement: .navigation) {
+                Button {
+                    appState.goHome()
+                } label: {
+                    Label("Home", systemImage: "house")
+                }
+                .help("Back to the home screen")
+            }
+
             albumNavigationHeader
             if appState.selectedAlbum != nil {
                 ToolbarItemGroup(placement: .primaryAction) {
@@ -115,7 +124,7 @@ struct ContentView: View {
     }
 
     private var mainToolbarTitle: String {
-        appState.selectedAlbum == nil ? "Photos Organizer" : ""
+        appState.selectedAlbum == nil ? AppBranding.photosModeTitle : ""
     }
 
     @ToolbarContentBuilder
@@ -173,7 +182,10 @@ struct ContentView: View {
             QuickLookHelper.closePreview()
             return
         }
-        guard appState.selectedAlbum != nil else { return }
+        guard appState.selectedAlbum != nil else {
+            appState.goHome()
+            return
+        }
         Task { await appState.selectAlbum(nil) }
     }
 }

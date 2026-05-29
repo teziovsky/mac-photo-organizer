@@ -53,6 +53,21 @@ final class PhotosService: NSObject, ObservableObject {
         await reloadAlbums()
     }
 
+    /// Reads the current authorization status without prompting (so the app can show its
+    /// own explainer before triggering the system dialog). Reloads albums if already authorized.
+    func refreshAuthorizationStatus() async {
+        authorizationState = mapStatus(PHPhotoLibrary.authorizationStatus(for: .readWrite))
+        registerChangeObserverIfNeeded()
+        guard canAccessLibrary else { return }
+        if albums.isEmpty {
+            await reloadAlbums()
+        }
+    }
+
+    var needsAuthorizationPrompt: Bool {
+        authorizationState == .notDetermined
+    }
+
     var canAccessLibrary: Bool {
         authorizationState == .authorized
     }

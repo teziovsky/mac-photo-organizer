@@ -12,11 +12,14 @@ enum MediaGridMoveDirection: Sendable {
 final class AppState: ObservableObject {
     let photosService = PhotosService()
     let organizeExporter = OrganizeExporter()
+    let droneFinalizer = DroneFinalizer()
 
     private var cancellables = Set<AnyCancellable>()
     private var albumLoadGeneration = 0
     private var currentAlbumAssets: [String: PHAsset] = [:]
 
+    @Published var route: AppRoute = .home
+    @Published var hasDismissedPermissionsOnboarding = false
     @Published var selectedAlbum: PhotoAlbum?
     @Published var mediaItems: [MediaItem] = []
     @Published var isLoadingMedia = false
@@ -41,10 +44,47 @@ final class AppState: ObservableObject {
         organizeExporter.objectWillChange
             .sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &cancellables)
+        droneFinalizer.objectWillChange
+            .sink { [weak self] _ in self?.objectWillChange.send() }
+            .store(in: &cancellables)
     }
 
     func bootstrap() async {
+        await photosService.refreshAuthorizationStatus()
+    }
+
+    // MARK: - Launch onboarding
+
+    /// True until the user grants/denies Photos access or chooses to continue without it.
+    var showsPermissionsOnboarding: Bool {
+        photosService.needsAuthorizationPrompt && !hasDismissedPermissionsOnboarding
+    }
+
+    /// Triggers the system Photos permission dialog, then proceeds to the home screen.
+    func requestPhotosAccess() async {
         await photosService.requestAuthorization()
+        hasDismissedPermissionsOnboarding = true
+    }
+
+    /// Proceeds without granting Photos access (drone mode needs no Photos permission).
+    func continueWithoutPhotosAccess() {
+        hasDismissedPermissionsOnboarding = true
+    }
+
+    // MARK: - Routing
+
+    func goHome() {
+        route = .home
+        Task { await selectAlbum(nil) }
+    }
+
+    func enterPhotosMode() {
+        route = .photos
+        Task { await photosService.refreshAuthorizationStatus() }
+    }
+
+    func enterDroneMode() {
+        route = .drone
     }
 
     func asset(for item: MediaItem) -> PHAsset? {
