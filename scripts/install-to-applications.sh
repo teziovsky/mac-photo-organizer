@@ -5,7 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
 SOURCE_APP_NAME="MacPhotoOrganizer"
-DEST_APP_NAME="Photos Organizer"
+DEST_APP_NAME="Media Organizer"
 BUILD_APP="build/DerivedData/Build/Products/Release/${SOURCE_APP_NAME}.app"
 INSTALL_PATH="/Applications/${DEST_APP_NAME}.app"
 OPEN_AFTER=false

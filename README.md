@@ -1,19 +1,40 @@
-# Photos Organizer
+# Media Organizer
 
-Native macOS app for reviewing Photos albums and exporting them to a folder.
+Native macOS app for organizing media. From a home screen you pick a workflow:
+
+- **Organize Photos** — review iCloud Photos albums and export them to a folder.
+- **Organize Drone Footage** — finalize a graded project folder (fully native, no external tools).
+
+> The internal Xcode target/scheme is still `MacPhotoOrganizer`; only the user-facing app name and bundle ID changed.
 
 ## Features
+
+### Organize Photos
 
 - Browse non-empty albums (hide albums ending with a configurable suffix, default `_zgrane`)
 - Lazy thumbnail **views** for large albums (PhotoKit loads item metadata per album; grid rows render on demand)
 - Choose an export folder and **Organize** to copy originals with progress and cancel
 - Quick Look preview for the selected item (⌘Y)
 
+### Organize Drone Footage
+
+Point the app at a project folder that contains a `raw/` and an `export/` subfolder (names configurable in Settings → Drone). The finalize action runs fully natively:
+
+1. For every compressed file in `export/` (name ending with the configurable suffix, default `_COMPRESSED`), match its source original, copy the source's creation/modification dates (and, for video, best-effort QuickTime creation date / location via AVFoundation passthrough) onto the compressed file, delete the source, and rename the compressed file to drop the suffix.
+2. Move the remaining images and videos from `export/` up one level into the project root.
+3. Remove the now-empty `raw/` and `export/` folders.
+
+The result is the finished media sitting directly in the project folder with no subdirectories. A preview lists every planned action before anything is changed (the operation deletes files). Video compression itself stays in HandBrake — this app handles the post-compression finalize.
+
+### First launch
+
+On first launch (before Photos access is granted) the app shows a short explainer with a button to grant Photos access. Drone footage organizing needs no Photos permission, so you can continue without granting it.
+
 ## Requirements
 
 - macOS 14+
 - Xcode 15+
-- Photos library access
+- Photos library access (only for the Organize Photos workflow)
 
 ## Build & run
 
@@ -35,7 +56,7 @@ Select the **MacPhotoOrganizer** scheme and press **Run** (⌘R).
 | `npm run run` | Debug build and launch the app |
 | `npm run build:production` | Release build (optimized) |
 | `npm run release` | Release build, copy `.app` to `dist/`, create `dist/MacPhotoOrganizer-macOS.zip` |
-| `npm run install` | Release build and install to `/Applications/MacPhotoOrganizer.app` |
+| `npm run install` | Release build and install to `/Applications/Media Organizer.app` |
 | `npm run install:open` | Same as `install`, then launch the app |
 
 ```bash
@@ -58,7 +79,7 @@ Set your development team in Xcode for signed release builds outside this repo (
 
 ## App identity
 
-- **Bundle ID:** `com.teziovsky.mac-photo-organizer`
+- **Bundle ID:** `com.teziovsky.media-organizer`
 - **Icons:** `MacPhotoOrganizer/Assets.xcassets/AppIcon.appiconset` (also copied under `MacPhotoOrganizer/Resources/AppIcon/`)
 
 ## Settings
@@ -66,6 +87,8 @@ Set your development team in Xcode for signed release builds outside this repo (
 - **Excluded album suffix** — albums whose names end with this suffix are hidden (default: `_zgrane`)
 - **Omit from Organize** — hide albums from the sidebar and disable Organize for them
 - **Export folder** — destination for the Organize action
+- **Drone → Compressed suffix** — suffix HandBrake adds to compressed files (default: `_COMPRESSED`)
+- **Drone → Raw / Export folder names** — subfolder names used by the drone finalize step (defaults: `raw`, `export`)
 
 ## Notes
 

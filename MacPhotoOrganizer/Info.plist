@@ -11,9 +11,9 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleDisplayName</key>
-	<string>Photos Organizer</string>
+	<string>Media Organizer</string>
 	<key>CFBundleName</key>
-	<string>Photos Organizer</string>
+	<string>Media Organizer</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.photography</string>
 	<key>CFBundlePackageType</key>
@@ -27,7 +27,7 @@
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2026 teziovsky. All rights reserved.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Photos Organizer needs access to your Photos library to list albums, show thumbnails, export media to a folder, and move items between albums in your library.</string>
+	<string>Media Organizer needs access to your Photos library to list albums, show thumbnails, export media to a folder, and move items between albums in your library.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 </dict>

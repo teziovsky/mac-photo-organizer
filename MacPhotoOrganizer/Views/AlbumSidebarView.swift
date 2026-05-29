@@ -15,7 +15,7 @@ struct AlbumSidebarView: View {
             case .denied, .restricted:
                 PhotosAccessUnavailableView(
                     title: "Photos Access Required",
-                    description: "Allow Photos Organizer to access your Photos library in System Settings."
+                    description: "Allow \(AppBranding.appName) to access your Photos library in System Settings."
                 )
             }
         }
