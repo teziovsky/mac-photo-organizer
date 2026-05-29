@@ -2,23 +2,23 @@
 import PackageDescription
 
 let package = Package(
-    name: "MacPhotoOrganizer",
+    name: "MediaOrganizer",
     platforms: [.macOS(.v14)],
     products: [
-        .executable(name: "MacPhotoOrganizer", targets: ["MacPhotoOrganizer"]),
+        .executable(name: "MediaOrganizer", targets: ["MediaOrganizer"]),
     ],
     dependencies: [
         .package(url: "https://github.com/SimplyDanny/SwiftLintPlugins", from: "0.63.3"),
     ],
     targets: [
         .executableTarget(
-            name: "MacPhotoOrganizer",
-            path: "MacPhotoOrganizer",
+            name: "MediaOrganizer",
+            path: "MediaOrganizer",
             exclude: [
                 "Info.plist",
                 "Assets.xcassets",
                 "Resources",
-                "MacPhotoOrganizer.entitlements",
+                "MediaOrganizer.entitlements",
             ],
             linkerSettings: [
                 .linkedFramework("Photos"),
@@ -31,9 +31,9 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "MacPhotoOrganizerTests",
-            dependencies: ["MacPhotoOrganizer"],
-            path: "Tests/MacPhotoOrganizerTests"
+            name: "MediaOrganizerTests",
+            dependencies: ["MediaOrganizer"],
+            path: "Tests/MediaOrganizerTests"
         ),
     ]
 )

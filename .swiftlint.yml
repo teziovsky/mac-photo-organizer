@@ -2,7 +2,7 @@
 # Run: npm run lint  (or build in Xcode after adding SwiftLintPlugins)
 
 included:
-  - MacPhotoOrganizer
+  - MediaOrganizer
   - Tests
 
 excluded:

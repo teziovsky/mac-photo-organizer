@@ -4,7 +4,7 @@ import Foundation
 ///
 /// To rename the app, update the canonical name in these spots (this file derives
 /// the runtime name from Info.plist, so most UI updates automatically):
-///   - `MacPhotoOrganizer/Info.plist` (`CFBundleDisplayName` / `CFBundleName`)
+///   - `MediaOrganizer/Info.plist` (`CFBundleDisplayName` / `CFBundleName`)
 ///   - `scripts/install-to-applications.sh` (`DEST_APP_NAME`)
 ///   - `README.md` and `package.json`
 enum AppBranding {

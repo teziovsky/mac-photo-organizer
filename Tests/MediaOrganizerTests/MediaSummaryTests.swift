@@ -1,5 +1,5 @@
 import XCTest
-@testable import MacPhotoOrganizer
+@testable import MediaOrganizer
 
 final class MediaSummaryTests: XCTestCase {
     func testSummaryFromCounts() {

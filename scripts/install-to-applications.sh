@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-SOURCE_APP_NAME="MacPhotoOrganizer"
+SOURCE_APP_NAME="MediaOrganizer"
 DEST_APP_NAME="Media Organizer"
 BUILD_APP="build/DerivedData/Build/Products/Release/${SOURCE_APP_NAME}.app"
 INSTALL_PATH="/Applications/${DEST_APP_NAME}.app"
@@ -42,8 +42,8 @@ done
 
 echo "Building ${DEST_APP_NAME} (Release)..."
 xcodebuild \
-	-project MacPhotoOrganizer.xcodeproj \
-	-scheme MacPhotoOrganizer \
+	-project MediaOrganizer.xcodeproj \
+	-scheme MediaOrganizer \
 	-configuration Release \
 	-derivedDataPath build/DerivedData \
 	build \

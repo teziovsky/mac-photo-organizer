@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 
 @main
-struct MacPhotoOrganizerApp: App {
+struct MediaOrganizerApp: App {
     @StateObject private var appState = AppState()
 
     var body: some Scene {
@@ -22,7 +22,7 @@ struct MacPhotoOrganizerApp: App {
                     appState.toggleSidebarVisibility()
                 }
             }
-            MacPhotoOrganizerAlbumCommands(appState: appState)
+            MediaOrganizerAlbumCommands(appState: appState)
             CommandGroup(after: .sidebar) {
                 Button("Refresh Albums") {
                     Task { await appState.photosService.reloadAlbums() }
@@ -65,7 +65,7 @@ struct MacPhotoOrganizerApp: App {
     }
 }
 
-private struct MacPhotoOrganizerAlbumCommands: Commands {
+private struct MediaOrganizerAlbumCommands: Commands {
     @ObservedObject var appState: AppState
 
     var body: some Commands {

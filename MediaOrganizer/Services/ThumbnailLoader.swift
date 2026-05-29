@@ -14,7 +14,7 @@ actor ThumbnailLoader {
 
     private var cacheRoot: URL {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        return appSupport.appendingPathComponent("MacPhotoOrganizer/Thumbnails", isDirectory: true)
+        return appSupport.appendingPathComponent("MediaOrganizer/Thumbnails", isDirectory: true)
     }
 
     func cachedImage(for itemID: String) -> NSImage? {

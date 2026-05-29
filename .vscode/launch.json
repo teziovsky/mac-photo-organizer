@@ -5,20 +5,20 @@
       "request": "launch",
       "args": [],
       "cwd": "${workspaceFolder:mac-photo-organizer}",
-      "name": "Debug MacPhotoOrganizer",
-      "target": "MacPhotoOrganizer",
+      "name": "Debug MediaOrganizer",
+      "target": "MediaOrganizer",
       "configuration": "debug",
-      "preLaunchTask": "swift: Build Debug MacPhotoOrganizer"
+      "preLaunchTask": "swift: Build Debug MediaOrganizer"
     },
     {
       "type": "swift",
       "request": "launch",
       "args": [],
       "cwd": "${workspaceFolder:mac-photo-organizer}",
-      "name": "Release MacPhotoOrganizer",
-      "target": "MacPhotoOrganizer",
+      "name": "Release MediaOrganizer",
+      "target": "MediaOrganizer",
       "configuration": "release",
-      "preLaunchTask": "swift: Build Release MacPhotoOrganizer"
+      "preLaunchTask": "swift: Build Release MediaOrganizer"
     }
   ]
 }
