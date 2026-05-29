@@ -249,10 +249,15 @@ private struct DroneMergeStepView: View {
     let statusMessage: String?
     let action: () -> Void
 
+    private var description: String {
+        "Copy each original's creation/modification dates and (for video) its container metadata "
+            + "onto the matching compressed file. Nothing is deleted in this step."
+    }
+
     var body: some View {
         DroneStepContainer(
             step: .merge,
-            description: "Copy each original's creation/modification dates and (for video) its container metadata onto the matching compressed file. Nothing is deleted in this step.",
+            description: description,
             isRunning: isRunning,
             statusMessage: statusMessage,
             actionTitle: pairs.isEmpty ? "Continue" : "Merge",
@@ -367,10 +372,15 @@ private struct DroneCleanupStepView: View {
     let statusMessage: String?
     let action: () -> Void
 
+    private var description: String {
+        "Move each original to the Trash and remove the “\(config.normalizedSuffix)” suffix "
+            + "from the compressed file names."
+    }
+
     var body: some View {
         DroneStepContainer(
             step: .cleanup,
-            description: "Move each original to the Trash and remove the “\(config.normalizedSuffix)” suffix from the compressed file names.",
+            description: description,
             isRunning: isRunning,
             statusMessage: statusMessage,
             actionTitle: DroneFinalizeStep.cleanup.actionTitle,
@@ -383,7 +393,9 @@ private struct DroneCleanupStepView: View {
                     title: "Delete original → rename compressed",
                     icon: "trash",
                     tint: .red,
-                    items: (plan?.matchedPairs ?? []).map { "\($0.sourceName)  →  Trash,  \($0.compressedName)  →  \($0.finalName)" }
+                    items: (plan?.matchedPairs ?? []).map {
+                        "\($0.sourceName)  →  Trash,  \($0.compressedName)  →  \($0.finalName)"
+                    }
                 )
                 DroneFileList(
                     title: "Rename (no original)",
@@ -405,10 +417,15 @@ private struct DroneFlattenStepView: View {
     let statusMessage: String?
     let action: () -> Void
 
+    private var description: String {
+        "Move the finished media into the project folder, then move the “\(config.rawDirectoryName)” and "
+            + "“\(config.exportDirectoryName)” folders to the Trash, leaving a flat project folder."
+    }
+
     var body: some View {
         DroneStepContainer(
             step: .flatten,
-            description: "Move the finished media up into the project folder, then move the “\(config.rawDirectoryName)” and “\(config.exportDirectoryName)” folders to the Trash. The result is a flat project folder.",
+            description: description,
             isRunning: isRunning,
             statusMessage: statusMessage,
             actionTitle: DroneFinalizeStep.flatten.actionTitle,
@@ -440,13 +457,18 @@ private struct DroneDoneStepView: View {
     let projectPath: String?
     let onChooseAnother: () -> Void
 
+    private var description: String {
+        "The project folder now holds the finished media with no subfolders. "
+            + "Use Go Back to undo the last step, or choose another project."
+    }
+
     var body: some View {
         GroupBox {
             VStack(alignment: .leading, spacing: 14) {
                 Label("Finished", systemImage: "checkmark.seal.fill")
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(.green)
-                Text("The project folder now holds the finished media with no subfolders. Use Go Back to undo the last step, or choose another project.")
+                Text(description)
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
