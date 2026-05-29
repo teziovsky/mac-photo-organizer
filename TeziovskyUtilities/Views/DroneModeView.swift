@@ -364,15 +364,19 @@ private struct MetadataColumn: View {
     }
 
     private func metadataRow(_ label: String, _ value: String, newValue: String? = nil) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 6) {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
             Text(label)
                 .font(.caption)
                 .foregroundStyle(.secondary)
-                .frame(width: 70, alignment: .leading)
+                .fixedSize()
+            Spacer(minLength: 8)
             valueText(current: value, newValue: newValue)
                 .font(.caption.monospaced())
-                .lineLimit(2)
+                .lineLimit(1)
+                .minimumScaleFactor(0.55)
+                .multilineTextAlignment(.trailing)
         }
+        .frame(maxWidth: .infinity)
     }
 
     private func valueText(current: String, newValue: String?) -> Text {
@@ -571,8 +575,8 @@ private struct DroneNotesBox: View {
 enum DroneFormat {
     private static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .short
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd HH:mm"
         return formatter
     }()
 
