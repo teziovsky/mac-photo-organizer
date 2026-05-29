@@ -1,5 +1,5 @@
 import XCTest
-@testable import MediaOrganizer
+@testable import TeziovskyUtilities
 
 final class AlbumNameFilterTests: XCTestCase {
     func testIncludesAlbumWithoutSuffix() {

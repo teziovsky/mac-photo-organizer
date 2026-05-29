@@ -39,7 +39,7 @@ enum QuickLookHelper {
         }
 
         let tempDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("MediaOrganizer-QuickLook", isDirectory: true)
+            .appendingPathComponent("TeziovskyUtilities-QuickLook", isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
         pruneTempExports(keeping: Array(tempExports.keys))
 
@@ -75,7 +75,7 @@ enum QuickLookHelper {
         }
 
         let tempDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("MediaOrganizer-QuickLook", isDirectory: true)
+            .appendingPathComponent("TeziovskyUtilities-QuickLook", isDirectory: true)
         guard let contents = try? FileManager.default.contentsOfDirectory(at: tempDir, includingPropertiesForKeys: nil) else {
             return
         }

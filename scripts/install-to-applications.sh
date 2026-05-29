@@ -4,8 +4,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-SOURCE_APP_NAME="MediaOrganizer"
-DEST_APP_NAME="Media Organizer"
+SOURCE_APP_NAME="TeziovskyUtilities"
+DEST_APP_NAME="Teziovsky Utilities"
 BUILD_APP="build/DerivedData/Build/Products/Release/${SOURCE_APP_NAME}.app"
 INSTALL_PATH="/Applications/${DEST_APP_NAME}.app"
 OPEN_AFTER=false
@@ -42,8 +42,8 @@ done
 
 echo "Building ${DEST_APP_NAME} (Release)..."
 xcodebuild \
-	-project MediaOrganizer.xcodeproj \
-	-scheme MediaOrganizer \
+	-project TeziovskyUtilities.xcodeproj \
+	-scheme TeziovskyUtilities \
 	-configuration Release \
 	-derivedDataPath build/DerivedData \
 	build \

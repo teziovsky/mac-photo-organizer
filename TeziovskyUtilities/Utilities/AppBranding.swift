@@ -4,12 +4,12 @@ import Foundation
 ///
 /// To rename the app, update the canonical name in these spots (this file derives
 /// the runtime name from Info.plist, so most UI updates automatically):
-///   - `MediaOrganizer/Info.plist` (`CFBundleDisplayName` / `CFBundleName`)
+///   - `TeziovskyUtilities/Info.plist` (`CFBundleDisplayName` / `CFBundleName`)
 ///   - `scripts/install-to-applications.sh` (`DEST_APP_NAME`)
 ///   - `README.md` and `package.json`
 enum AppBranding {
     /// Hardcoded fallback used only when Info.plist is unavailable (e.g. SPM CLI builds).
-    static let fallbackAppName = "Media Organizer"
+    static let fallbackAppName = "Teziovsky Utilities"
 
     /// Canonical app name, read from Info.plist so the displayed name has one source.
     static let appName: String =

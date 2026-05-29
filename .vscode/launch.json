@@ -5,20 +5,20 @@
       "request": "launch",
       "args": [],
       "cwd": "${workspaceFolder:mac-photo-organizer}",
-      "name": "Debug MediaOrganizer",
-      "target": "MediaOrganizer",
+      "name": "Debug TeziovskyUtilities",
+      "target": "TeziovskyUtilities",
       "configuration": "debug",
-      "preLaunchTask": "swift: Build Debug MediaOrganizer"
+      "preLaunchTask": "swift: Build Debug TeziovskyUtilities"
     },
     {
       "type": "swift",
       "request": "launch",
       "args": [],
       "cwd": "${workspaceFolder:mac-photo-organizer}",
-      "name": "Release MediaOrganizer",
-      "target": "MediaOrganizer",
+      "name": "Release TeziovskyUtilities",
+      "target": "TeziovskyUtilities",
       "configuration": "release",
-      "preLaunchTask": "swift: Build Release MediaOrganizer"
+      "preLaunchTask": "swift: Build Release TeziovskyUtilities"
     }
   ]
 }

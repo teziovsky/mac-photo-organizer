@@ -2,23 +2,23 @@
 import PackageDescription
 
 let package = Package(
-    name: "MediaOrganizer",
+    name: "TeziovskyUtilities",
     platforms: [.macOS(.v14)],
     products: [
-        .executable(name: "MediaOrganizer", targets: ["MediaOrganizer"]),
+        .executable(name: "TeziovskyUtilities", targets: ["TeziovskyUtilities"]),
     ],
     dependencies: [
         .package(url: "https://github.com/SimplyDanny/SwiftLintPlugins", from: "0.63.3"),
     ],
     targets: [
         .executableTarget(
-            name: "MediaOrganizer",
-            path: "MediaOrganizer",
+            name: "TeziovskyUtilities",
+            path: "TeziovskyUtilities",
             exclude: [
                 "Info.plist",
                 "Assets.xcassets",
                 "Resources",
-                "MediaOrganizer.entitlements",
+                "TeziovskyUtilities.entitlements",
             ],
             linkerSettings: [
                 .linkedFramework("Photos"),
@@ -31,9 +31,9 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "MediaOrganizerTests",
-            dependencies: ["MediaOrganizer"],
-            path: "Tests/MediaOrganizerTests"
+            name: "TeziovskyUtilitiesTests",
+            dependencies: ["TeziovskyUtilities"],
+            path: "Tests/TeziovskyUtilitiesTests"
         ),
     ]
 )

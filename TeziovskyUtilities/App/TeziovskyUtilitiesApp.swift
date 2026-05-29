@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 
 @main
-struct MediaOrganizerApp: App {
+struct TeziovskyUtilitiesApp: App {
     @StateObject private var appState = AppState()
 
     var body: some Scene {
@@ -22,7 +22,7 @@ struct MediaOrganizerApp: App {
                     appState.toggleSidebarVisibility()
                 }
             }
-            MediaOrganizerAlbumCommands(appState: appState)
+            TeziovskyUtilitiesAlbumCommands(appState: appState)
             CommandGroup(after: .sidebar) {
                 Button("Refresh Albums") {
                     Task { await appState.photosService.reloadAlbums() }
@@ -65,7 +65,7 @@ struct MediaOrganizerApp: App {
     }
 }
 
-private struct MediaOrganizerAlbumCommands: Commands {
+private struct TeziovskyUtilitiesAlbumCommands: Commands {
     @ObservedObject var appState: AppState
 
     var body: some Commands {

@@ -1,11 +1,11 @@
-# Media Organizer
+# Teziovsky Utilities
 
 Native macOS app for organizing media. From a home screen you pick a workflow:
 
 - **Organize Photos** — review iCloud Photos albums and export them to a folder.
 - **Organize Drone Footage** — finalize a graded project folder (fully native, no external tools).
 
-> The Xcode target, scheme, and Swift module are all named `MediaOrganizer`; the user-facing app name is **Media Organizer** and the bundle ID is `com.teziovsky.media-organizer`.
+> The Xcode target, scheme, and Swift module are all named `TeziovskyUtilities`; the user-facing app name is **Teziovsky Utilities** and the bundle ID is `com.teziovsky.utilities`.
 
 ## Features
 
@@ -42,7 +42,7 @@ Style and conventions are enforced with [SwiftLint](https://realm.github.io/Swif
 
 | Command | Description |
 |---------|-------------|
-| `npm run lint` | Lint `MediaOrganizer/` and `Tests/` |
+| `npm run lint` | Lint `TeziovskyUtilities/` and `Tests/` |
 | `npm run lint:fix` | Auto-fix correctable issues, then lint again |
 
 SwiftLint also runs during **Xcode** builds (Run Script phase after compile) and **SPM** builds via the [SwiftLintPlugins](https://github.com/SimplyDanny/SwiftLintPlugins) build-tool plugin (version **0.63.3**). The Xcode script uses the package’s bundled `swiftlint` binary when available, otherwise Homebrew’s.
@@ -57,19 +57,19 @@ For CI / unattended `xcodebuild`, pass `-skipPackagePluginValidation` when using
 npm run open
 ```
 
-Select the **MediaOrganizer** scheme and press **Run** (⌘R).
+Select the **TeziovskyUtilities** scheme and press **Run** (⌘R).
 
 ### npm scripts (Xcode — full `.app` bundle)
 
 | Script | Description |
 |--------|-------------|
 | `npm run clean` | Remove `build/`, `dist/`, and run `xcodebuild clean` |
-| `npm run build` | Debug build → `build/DerivedData/Build/Products/Debug/MediaOrganizer.app` |
+| `npm run build` | Debug build → `build/DerivedData/Build/Products/Debug/TeziovskyUtilities.app` |
 | `npm run clean:build` | Clean, then debug build |
 | `npm run run` | Debug build and launch the app |
 | `npm run build:production` | Release build (optimized) |
-| `npm run release` | Release build, copy `.app` to `dist/`, create `dist/MediaOrganizer-macOS.zip` |
-| `npm run install` | Release build and install to `/Applications/Media Organizer.app` |
+| `npm run release` | Release build, copy `.app` to `dist/`, create `dist/TeziovskyUtilities-macOS.zip` |
+| `npm run install` | Release build and install to `/Applications/Teziovsky Utilities.app` |
 | `npm run install:open` | Same as `install`, then launch the app |
 
 ```bash
@@ -92,8 +92,8 @@ Set your development team in Xcode for signed release builds outside this repo (
 
 ## App identity
 
-- **Bundle ID:** `com.teziovsky.media-organizer`
-- **Icons:** `MediaOrganizer/Assets.xcassets/AppIcon.appiconset` (also copied under `MediaOrganizer/Resources/AppIcon/`)
+- **Bundle ID:** `com.teziovsky.utilities`
+- **Icons:** `TeziovskyUtilities/Assets.xcassets/AppIcon.appiconset` (also copied under `TeziovskyUtilities/Resources/AppIcon/`)
 
 ## Settings
 
