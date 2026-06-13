@@ -10,6 +10,7 @@ enum AppSettings {
     private static let defaultMediaGridColumnCount = 6
     private static let exportDirectoryBookmarkKey = "exportDirectoryBookmark"
     private static let exportDirectoryPathKey = "exportDirectoryPath"
+    private static let organizeByYearEnabledKey = "organizeByYearEnabled"
     private static let droneCompressedSuffixKey = "droneCompressedSuffix"
     private static let droneRawDirectoryNameKey = "droneRawDirectoryName"
     private static let droneExportDirectoryNameKey = "droneExportDirectoryName"
@@ -65,6 +66,11 @@ enum AppSettings {
     static var exportDirectoryPath: String? {
         get { UserDefaults.standard.string(forKey: exportDirectoryPathKey) }
         set { UserDefaults.standard.set(newValue, forKey: exportDirectoryPathKey) }
+    }
+
+    static var organizeByYearEnabled: Bool {
+        get { UserDefaults.standard.bool(forKey: organizeByYearEnabledKey) }
+        set { UserDefaults.standard.set(newValue, forKey: organizeByYearEnabledKey) }
     }
 
     // MARK: - Drone finalize

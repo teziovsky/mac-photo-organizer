@@ -4,6 +4,7 @@ struct SettingsView: View {
     @EnvironmentObject private var appState: AppState
     @State private var excludedSuffix: String = AppSettings.excludedAlbumSuffix
     @State private var omittedAlbumIDs: Set<String> = AppSettings.omittedFromOrganizeAlbumIDs
+    @State private var organizeByYearEnabled: Bool = AppSettings.organizeByYearEnabled
     @State private var droneCompressedSuffix: String = AppSettings.droneCompressedSuffix
     @State private var droneRawDirectoryName: String = AppSettings.droneRawDirectoryName
     @State private var droneExportDirectoryName: String = AppSettings.droneExportDirectoryName
@@ -12,7 +13,8 @@ struct SettingsView: View {
         TabView {
             PhotosSettingsTab(
                 excludedSuffix: $excludedSuffix,
-                omittedAlbumIDs: $omittedAlbumIDs
+                omittedAlbumIDs: $omittedAlbumIDs,
+                organizeByYearEnabled: $organizeByYearEnabled
             )
             .tabItem {
                 Label("Photos", systemImage: "photo.on.rectangle.angled")
@@ -31,6 +33,7 @@ struct SettingsView: View {
         .onAppear {
             excludedSuffix = AppSettings.excludedAlbumSuffix
             omittedAlbumIDs = AppSettings.omittedFromOrganizeAlbumIDs
+            organizeByYearEnabled = AppSettings.organizeByYearEnabled
             droneCompressedSuffix = AppSettings.droneCompressedSuffix
             droneRawDirectoryName = AppSettings.droneRawDirectoryName
             droneExportDirectoryName = AppSettings.droneExportDirectoryName
@@ -41,6 +44,7 @@ struct SettingsView: View {
         }
         .onDisappear {
             AppSettings.excludedAlbumSuffix = excludedSuffix
+            AppSettings.organizeByYearEnabled = organizeByYearEnabled
             AppSettings.droneCompressedSuffix = droneCompressedSuffix
             AppSettings.droneRawDirectoryName = droneRawDirectoryName
             AppSettings.droneExportDirectoryName = droneExportDirectoryName
@@ -90,6 +94,7 @@ private struct PhotosSettingsTab: View {
     @EnvironmentObject private var appState: AppState
     @Binding var excludedSuffix: String
     @Binding var omittedAlbumIDs: Set<String>
+    @Binding var organizeByYearEnabled: Bool
 
     private var sortedAlbums: [PhotoAlbum] {
         appState.photosService.albums.sorted {
@@ -99,6 +104,18 @@ private struct PhotosSettingsTab: View {
 
     var body: some View {
         Form {
+            Section("Organize export") {
+                Toggle("Organize into year folders", isOn: $organizeByYearEnabled)
+                    .help("When enabled, exports into year subfolders unless the chosen folder name already contains a year.")
+                Text(
+                    "When on, photos are placed in a YEAR subfolder based on creation date. "
+                        + "If the export folder name already contains a year (e.g. 2026 or 2026_10_test), "
+                        + "all items go directly into that folder. When off, everything exports flat into the chosen folder."
+                )
+                .font(AlbumListRowStyle.detailFont)
+                .foregroundStyle(.secondary)
+            }
+
             Section("Album list") {
                 TextField("Excluded album suffix", text: $excludedSuffix)
                     .help("Albums whose names end with this suffix are hidden from the list.")

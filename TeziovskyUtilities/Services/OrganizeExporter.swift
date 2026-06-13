@@ -127,8 +127,16 @@ final class OrganizeExporter: ObservableObject {
             }
 
             let safeName = SafeFilename.sanitize(item.filename, fallback: item.id)
+            let itemCreationDate = asset.creationDate ?? asset.modificationDate ?? Date()
+            let itemDirectory = OrganizeExportDirectory.exportDirectory(
+                base: scopedDirectory,
+                selectedDirectoryName: exportDirectory.lastPathComponent,
+                creationDate: itemCreationDate,
+                organizeByYearEnabled: AppSettings.organizeByYearEnabled
+            )
+            try? fileManager.createDirectory(at: itemDirectory, withIntermediateDirectories: true)
             let destination = uniqueDestinationURL(
-                directory: scopedDirectory,
+                directory: itemDirectory,
                 filename: safeName,
                 fileManager: fileManager
             )
