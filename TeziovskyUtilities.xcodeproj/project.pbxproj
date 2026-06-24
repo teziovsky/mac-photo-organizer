@@ -45,6 +45,12 @@
 		A00100000000000000000009 /* PermissionsOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00100000000000000000009 /* PermissionsOnboardingView.swift */; };
 		A0010000000000000000000A /* PhotosModeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010000000000000000000A /* PhotosModeView.swift */; };
 		A0010000000000000000000B /* DroneModeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0010000000000000000000B /* DroneModeView.swift */; };
+		A00100000000000000000017 /* DroneFinalizeViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00100000000000000000017 /* DroneFinalizeViews.swift */; };
+		A00100000000000000000012 /* DroneWorkflowCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00100000000000000000012 /* DroneWorkflowCoordinator.swift */; };
+		A00100000000000000000013 /* DroneExportScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00100000000000000000013 /* DroneExportScanner.swift */; };
+		A00100000000000000000014 /* HandBrakeCompressor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00100000000000000000014 /* HandBrakeCompressor.swift */; };
+		A00100000000000000000015 /* DroneMediaPaths.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00100000000000000000015 /* DroneMediaPaths.swift */; };
+		A00100000000000000000016 /* DroneProjectValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00100000000000000000016 /* DroneProjectValidator.swift */; };
 		0FF1B5869E37421096AD477E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CCEC6AF34D2A457CA48F3ED4 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -91,6 +97,12 @@
 		B00100000000000000000009 /* PermissionsOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionsOnboardingView.swift; sourceTree = "<group>"; };
 		B0010000000000000000000A /* PhotosModeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotosModeView.swift; sourceTree = "<group>"; };
 		B0010000000000000000000B /* DroneModeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DroneModeView.swift; sourceTree = "<group>"; };
+		B00100000000000000000017 /* DroneFinalizeViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DroneFinalizeViews.swift; sourceTree = "<group>"; };
+		B00100000000000000000012 /* DroneWorkflowCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DroneWorkflowCoordinator.swift; sourceTree = "<group>"; };
+		B00100000000000000000013 /* DroneExportScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DroneExportScanner.swift; sourceTree = "<group>"; };
+		B00100000000000000000014 /* HandBrakeCompressor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandBrakeCompressor.swift; sourceTree = "<group>"; };
+		B00100000000000000000015 /* DroneMediaPaths.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DroneMediaPaths.swift; sourceTree = "<group>"; };
+		B00100000000000000000016 /* DroneProjectValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DroneProjectValidator.swift; sourceTree = "<group>"; };
 		334455667788990011223344 /* TeziovskyUtilities.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TeziovskyUtilities.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -144,6 +156,9 @@
 				F8E91EBDB1C849DBBCB91309 /* ThumbnailLoader.swift */,
 				778899001122334455667788 /* PhotoAssetExporter.swift */,
 				B00100000000000000000005 /* DroneFinalizer.swift */,
+				B00100000000000000000012 /* DroneWorkflowCoordinator.swift */,
+				B00100000000000000000013 /* DroneExportScanner.swift */,
+				B00100000000000000000014 /* HandBrakeCompressor.swift */,
 				B00100000000000000000006 /* VideoMetadataTransfer.swift */,
 				B00100000000000000000011 /* MediaMetadataReader.swift */,
 			);
@@ -164,6 +179,8 @@
 				F6A7B8C9D0E1499001122337 /* ExportDirectoryAccess.swift */,
 				B00100000000000000000001 /* AppBranding.swift */,
 				B00100000000000000000004 /* DroneFinalizePlan.swift */,
+				B00100000000000000000015 /* DroneMediaPaths.swift */,
+				B00100000000000000000016 /* DroneProjectValidator.swift */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
@@ -183,6 +200,7 @@
 				B00100000000000000000009 /* PermissionsOnboardingView.swift */,
 				B0010000000000000000000A /* PhotosModeView.swift */,
 				B0010000000000000000000B /* DroneModeView.swift */,
+				B00100000000000000000017 /* DroneFinalizeViews.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -310,6 +328,11 @@
 				A00100000000000000000010 /* DroneStepModels.swift in Sources */,
 				A00100000000000000000004 /* DroneFinalizePlan.swift in Sources */,
 				A00100000000000000000005 /* DroneFinalizer.swift in Sources */,
+				A00100000000000000000012 /* DroneWorkflowCoordinator.swift in Sources */,
+				A00100000000000000000013 /* DroneExportScanner.swift in Sources */,
+				A00100000000000000000014 /* HandBrakeCompressor.swift in Sources */,
+				A00100000000000000000015 /* DroneMediaPaths.swift in Sources */,
+				A00100000000000000000016 /* DroneProjectValidator.swift in Sources */,
 				A00100000000000000000006 /* VideoMetadataTransfer.swift in Sources */,
 				A00100000000000000000011 /* MediaMetadataReader.swift in Sources */,
 				A00100000000000000000007 /* RootView.swift in Sources */,
@@ -317,6 +340,7 @@
 				A00100000000000000000009 /* PermissionsOnboardingView.swift in Sources */,
 				A0010000000000000000000A /* PhotosModeView.swift in Sources */,
 				A0010000000000000000000B /* DroneModeView.swift in Sources */,
+				A00100000000000000000017 /* DroneFinalizeViews.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

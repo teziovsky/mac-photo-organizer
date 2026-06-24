@@ -22,6 +22,6 @@ enum AppBranding {
     static let photosModeIcon = "photo.on.rectangle.angled"
 
     static let droneModeTitle = "Organize Drone Footage"
-    static let droneModeSubtitle = "Finalize a graded project: merge metadata, drop the compressed suffix, and flatten into one folder."
+    static let droneModeSubtitle = "Validate project, compress exports, finalize delivery files."
     static let droneModeIcon = "airplane"
 }

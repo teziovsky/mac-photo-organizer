@@ -1,6 +1,55 @@
 import Foundation
 
-/// The ordered steps of the drone finalize wizard.
+/// Top-level phases of the guided drone workflow.
+enum DroneWorkflowPhase: Int, CaseIterable, Sendable {
+    case validateLayout = 0
+    case waitForResolve
+    case scanExport
+    case pickPreset
+    case compress
+    case finalize
+    case done
+
+    var stepNumber: Int { rawValue + 1 }
+
+    var shortTitle: String {
+        switch self {
+        case .validateLayout: return "Layout"
+        case .waitForResolve: return "Resolve"
+        case .scanExport: return "Scan"
+        case .pickPreset: return "Preset"
+        case .compress: return "Compress"
+        case .finalize: return "Finalize"
+        case .done: return "Done"
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .validateLayout: return "Step 1 — Validate project layout"
+        case .waitForResolve: return "Step 2 — Edit in DaVinci Resolve"
+        case .scanExport: return "Step 3 — Scan exports"
+        case .pickPreset: return "Step 4 — Choose HandBrake preset"
+        case .compress: return "Step 5 — Compress exports"
+        case .finalize: return "Step 6 — Finalize delivery files"
+        case .done: return "Finished"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .validateLayout: return "folder.badge.checkmark"
+        case .waitForResolve: return "film.stack"
+        case .scanExport: return "doc.text.magnifyingglass"
+        case .pickPreset: return "slider.horizontal.3"
+        case .compress: return "arrow.down.circle"
+        case .finalize: return "wand.and.stars"
+        case .done: return "checkmark.seal"
+        }
+    }
+}
+
+/// The ordered steps of the drone finalize sub-wizard.
 enum DroneFinalizeStep: Int, CaseIterable, Sendable {
     case merge = 0
     case cleanup
@@ -20,9 +69,9 @@ enum DroneFinalizeStep: Int, CaseIterable, Sendable {
 
     var title: String {
         switch self {
-        case .merge: return "Step 1 — Merge metadata"
-        case .cleanup: return "Step 2 — Delete originals & rename"
-        case .flatten: return "Step 3 — Flatten project folder"
+        case .merge: return "Merge metadata"
+        case .cleanup: return "Delete originals & rename"
+        case .flatten: return "Flatten project folder"
         case .done: return "Finished"
         }
     }

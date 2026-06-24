@@ -14,6 +14,14 @@ enum AppSettings {
     private static let droneCompressedSuffixKey = "droneCompressedSuffix"
     private static let droneRawDirectoryNameKey = "droneRawDirectoryName"
     private static let droneExportDirectoryNameKey = "droneExportDirectoryName"
+    private static let droneVerticalDirectoryNameKey = "droneVerticalDirectoryName"
+    private static let droneHorizontalDirectoryNameKey = "droneHorizontalDirectoryName"
+    private static let droneHandBrakeCLIPathKey = "droneHandBrakeCLIPath"
+    private static let droneResolveAppPathKey = "droneResolveAppPath"
+    private static let droneHandBrakeOutputExtensionKey = "droneHandBrakeOutputExtension"
+    private static let droneKeepRawAfterFinalizeKey = "droneKeepRawAfterFinalize"
+    private static let dronePreserveOrientationOnFlattenKey = "dronePreserveOrientationOnFlatten"
+    private static let droneLastHandBrakePresetKey = "droneLastHandBrakePreset"
 
     static var mediaGridColumnCount: Int {
         get {
@@ -99,11 +107,77 @@ enum AppSettings {
         set { UserDefaults.standard.set(newValue, forKey: droneExportDirectoryNameKey) }
     }
 
+    static var droneVerticalDirectoryName: String {
+        get {
+            let value = UserDefaults.standard.string(forKey: droneVerticalDirectoryNameKey)
+            return (value?.isEmpty == false) ? value! : DroneFinalizeConfig.default.verticalDirectoryName
+        }
+        set { UserDefaults.standard.set(newValue, forKey: droneVerticalDirectoryNameKey) }
+    }
+
+    static var droneHorizontalDirectoryName: String {
+        get {
+            let value = UserDefaults.standard.string(forKey: droneHorizontalDirectoryNameKey)
+            return (value?.isEmpty == false) ? value! : DroneFinalizeConfig.default.horizontalDirectoryName
+        }
+        set { UserDefaults.standard.set(newValue, forKey: droneHorizontalDirectoryNameKey) }
+    }
+
+    static var droneHandBrakeCLIPath: String {
+        get { UserDefaults.standard.string(forKey: droneHandBrakeCLIPathKey) ?? "" }
+        set { UserDefaults.standard.set(newValue, forKey: droneHandBrakeCLIPathKey) }
+    }
+
+    static var droneResolveAppPath: String {
+        get { UserDefaults.standard.string(forKey: droneResolveAppPathKey) ?? "" }
+        set { UserDefaults.standard.set(newValue, forKey: droneResolveAppPathKey) }
+    }
+
+    static var droneHandBrakeOutputExtension: String {
+        get {
+            let value = UserDefaults.standard.string(forKey: droneHandBrakeOutputExtensionKey)
+            return (value?.isEmpty == false) ? value! : DroneFinalizeConfig.default.handBrakeOutputExtension
+        }
+        set { UserDefaults.standard.set(newValue, forKey: droneHandBrakeOutputExtensionKey) }
+    }
+
+    static var droneKeepRawAfterFinalize: Bool {
+        get {
+            if UserDefaults.standard.object(forKey: droneKeepRawAfterFinalizeKey) == nil {
+                return DroneFinalizeConfig.default.keepRawAfterFinalize
+            }
+            return UserDefaults.standard.bool(forKey: droneKeepRawAfterFinalizeKey)
+        }
+        set { UserDefaults.standard.set(newValue, forKey: droneKeepRawAfterFinalizeKey) }
+    }
+
+    static var dronePreserveOrientationOnFlatten: Bool {
+        get {
+            if UserDefaults.standard.object(forKey: dronePreserveOrientationOnFlattenKey) == nil {
+                return DroneFinalizeConfig.default.preserveOrientationOnFlatten
+            }
+            return UserDefaults.standard.bool(forKey: dronePreserveOrientationOnFlattenKey)
+        }
+        set { UserDefaults.standard.set(newValue, forKey: dronePreserveOrientationOnFlattenKey) }
+    }
+
+    static var droneLastHandBrakePreset: String {
+        get { UserDefaults.standard.string(forKey: droneLastHandBrakePresetKey) ?? "" }
+        set { UserDefaults.standard.set(newValue, forKey: droneLastHandBrakePresetKey) }
+    }
+
     static var droneFinalizeConfig: DroneFinalizeConfig {
         DroneFinalizeConfig(
             compressedSuffix: droneCompressedSuffix,
             rawDirectoryName: droneRawDirectoryName,
-            exportDirectoryName: droneExportDirectoryName
+            exportDirectoryName: droneExportDirectoryName,
+            verticalDirectoryName: droneVerticalDirectoryName,
+            horizontalDirectoryName: droneHorizontalDirectoryName,
+            handBrakeCLIPath: droneHandBrakeCLIPath,
+            resolveAppPath: droneResolveAppPath,
+            handBrakeOutputExtension: droneHandBrakeOutputExtension,
+            keepRawAfterFinalize: droneKeepRawAfterFinalize,
+            preserveOrientationOnFlatten: dronePreserveOrientationOnFlatten
         )
     }
 

@@ -1,15 +1,29 @@
 import Foundation
 
-/// User-configurable inputs for the drone finalize workflow.
+/// User-configurable inputs for the drone project workflow.
 struct DroneFinalizeConfig: Equatable, Sendable {
     var compressedSuffix: String
     var rawDirectoryName: String
     var exportDirectoryName: String
+    var verticalDirectoryName: String
+    var horizontalDirectoryName: String
+    var handBrakeCLIPath: String
+    var resolveAppPath: String
+    var handBrakeOutputExtension: String
+    var keepRawAfterFinalize: Bool
+    var preserveOrientationOnFlatten: Bool
 
     static let `default` = DroneFinalizeConfig(
         compressedSuffix: "_COMPRESSED",
         rawDirectoryName: "raw",
-        exportDirectoryName: "export"
+        exportDirectoryName: "export",
+        verticalDirectoryName: "vertical",
+        horizontalDirectoryName: "horizontal",
+        handBrakeCLIPath: "",
+        resolveAppPath: "",
+        handBrakeOutputExtension: "mp4",
+        keepRawAfterFinalize: true,
+        preserveOrientationOnFlatten: true
     )
 
     /// Trimmed suffix; falls back to the default when blank.
@@ -17,19 +31,33 @@ struct DroneFinalizeConfig: Equatable, Sendable {
         let trimmed = compressedSuffix.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? "_COMPRESSED" : trimmed
     }
+
+    var normalizedOutputExtension: String {
+        let trimmed = handBrakeOutputExtension.trimmingCharacters(in: .whitespacesAndNewlines)
+            .trimmingCharacters(in: CharacterSet(charactersIn: "."))
+        return trimmed.isEmpty ? "mp4" : trimmed.lowercased()
+    }
 }
 
 /// A compressed file matched to its source original.
 struct DroneMatchedPair: Equatable, Sendable {
-    let sourceName: String
-    let compressedName: String
-    let finalName: String
+    let sourceRelativePath: String
+    let compressedRelativePath: String
+    let finalRelativePath: String
+
+    /// Backward-compatible flat filename accessors for UI/tests using root-level paths.
+    var sourceName: String { sourceRelativePath }
+    var compressedName: String { compressedRelativePath }
+    var finalName: String { finalRelativePath }
 }
 
 /// A compressed file whose suffix is dropped, with no matching source (no delete, no metadata copy).
 struct DroneRenameOnly: Equatable, Sendable {
-    let originalName: String
-    let finalName: String
+    let originalRelativePath: String
+    let finalRelativePath: String
+
+    var originalName: String { originalRelativePath }
+    var finalName: String { finalRelativePath }
 }
 
 /// Pure description of what the finalize run will do to the export directory.
@@ -44,11 +72,10 @@ struct DroneFinalizePlan: Equatable, Sendable {
     /// Compressed files skipped because their final name would collide with another file.
     var conflicts: [String] = []
 
-    /// Every media filename that will exist in the export dir after pairs are processed,
-    /// i.e. the set that gets moved up one level into the project root.
+    /// Every media relative path that will exist in the export dir after pairs are processed.
     var finalMediaNames: [String] {
-        var names = matchedPairs.map(\.finalName)
-        names.append(contentsOf: unmatchedCompressed.map(\.finalName))
+        var names = matchedPairs.map(\.finalRelativePath)
+        names.append(contentsOf: unmatchedCompressed.map(\.finalRelativePath))
         names.append(contentsOf: passthroughMedia)
         return names
     }
@@ -61,26 +88,25 @@ struct DroneFinalizePlan: Equatable, Sendable {
 }
 
 enum DroneFinalizePlanBuilder {
-    /// Builds a plan from the regular (non-directory) file names in the export directory.
-    /// `isMedia` decides whether a leftover (no compressed counterpart) is moved up or reported.
+    /// Builds a plan from relative file paths under the export directory.
+    /// `isMedia` receives the filename (last path component) only.
     static func makePlan(
         exportFiles files: [String],
         config: DroneFinalizeConfig,
         isMedia: (String) -> Bool
     ) -> DroneFinalizePlan {
         let suffix = config.normalizedSuffix
+        let visible = files.filter { !$0.hasPrefix(".") && !($0 as NSString).lastPathComponent.hasPrefix(".") }
 
-        // Ignore hidden files (e.g. .DS_Store) entirely; they neither move nor block.
-        let visible = files.filter { !$0.hasPrefix(".") }
-
-        let compressed = visible.filter { hasCompressedSuffix($0, suffix: suffix) }
+        let compressed = visible.filter { hasCompressedSuffix(($0 as NSString).lastPathComponent, suffix: suffix) }
         let compressedSet = Set(compressed)
 
-        // Lookup of non-compressed files by their base name (without extension), lowercased.
-        var candidatesByBase: [String: [String]] = [:]
+        var candidatesByDirectoryAndBase: [String: [String]] = [:]
         for file in visible where !compressedSet.contains(file) {
-            let base = baseName(file).lowercased()
-            candidatesByBase[base, default: []].append(file)
+            let directory = directoryPrefix(of: file)
+            let base = baseName((file as NSString).lastPathComponent).lowercased()
+            let key = "\(directory)|\(base)"
+            candidatesByDirectoryAndBase[key, default: []].append(file)
         }
 
         var plan = DroneFinalizePlan()
@@ -88,18 +114,20 @@ enum DroneFinalizePlanBuilder {
         var claimedFinalNames = Set<String>()
 
         for compressedFile in compressed.sorted() {
-            let strippedBase = strippingCompressedSuffix(baseName(compressedFile), suffix: suffix)
-            let ext = fileExtension(compressedFile)
-            let finalName = ext.isEmpty ? strippedBase : "\(strippedBase).\(ext)"
-            let finalKey = finalName.lowercased()
+            let fileName = (compressedFile as NSString).lastPathComponent
+            let directory = directoryPrefix(of: compressedFile)
+            let strippedBase = strippingCompressedSuffix(baseName(fileName), suffix: suffix)
+            let ext = fileExtension(fileName)
+            let finalFileName = ext.isEmpty ? strippedBase : "\(strippedBase).\(ext)"
+            let finalRelativePath = directory.isEmpty ? finalFileName : "\(directory)/\(finalFileName)"
+            let finalKey = finalRelativePath.lowercased()
 
-            // Source: a non-compressed file sharing the stripped base name, not already used.
-            let source = (candidatesByBase[strippedBase.lowercased()] ?? [])
+            let lookupKey = "\(directory)|\(strippedBase.lowercased())"
+            let source = (candidatesByDirectoryAndBase[lookupKey] ?? [])
                 .filter { !consumedSources.contains($0) }
                 .sorted()
                 .first
 
-            // Collision: final name already claimed, or matches an unrelated existing file.
             let collidesWithExisting = visible.contains {
                 $0.lowercased() == finalKey
                     && $0 != compressedFile
@@ -116,29 +144,32 @@ enum DroneFinalizePlanBuilder {
                 consumedSources.insert(source)
                 plan.matchedPairs.append(
                     DroneMatchedPair(
-                        sourceName: source,
-                        compressedName: compressedFile,
-                        finalName: finalName
+                        sourceRelativePath: source,
+                        compressedRelativePath: compressedFile,
+                        finalRelativePath: finalRelativePath
                     )
                 )
             } else {
                 plan.unmatchedCompressed.append(
-                    DroneRenameOnly(originalName: compressedFile, finalName: finalName)
+                    DroneRenameOnly(
+                        originalRelativePath: compressedFile,
+                        finalRelativePath: finalRelativePath
+                    )
                 )
             }
         }
 
-        // Remaining non-compressed files that were not consumed as a source.
         for file in visible where !compressedSet.contains(file) && !consumedSources.contains(file) {
-            if isMedia(file) {
+            let fileName = (file as NSString).lastPathComponent
+            if isMedia(fileName) {
                 plan.passthroughMedia.append(file)
             } else {
                 plan.leftoverFiles.append(file)
             }
         }
 
-        plan.matchedPairs.sort { $0.compressedName < $1.compressedName }
-        plan.unmatchedCompressed.sort { $0.originalName < $1.originalName }
+        plan.matchedPairs.sort { $0.compressedRelativePath < $1.compressedRelativePath }
+        plan.unmatchedCompressed.sort { $0.originalRelativePath < $1.originalRelativePath }
         plan.passthroughMedia.sort()
         plan.leftoverFiles.sort()
         plan.conflicts.sort()
@@ -160,5 +191,38 @@ enum DroneFinalizePlanBuilder {
 
     static func fileExtension(_ filename: String) -> String {
         (filename as NSString).pathExtension
+    }
+
+    private static func directoryPrefix(of relativePath: String) -> String {
+        let directory = (relativePath as NSString).deletingLastPathComponent
+        if directory == "." { return "" }
+        return directory
+    }
+}
+
+enum DroneToolPaths {
+    static func resolveHandBrakeCLI(configuredPath: String) -> URL? {
+        let trimmed = configuredPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty, FileManager.default.isExecutableFile(atPath: trimmed) {
+            return URL(fileURLWithPath: trimmed)
+        }
+        let candidates = [
+            "/opt/homebrew/bin/HandBrakeCLI",
+            "/usr/local/bin/HandBrakeCLI",
+            "/Applications/HandBrake.app/Contents/MacOS/HandBrakeCLI"
+        ]
+        return candidates.first { FileManager.default.isExecutableFile(atPath: $0) }.map { URL(fileURLWithPath: $0) }
+    }
+
+    static func resolveDaVinciResolve(configuredPath: String) -> URL? {
+        let trimmed = configuredPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty, FileManager.default.fileExists(atPath: trimmed) {
+            return URL(fileURLWithPath: trimmed)
+        }
+        let candidates = [
+            "/Applications/DaVinci Resolve/DaVinci Resolve.app",
+            "/Applications/DaVinci Resolve.app"
+        ]
+        return candidates.first { FileManager.default.fileExists(atPath: $0) }.map { URL(fileURLWithPath: $0) }
     }
 }

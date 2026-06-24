@@ -12,7 +12,7 @@ enum MediaGridMoveDirection: Sendable {
 final class AppState: ObservableObject {
     let photosService = PhotosService()
     let organizeExporter = OrganizeExporter()
-    let droneFinalizer = DroneFinalizer()
+    let droneWorkflow = DroneWorkflowCoordinator()
 
     private var cancellables = Set<AnyCancellable>()
     private var albumLoadGeneration = 0
@@ -43,7 +43,7 @@ final class AppState: ObservableObject {
         organizeExporter.objectWillChange
             .sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &cancellables)
-        droneFinalizer.objectWillChange
+        droneWorkflow.objectWillChange
             .sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &cancellables)
     }

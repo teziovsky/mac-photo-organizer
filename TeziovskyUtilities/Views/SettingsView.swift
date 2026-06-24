@@ -8,6 +8,13 @@ struct SettingsView: View {
     @State private var droneCompressedSuffix: String = AppSettings.droneCompressedSuffix
     @State private var droneRawDirectoryName: String = AppSettings.droneRawDirectoryName
     @State private var droneExportDirectoryName: String = AppSettings.droneExportDirectoryName
+    @State private var droneVerticalDirectoryName: String = AppSettings.droneVerticalDirectoryName
+    @State private var droneHorizontalDirectoryName: String = AppSettings.droneHorizontalDirectoryName
+    @State private var droneHandBrakeCLIPath: String = AppSettings.droneHandBrakeCLIPath
+    @State private var droneResolveAppPath: String = AppSettings.droneResolveAppPath
+    @State private var droneHandBrakeOutputExtension: String = AppSettings.droneHandBrakeOutputExtension
+    @State private var droneKeepRawAfterFinalize: Bool = AppSettings.droneKeepRawAfterFinalize
+    @State private var dronePreserveOrientationOnFlatten: Bool = AppSettings.dronePreserveOrientationOnFlatten
 
     var body: some View {
         TabView {
@@ -23,13 +30,20 @@ struct SettingsView: View {
             DroneSettingsTab(
                 compressedSuffix: $droneCompressedSuffix,
                 rawDirectoryName: $droneRawDirectoryName,
-                exportDirectoryName: $droneExportDirectoryName
+                exportDirectoryName: $droneExportDirectoryName,
+                verticalDirectoryName: $droneVerticalDirectoryName,
+                horizontalDirectoryName: $droneHorizontalDirectoryName,
+                handBrakeCLIPath: $droneHandBrakeCLIPath,
+                resolveAppPath: $droneResolveAppPath,
+                handBrakeOutputExtension: $droneHandBrakeOutputExtension,
+                keepRawAfterFinalize: $droneKeepRawAfterFinalize,
+                preserveOrientationOnFlatten: $dronePreserveOrientationOnFlatten
             )
             .tabItem {
                 Label("Drone", systemImage: "airplane")
             }
         }
-        .frame(width: 520, height: 560)
+        .frame(width: 520, height: 640)
         .onAppear {
             excludedSuffix = AppSettings.excludedAlbumSuffix
             omittedAlbumIDs = AppSettings.omittedFromOrganizeAlbumIDs
@@ -37,6 +51,13 @@ struct SettingsView: View {
             droneCompressedSuffix = AppSettings.droneCompressedSuffix
             droneRawDirectoryName = AppSettings.droneRawDirectoryName
             droneExportDirectoryName = AppSettings.droneExportDirectoryName
+            droneVerticalDirectoryName = AppSettings.droneVerticalDirectoryName
+            droneHorizontalDirectoryName = AppSettings.droneHorizontalDirectoryName
+            droneHandBrakeCLIPath = AppSettings.droneHandBrakeCLIPath
+            droneResolveAppPath = AppSettings.droneResolveAppPath
+            droneHandBrakeOutputExtension = AppSettings.droneHandBrakeOutputExtension
+            droneKeepRawAfterFinalize = AppSettings.droneKeepRawAfterFinalize
+            dronePreserveOrientationOnFlatten = AppSettings.dronePreserveOrientationOnFlatten
             loadAlbumsIfNeeded()
         }
         .onChange(of: omittedAlbumIDs) { _, newValue in
@@ -48,6 +69,13 @@ struct SettingsView: View {
             AppSettings.droneCompressedSuffix = droneCompressedSuffix
             AppSettings.droneRawDirectoryName = droneRawDirectoryName
             AppSettings.droneExportDirectoryName = droneExportDirectoryName
+            AppSettings.droneVerticalDirectoryName = droneVerticalDirectoryName
+            AppSettings.droneHorizontalDirectoryName = droneHorizontalDirectoryName
+            AppSettings.droneHandBrakeCLIPath = droneHandBrakeCLIPath
+            AppSettings.droneResolveAppPath = droneResolveAppPath
+            AppSettings.droneHandBrakeOutputExtension = droneHandBrakeOutputExtension
+            AppSettings.droneKeepRawAfterFinalize = droneKeepRawAfterFinalize
+            AppSettings.dronePreserveOrientationOnFlatten = dronePreserveOrientationOnFlatten
             appState.syncOmittedFromOrganizeAlbums(omittedAlbumIDs)
             Task { await appState.photosService.reloadAlbums() }
         }
@@ -64,23 +92,41 @@ private struct DroneSettingsTab: View {
     @Binding var compressedSuffix: String
     @Binding var rawDirectoryName: String
     @Binding var exportDirectoryName: String
+    @Binding var verticalDirectoryName: String
+    @Binding var horizontalDirectoryName: String
+    @Binding var handBrakeCLIPath: String
+    @Binding var resolveAppPath: String
+    @Binding var handBrakeOutputExtension: String
+    @Binding var keepRawAfterFinalize: Bool
+    @Binding var preserveOrientationOnFlatten: Bool
 
     var body: some View {
         Form {
+            Section("External tools") {
+                TextField("HandBrakeCLI path", text: $handBrakeCLIPath)
+                    .help("Leave blank to auto-detect Homebrew or HandBrake.app.")
+                TextField("DaVinci Resolve app path", text: $resolveAppPath)
+                    .help("Leave blank to auto-detect in /Applications.")
+            }
+
             Section("Compressed files") {
                 TextField("Compressed suffix", text: $compressedSuffix)
-                    .help("Suffix HandBrake adds to compressed files; removed during finalize.")
-                Text("Default: _COMPRESSED")
+                    .help("Suffix added to HandBrake outputs; removed during finalize.")
+                TextField("Output extension", text: $handBrakeOutputExtension)
+                    .help("Extension for HandBrake outputs, e.g. mp4.")
+                Text("Defaults: _COMPRESSED, mp4")
                     .font(AlbumListRowStyle.detailFont)
                     .foregroundStyle(.secondary)
             }
 
             Section("Project folders") {
                 TextField("Raw folder name", text: $rawDirectoryName)
-                    .help("Subfolder holding raw source media; removed during finalize.")
                 TextField("Export folder name", text: $exportDirectoryName)
-                    .help("Subfolder holding graded/compressed media; flattened during finalize.")
-                Text("Defaults: raw, export")
+                TextField("Vertical subfolder", text: $verticalDirectoryName)
+                TextField("Horizontal subfolder", text: $horizontalDirectoryName)
+                Toggle("Keep raw/ after finalize", isOn: $keepRawAfterFinalize)
+                Toggle("Preserve vertical/horizontal after flatten", isOn: $preserveOrientationOnFlatten)
+                Text("Defaults: raw, export, vertical, horizontal")
                     .font(AlbumListRowStyle.detailFont)
                     .foregroundStyle(.secondary)
             }

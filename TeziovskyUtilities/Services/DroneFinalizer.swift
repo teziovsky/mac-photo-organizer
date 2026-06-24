@@ -59,7 +59,7 @@ final class DroneFinalizer: ObservableObject {
     // MARK: - Setup
 
     func loadProject(projectDirectory: URL, config: DroneFinalizeConfig) {
-        reset()
+        reset(keepingProject: false)
         self.config = config
         self.projectDirectory = projectDirectory
         projectDirectoryPath = projectDirectory.path
@@ -74,7 +74,7 @@ final class DroneFinalizer: ObservableObject {
         }
 
         do {
-            let files = try regularFileNames(in: exportDir)
+            let files = try DroneMediaPaths.regularFiles(relativeTo: exportDir)
             let plan = DroneFinalizePlanBuilder.makePlan(
                 exportFiles: files,
                 config: config,
@@ -83,11 +83,11 @@ final class DroneFinalizer: ObservableObject {
             self.plan = plan
             pairMetadata = plan.matchedPairs.map { pair in
                 DronePairMetadata(
-                    id: pair.compressedName,
-                    sourceName: pair.sourceName,
-                    compressedName: pair.compressedName,
-                    finalName: pair.finalName,
-                    isVideo: MediaFileClassifier.isVideo(pair.compressedName)
+                    id: pair.compressedRelativePath,
+                    sourceName: pair.sourceRelativePath,
+                    compressedName: pair.compressedRelativePath,
+                    finalName: pair.finalRelativePath,
+                    isVideo: MediaFileClassifier.isVideo((pair.compressedRelativePath as NSString).lastPathComponent)
                 )
             }
             step = .merge
@@ -97,10 +97,12 @@ final class DroneFinalizer: ObservableObject {
         }
     }
 
-    func reset() {
+    func reset(keepingProject: Bool = false) {
         cleanUpBackups()
-        projectDirectory = nil
-        projectDirectoryPath = nil
+        if !keepingProject {
+            projectDirectory = nil
+            projectDirectoryPath = nil
+        }
         plan = nil
         pairMetadata = []
         previewError = nil
@@ -110,7 +112,13 @@ final class DroneFinalizer: ObservableObject {
         canUndo = false
         isRunning = false
         step = .merge
-        config = .default
+        if !keepingProject {
+            config = .default
+        }
+    }
+
+    func reset() {
+        reset(keepingProject: false)
     }
 
     private func loadMetadata() {
@@ -121,16 +129,17 @@ final class DroneFinalizer: ObservableObject {
             let didAccess = project.startAccessingSecurityScopedResource()
             defer { if didAccess { project.stopAccessingSecurityScopedResource() } }
             for pair in pairs {
-                let isVideo = MediaFileClassifier.isVideo(pair.compressedName)
+                let fileName = (pair.compressedRelativePath as NSString).lastPathComponent
+                let isVideo = MediaFileClassifier.isVideo(fileName)
                 let original = await MediaMetadataReader.read(
-                    url: exportDir.appendingPathComponent(pair.sourceName),
-                    isVideo: MediaFileClassifier.isVideo(pair.sourceName)
+                    url: exportDir.appendingPathComponent(pair.sourceRelativePath),
+                    isVideo: MediaFileClassifier.isVideo((pair.sourceRelativePath as NSString).lastPathComponent)
                 )
                 let compressed = await MediaMetadataReader.read(
-                    url: exportDir.appendingPathComponent(pair.compressedName),
+                    url: exportDir.appendingPathComponent(pair.compressedRelativePath),
                     isVideo: isVideo
                 )
-                if let index = pairMetadata.firstIndex(where: { $0.id == pair.compressedName }) {
+                if let index = pairMetadata.firstIndex(where: { $0.id == pair.compressedRelativePath }) {
                     pairMetadata[index].original = original
                     pairMetadata[index].compressed = compressed
                 }
@@ -159,18 +168,19 @@ final class DroneFinalizer: ObservableObject {
             let fileManager = FileManager.default
 
             for pair in plan.matchedPairs {
-                statusMessage = "Merging \(pair.compressedName)…"
-                let sourceURL = exportDir.appendingPathComponent(pair.sourceName)
-                let compressedURL = exportDir.appendingPathComponent(pair.compressedName)
+                statusMessage = "Merging \(pair.compressedRelativePath)…"
+                let sourceURL = exportDir.appendingPathComponent(pair.sourceRelativePath)
+                let compressedURL = exportDir.appendingPathComponent(pair.compressedRelativePath)
+                let fileName = (pair.compressedRelativePath as NSString).lastPathComponent
 
-                if MediaFileClassifier.isVideo(pair.compressedName) {
+                if MediaFileClassifier.isVideo(fileName) {
                     do {
                         let backupURL = try makeBackup(of: compressedURL, fileManager: fileManager)
                         ops.append(.restoreFile(target: compressedURL, backup: backupURL))
                         try await VideoMetadataTransfer.transfer(from: sourceURL, to: compressedURL)
                     } catch {
                         issues.append(OrganizeFailure(
-                            filename: pair.compressedName,
+                            filename: pair.compressedRelativePath,
                             message: "Container metadata not copied (\(error.localizedDescription)); file dates still applied."
                         ))
                     }
@@ -181,7 +191,7 @@ final class DroneFinalizer: ObservableObject {
                 do {
                     try FileDatePreservation.copyFileDates(from: sourceURL, to: compressedURL)
                 } catch {
-                    issues.append(OrganizeFailure(filename: pair.compressedName, message: error.localizedDescription))
+                    issues.append(OrganizeFailure(filename: pair.compressedRelativePath, message: error.localizedDescription))
                 }
             }
 
@@ -201,10 +211,10 @@ final class DroneFinalizer: ObservableObject {
             let fileManager = FileManager.default
 
             for pair in plan.matchedPairs {
-                statusMessage = "Removing \(pair.sourceName)…"
-                let sourceURL = exportDir.appendingPathComponent(pair.sourceName)
-                let compressedURL = exportDir.appendingPathComponent(pair.compressedName)
-                let finalURL = exportDir.appendingPathComponent(pair.finalName)
+                statusMessage = "Removing \(pair.sourceRelativePath)…"
+                let sourceURL = exportDir.appendingPathComponent(pair.sourceRelativePath)
+                let compressedURL = exportDir.appendingPathComponent(pair.compressedRelativePath)
+                let finalURL = exportDir.appendingPathComponent(pair.finalRelativePath)
                 do {
                     if let trashed = try trash(sourceURL, fileManager: fileManager) {
                         ops.append(.untrash(original: sourceURL, trashed: trashed))
@@ -212,19 +222,19 @@ final class DroneFinalizer: ObservableObject {
                     try fileManager.moveItem(at: compressedURL, to: finalURL)
                     ops.append(.move(from: compressedURL, to: finalURL))
                 } catch {
-                    issues.append(OrganizeFailure(filename: pair.compressedName, message: error.localizedDescription))
+                    issues.append(OrganizeFailure(filename: pair.compressedRelativePath, message: error.localizedDescription))
                 }
             }
 
             for item in plan.unmatchedCompressed {
-                statusMessage = "Renaming \(item.originalName)…"
-                let originalURL = exportDir.appendingPathComponent(item.originalName)
-                let finalURL = exportDir.appendingPathComponent(item.finalName)
+                statusMessage = "Renaming \(item.originalRelativePath)…"
+                let originalURL = exportDir.appendingPathComponent(item.originalRelativePath)
+                let finalURL = exportDir.appendingPathComponent(item.finalRelativePath)
                 do {
                     try fileManager.moveItem(at: originalURL, to: finalURL)
                     ops.append(.move(from: originalURL, to: finalURL))
                 } catch {
-                    issues.append(OrganizeFailure(filename: item.originalName, message: error.localizedDescription))
+                    issues.append(OrganizeFailure(filename: item.originalRelativePath, message: error.localizedDescription))
                 }
             }
 
@@ -244,20 +254,26 @@ final class DroneFinalizer: ObservableObject {
             var issues: [OrganizeFailure] = []
             let fileManager = FileManager.default
 
-            for name in plan.finalMediaNames.sorted() {
-                let fromURL = exportDir.appendingPathComponent(name)
+            for relativePath in plan.finalMediaNames.sorted() {
+                let fromURL = exportDir.appendingPathComponent(relativePath)
                 guard fileManager.fileExists(atPath: fromURL.path) else { continue }
-                statusMessage = "Moving \(name)…"
-                let destination = uniqueDestination(directory: project, filename: name, fileManager: fileManager)
+                statusMessage = "Moving \(relativePath)…"
+                let destination = DroneMediaPaths.flattenDestination(
+                    project: project,
+                    relativeMediaPath: relativePath,
+                    config: config,
+                    fileManager: fileManager
+                )
                 do {
+                    try ensureParentExists(of: destination, fileManager: fileManager)
                     try fileManager.moveItem(at: fromURL, to: destination)
                     ops.append(.move(from: fromURL, to: destination))
                 } catch {
-                    issues.append(OrganizeFailure(filename: name, message: error.localizedDescription))
+                    issues.append(OrganizeFailure(filename: relativePath, message: error.localizedDescription))
                 }
             }
 
-            if fileManager.fileExists(atPath: rawDir.path) {
+            if !config.keepRawAfterFinalize, fileManager.fileExists(atPath: rawDir.path) {
                 statusMessage = "Moving \(config.rawDirectoryName)/ to Trash…"
                 do {
                     if let trashed = try trash(rawDir, fileManager: fileManager) {
@@ -397,32 +413,5 @@ final class DroneFinalizer: ObservableObject {
     private func isDirectory(_ url: URL) -> Bool {
         var isDir: ObjCBool = false
         return FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir) && isDir.boolValue
-    }
-
-    private func regularFileNames(in directory: URL) throws -> [String] {
-        let urls = try FileManager.default.contentsOfDirectory(
-            at: directory,
-            includingPropertiesForKeys: [.isRegularFileKey],
-            options: [.skipsSubdirectoryDescendants]
-        )
-        return urls.compactMap { url in
-            let values = try? url.resourceValues(forKeys: [.isRegularFileKey])
-            return (values?.isRegularFile ?? false) ? url.lastPathComponent : nil
-        }
-    }
-
-    private func uniqueDestination(directory: URL, filename: String, fileManager: FileManager) -> URL {
-        var candidate = directory.appendingPathComponent(filename)
-        guard fileManager.fileExists(atPath: candidate.path) else { return candidate }
-
-        let base = (filename as NSString).deletingPathExtension
-        let ext = (filename as NSString).pathExtension
-        var counter = 1
-        repeat {
-            let newName = ext.isEmpty ? "\(base) (\(counter))" : "\(base) (\(counter)).\(ext)"
-            candidate = directory.appendingPathComponent(newName)
-            counter += 1
-        } while fileManager.fileExists(atPath: candidate.path)
-        return candidate
     }
 }
