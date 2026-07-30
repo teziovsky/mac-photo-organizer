@@ -103,7 +103,7 @@ struct FileDateRepairModeView: View {
         GlassCard {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
-                    Text(service.isScanning ? "Scanning media" : "Repairing current chunk")
+                    Text(service.isScanning ? "Scanning media" : "Repairing dates")
                         .font(.headline)
                     Spacer()
                     Text("\(service.progress.processed) of \(service.progress.total)")
@@ -209,8 +209,15 @@ struct FileDateRepairModeView: View {
             Button("Fix Current Chunk") {
                 service.repairCurrentChunk()
             }
-            .pillActionButton(prominent: true)
+            .pillActionButton()
             .disabled(service.currentChunk.isEmpty || service.isRunning)
+
+            Button("Fix All (\(service.pendingItems.count))") {
+                service.repairAll()
+            }
+            .pillActionButton(prominent: true)
+            .disabled(service.pendingItems.isEmpty || service.isRunning)
+            .help("Repair every remaining file without using chunks")
         }
     }
 

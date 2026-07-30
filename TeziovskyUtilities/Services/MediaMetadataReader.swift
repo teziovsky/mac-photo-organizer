@@ -119,34 +119,29 @@ enum MediaMetadataReader {
     }
 
     private static func readImageDateEvidence(url: URL) -> [FileDateEvidence] {
-        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil) else {
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+              CGImageSourceGetCount(source) > 0,
+              let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any] else {
             return []
         }
 
+        // Only the primary image is used. Auxiliary HEIC/JPEG frames often keep stale
+        // timestamps through ImageIO rewrites and would falsely fail verification.
         var evidence: [FileDateEvidence] = []
-        for index in 0..<CGImageSourceGetCount(source) {
-            guard let properties = CGImageSourceCopyPropertiesAtIndex(
-                source,
-                index,
-                nil
-            ) as? [CFString: Any] else {
-                continue
-            }
-            if let exif = properties[kCGImagePropertyExifDictionary] as? [CFString: Any] {
-                appendDate(
-                    exif[kCGImagePropertyExifDateTimeOriginal],
-                    source: .exifOriginal,
-                    to: &evidence
-                )
-                appendDate(
-                    exif[kCGImagePropertyExifDateTimeDigitized],
-                    source: .exifDigitized,
-                    to: &evidence
-                )
-            }
-            if let tiff = properties[kCGImagePropertyTIFFDictionary] as? [CFString: Any] {
-                appendDate(tiff[kCGImagePropertyTIFFDateTime], source: .tiffDateTime, to: &evidence)
-            }
+        if let exif = properties[kCGImagePropertyExifDictionary] as? [CFString: Any] {
+            appendDate(
+                exif[kCGImagePropertyExifDateTimeOriginal],
+                source: .exifOriginal,
+                to: &evidence
+            )
+            appendDate(
+                exif[kCGImagePropertyExifDateTimeDigitized],
+                source: .exifDigitized,
+                to: &evidence
+            )
+        }
+        if let tiff = properties[kCGImagePropertyTIFFDictionary] as? [CFString: Any] {
+            appendDate(tiff[kCGImagePropertyTIFFDateTime], source: .tiffDateTime, to: &evidence)
         }
         return evidence
     }

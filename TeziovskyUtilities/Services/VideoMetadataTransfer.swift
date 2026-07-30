@@ -48,7 +48,7 @@ enum VideoMetadataTransfer {
                 return item
             }
             didFindCreationDate = true
-            mutableItem.value = ISO8601DateFormatter().string(from: date) as NSString
+            mutableItem.value = date as NSDate
             return mutableItem
         }
         guard didFindCreationDate else { return }

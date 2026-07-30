@@ -111,6 +111,18 @@ enum FileDateRepairPlanner {
         if lhs.date != rhs.date { return lhs.date < rhs.date }
         return lhs.source.rawValue < rhs.source.rawValue
     }
+
+    /// True when at least one embedded creation date disagrees with the target.
+    static func embeddedCreationDatesNeedSync(
+        _ evidence: [FileDateEvidence],
+        target: Date,
+        tolerance: TimeInterval = timestampTolerance
+    ) -> Bool {
+        evidence.contains {
+            $0.source.isEmbeddedCreationDate &&
+                abs($0.date.timeIntervalSince(target)) > tolerance
+        }
+    }
 }
 
 enum FileDateRepairExtensions {
@@ -149,5 +161,68 @@ enum FileDateRepairChunker {
     ) -> [FileDateRepairItem] {
         guard size > 0 else { return [] }
         return Array(items.lazy.filter { !attemptedIDs.contains($0.id) }.prefix(size))
+    }
+}
+
+enum FileDateRepairVerification {
+    enum Failure: Equatable {
+        case missingCreationDate
+        case creationDateMismatch
+        case missingModificationDate
+        case modificationDateMismatch
+        case embeddedDateMismatch(FileDateSource)
+        case embeddedDatesMissing
+
+        var message: String {
+            switch self {
+            case .missingCreationDate:
+                return "The filesystem creation date could not be verified after writing."
+            case .creationDateMismatch:
+                return "The filesystem creation date did not match the target after writing."
+            case .missingModificationDate:
+                return "The filesystem modification date could not be verified after writing."
+            case .modificationDateMismatch:
+                return "The filesystem modification date changed while repairing creation dates."
+            case .embeddedDateMismatch(let source):
+                return "\(source.label) did not match the target after writing."
+            case .embeddedDatesMissing:
+                return "Embedded creation dates were lost while writing metadata."
+            }
+        }
+    }
+
+    /// Confirms filesystem dates and any remaining embedded creation dates match the target.
+    /// Sources that ImageIO drops on rewrite are allowed to disappear, but every remaining
+    /// embedded creation date must match and at least one expected source must survive.
+    static func validate(
+        _ evidence: [FileDateEvidence],
+        expectedEmbeddedSources: Set<FileDateSource>,
+        target: Date,
+        originalModification: Date,
+        tolerance: TimeInterval = FileDateRepairPlanner.timestampTolerance
+    ) -> Failure? {
+        guard let created = evidence.first(where: { $0.source == .filesystemCreation })?.date else {
+            return .missingCreationDate
+        }
+        guard abs(created.timeIntervalSince(target)) <= tolerance else {
+            return .creationDateMismatch
+        }
+        guard let modified = evidence.first(where: { $0.source == .filesystemModification })?.date else {
+            return .missingModificationDate
+        }
+        guard abs(modified.timeIntervalSince(originalModification)) <= tolerance else {
+            return .modificationDateMismatch
+        }
+
+        let embedded = evidence.filter(\.source.isEmbeddedCreationDate)
+        for item in embedded {
+            guard abs(item.date.timeIntervalSince(target)) <= tolerance else {
+                return .embeddedDateMismatch(item.source)
+            }
+        }
+        if !expectedEmbeddedSources.isEmpty, embedded.isEmpty {
+            return .embeddedDatesMissing
+        }
+        return nil
     }
 }

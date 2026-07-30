@@ -237,8 +237,15 @@ final class FileDateRepairService: ObservableObject {
     }
 
     func repairCurrentChunk() {
-        guard !isRunning, !currentChunk.isEmpty, let directory else { return }
-        let chunk = currentChunk
+        repair(items: currentChunk)
+    }
+
+    func repairAll() {
+        repair(items: pendingItems)
+    }
+
+    private func repair(items chunk: [FileDateRepairItem]) {
+        guard !isRunning, !chunk.isEmpty, let directory else { return }
         isRepairing = true
         cancellationMessage = nil
         progress = FileDateRepairProgress(total: chunk.count)
@@ -345,6 +352,10 @@ final class FileDateRepairService: ObservableObject {
         let embeddedSources = Set(
             before.lazy.filter(\.source.isEmbeddedCreationDate).map(\.source)
         )
+        let embeddedNeedsSync = FileDateRepairPlanner.embeddedCreationDatesNeedSync(
+            before,
+            target: item.proposedCreationDate
+        )
         let backupURL = try makeBackup(of: item.fileURL)
         defer { try? FileManager.default.removeItem(at: backupURL) }
 
@@ -353,7 +364,7 @@ final class FileDateRepairService: ObservableObject {
             try await synchronizeEmbeddedDates(
                 for: item,
                 isVideo: isVideo,
-                isRequired: !embeddedSources.isEmpty
+                isRequired: embeddedNeedsSync
             )
             try Task.checkCancellation()
             try FileDatePreservation.applyCreationDate(
@@ -366,18 +377,15 @@ final class FileDateRepairService: ObservableObject {
                 isVideo: isVideo
             )
             try Task.checkCancellation()
-            guard datesWereSynchronized(
+            if let failure = FileDateRepairVerification.validate(
                 after,
-                expectedEmbeddedSources: embeddedSources,
+                expectedEmbeddedSources: embeddedNeedsSync ? embeddedSources : [],
                 target: item.proposedCreationDate,
                 originalModification: originalModification
-            ) else {
+            ) {
                 throw CocoaError(
                     .fileWriteUnknown,
-                    userInfo: [
-                        NSLocalizedDescriptionKey:
-                            "Not every creation date could be verified after writing."
-                    ]
+                    userInfo: [NSLocalizedDescriptionKey: failure.message]
                 )
             }
         } catch {
@@ -401,14 +409,6 @@ final class FileDateRepairService: ObservableObject {
         }
     }
 
-    private func makeBackup(of fileURL: URL) throws -> URL {
-        let backupURL = fileURL.deletingLastPathComponent()
-            .appendingPathComponent(".date-repair-backup-\(UUID().uuidString)")
-            .appendingPathExtension(fileURL.pathExtension)
-        try FileManager.default.copyItem(at: fileURL, to: backupURL)
-        return backupURL
-    }
-
     private func synchronizeEmbeddedDates(
         for item: FileDateRepairItem,
         isVideo: Bool,
@@ -428,34 +428,12 @@ final class FileDateRepairService: ObservableObject {
         }
     }
 
-    private func datesWereSynchronized(
-        _ evidence: [FileDateEvidence],
-        expectedEmbeddedSources: Set<FileDateSource>,
-        target: Date,
-        originalModification: Date
-    ) -> Bool {
-        let tolerance = FileDateRepairPlanner.timestampTolerance
-        guard let created = evidence.first(where: {
-            $0.source == .filesystemCreation
-        })?.date,
-            abs(created.timeIntervalSince(target)) <= tolerance,
-            let modified = evidence.first(where: {
-                $0.source == .filesystemModification
-            })?.date,
-            abs(modified.timeIntervalSince(originalModification)) <= tolerance else {
-            return false
-        }
-
-        for source in expectedEmbeddedSources {
-            let matchingDates = evidence.filter { $0.source == source }.map(\.date)
-            guard !matchingDates.isEmpty,
-                  matchingDates.allSatisfy({
-                      abs($0.timeIntervalSince(target)) <= tolerance
-                  }) else {
-                return false
-            }
-        }
-        return true
+    private func makeBackup(of fileURL: URL) throws -> URL {
+        let backupURL = fileURL.deletingLastPathComponent()
+            .appendingPathComponent(".date-repair-backup-\(UUID().uuidString)")
+            .appendingPathExtension(fileURL.pathExtension)
+        try FileManager.default.copyItem(at: fileURL, to: backupURL)
+        return backupURL
     }
 
     private func restoreBackup(

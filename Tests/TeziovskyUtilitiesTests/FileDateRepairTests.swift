@@ -107,6 +107,31 @@ final class FileDateRepairPlannerTests: XCTestCase {
         XCTAssertNil(item)
     }
 
+    func testEmbeddedSyncSkippedWhenEmbeddedDatesAlreadyMatchTarget() {
+        let target = date(2015)
+        XCTAssertFalse(
+            FileDateRepairPlanner.embeddedCreationDatesNeedSync(
+                [
+                    FileDateEvidence(source: .filesystemCreation, date: date(2026)),
+                    FileDateEvidence(source: .filesystemModification, date: target),
+                    FileDateEvidence(source: .exifOriginal, date: target),
+                    FileDateEvidence(source: .exifDigitized, date: target)
+                ],
+                target: target
+            )
+        )
+        XCTAssertTrue(
+            FileDateRepairPlanner.embeddedCreationDatesNeedSync(
+                [
+                    FileDateEvidence(source: .filesystemCreation, date: date(2026)),
+                    FileDateEvidence(source: .filesystemModification, date: target),
+                    FileDateEvidence(source: .exifOriginal, date: date(2012))
+                ],
+                target: target
+            )
+        )
+    }
+
     private func date(_ year: Int) -> Date {
         Calendar(identifier: .gregorian).date(from: DateComponents(year: year, month: 1, day: 1))!
     }
@@ -311,5 +336,156 @@ final class FileDatePreservationRepairTests: XCTestCase {
             )
             XCTAssertEqual(actual.timeIntervalSince1970, target.timeIntervalSince1970, accuracy: 1)
         }
+    }
+
+    func testSynchronizesJPEGCreationDatesWithoutLeavingStaleValues() async throws {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("FileDateMetadata-\(UUID().uuidString).jpg")
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let context = try XCTUnwrap(
+            CGContext(
+                data: nil,
+                width: 1,
+                height: 1,
+                bitsPerComponent: 8,
+                bytesPerRow: 4,
+                space: CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            )
+        )
+        let image = try XCTUnwrap(context.makeImage())
+        let destination = try XCTUnwrap(
+            CGImageDestinationCreateWithURL(url as CFURL, "public.jpeg" as CFString, 1, nil)
+        )
+        CGImageDestinationAddImage(
+            destination,
+            image,
+            [
+                kCGImagePropertyExifDictionary: [
+                    kCGImagePropertyExifDateTimeOriginal: "2012:06:15 12:30:00",
+                    kCGImagePropertyExifDateTimeDigitized: "2011:06:15 12:30:00"
+                ],
+                kCGImagePropertyTIFFDictionary: [
+                    kCGImagePropertyTIFFDateTime: "2010:06:15 12:30:00"
+                ]
+            ] as CFDictionary
+        )
+        XCTAssertTrue(CGImageDestinationFinalize(destination))
+
+        let target = Calendar(identifier: .gregorian).date(
+            from: DateComponents(year: 2004, month: 3, day: 4, hour: 5, minute: 6, second: 7)
+        )!
+        try FileDatePreservation.synchronizeImageCreationDates(in: url, to: target)
+
+        let evidence = try await MediaMetadataReader.readDateEvidence(url: url, isVideo: false)
+        let embedded = evidence.filter(\.source.isEmbeddedCreationDate)
+        XCTAssertFalse(embedded.isEmpty)
+        for item in embedded {
+            XCTAssertEqual(
+                item.date.timeIntervalSince1970,
+                target.timeIntervalSince1970,
+                accuracy: 1,
+                "Stale \(item.source) remained after sync"
+            )
+        }
+    }
+
+    func testRemovesStaleDigitizedWhenImageIOWillNotUpdateIt() async throws {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("FileDateDigitized-\(UUID().uuidString).jpg")
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let context = try XCTUnwrap(
+            CGContext(
+                data: nil,
+                width: 1,
+                height: 1,
+                bitsPerComponent: 8,
+                bytesPerRow: 4,
+                space: CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            )
+        )
+        let image = try XCTUnwrap(context.makeImage())
+        let destination = try XCTUnwrap(
+            CGImageDestinationCreateWithURL(url as CFURL, "public.jpeg" as CFString, 1, nil)
+        )
+        CGImageDestinationAddImage(
+            destination,
+            image,
+            [
+                kCGImagePropertyExifDictionary: [
+                    kCGImagePropertyExifDateTimeOriginal: "2015:02:22 20:45:00",
+                    kCGImagePropertyExifDateTimeDigitized: "2012:01:01 00:00:00"
+                ]
+            ] as CFDictionary
+        )
+        XCTAssertTrue(CGImageDestinationFinalize(destination))
+
+        let target = Calendar(identifier: .gregorian).date(
+            from: DateComponents(year: 2015, month: 2, day: 22, hour: 20, minute: 45)
+        )!
+        try FileDatePreservation.synchronizeImageCreationDates(in: url, to: target)
+
+        let evidence = try await MediaMetadataReader.readDateEvidence(url: url, isVideo: false)
+        if let digitized = evidence.first(where: { $0.source == .exifDigitized })?.date {
+            XCTAssertEqual(digitized.timeIntervalSince1970, target.timeIntervalSince1970, accuracy: 1)
+        }
+        for item in evidence where item.source.isEmbeddedCreationDate {
+            XCTAssertEqual(item.date.timeIntervalSince1970, target.timeIntervalSince1970, accuracy: 1)
+        }
+    }
+}
+
+final class FileDateRepairVerificationTests: XCTestCase {
+    func testAllowsDroppedEmbeddedSourcesWhenRemainingDatesMatch() {
+        let target = Date(timeIntervalSince1970: 1_000)
+        let modified = Date(timeIntervalSince1970: 2_000)
+        let failure = FileDateRepairVerification.validate(
+            [
+                FileDateEvidence(source: .filesystemCreation, date: target),
+                FileDateEvidence(source: .filesystemModification, date: modified),
+                FileDateEvidence(source: .exifOriginal, date: target)
+            ],
+            expectedEmbeddedSources: [.exifOriginal, .tiffDateTime],
+            target: target,
+            originalModification: modified
+        )
+
+        XCTAssertNil(failure)
+    }
+
+    func testRejectsStaleEmbeddedDate() {
+        let target = Date(timeIntervalSince1970: 1_000)
+        let modified = Date(timeIntervalSince1970: 2_000)
+        let failure = FileDateRepairVerification.validate(
+            [
+                FileDateEvidence(source: .filesystemCreation, date: target),
+                FileDateEvidence(source: .filesystemModification, date: modified),
+                FileDateEvidence(source: .exifOriginal, date: Date(timeIntervalSince1970: 500))
+            ],
+            expectedEmbeddedSources: [.exifOriginal],
+            target: target,
+            originalModification: modified
+        )
+
+        XCTAssertEqual(failure, .embeddedDateMismatch(.exifOriginal))
+    }
+
+    func testRejectsCompleteLossOfEmbeddedDates() {
+        let target = Date(timeIntervalSince1970: 1_000)
+        let modified = Date(timeIntervalSince1970: 2_000)
+        let failure = FileDateRepairVerification.validate(
+            [
+                FileDateEvidence(source: .filesystemCreation, date: target),
+                FileDateEvidence(source: .filesystemModification, date: modified)
+            ],
+            expectedEmbeddedSources: [.exifOriginal],
+            target: target,
+            originalModification: modified
+        )
+
+        XCTAssertEqual(failure, .embeddedDatesMissing)
     }
 }
