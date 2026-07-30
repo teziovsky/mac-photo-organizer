@@ -1,4 +1,6 @@
+import CoreGraphics
 import Foundation
+import ImageIO
 import XCTest
 @testable import TeziovskyUtilities
 
@@ -39,13 +41,65 @@ final class FileDateRepairPlannerTests: XCTestCase {
         XCTAssertNil(item)
     }
 
-    func testIgnoresImplausibleFutureDate() {
+    func testChoosesOldestOfAllCreationFields() {
+        let item = FileDateRepairPlanner.makeItem(
+            fileURL: URL(fileURLWithPath: "/tmp/photo.jpg"),
+            relativePath: "photo.jpg",
+            evidence: [
+                FileDateEvidence(source: .filesystemCreation, date: date(2024)),
+                FileDateEvidence(source: .exifOriginal, date: date(2012)),
+                FileDateEvidence(source: .exifDigitized, date: date(2010)),
+                FileDateEvidence(source: .tiffDateTime, date: date(2008)),
+                FileDateEvidence(source: .filesystemModification, date: date(2015))
+            ],
+            now: date(2026)
+        )
+
+        XCTAssertEqual(item?.proposedCreationDate, date(2008))
+        XCTAssertEqual(item?.proposedSource, .tiffDateTime)
+    }
+
+    func testRepairsImplausibleFutureCreationDateUsingOldestValidDate() {
         let item = FileDateRepairPlanner.makeItem(
             fileURL: URL(fileURLWithPath: "/tmp/photo.jpg"),
             relativePath: "photo.jpg",
             evidence: [
                 FileDateEvidence(source: .filesystemCreation, date: date(2024)),
                 FileDateEvidence(source: .exifOriginal, date: date(2030))
+            ],
+            now: date(2026)
+        )
+
+        XCTAssertEqual(item?.proposedCreationDate, date(2024))
+        XCTAssertEqual(item?.proposedSource, .filesystemCreation)
+    }
+
+    func testRepairsEmbeddedDatesWhenFilesystemCreationIsAlreadyOldest() {
+        let item = FileDateRepairPlanner.makeItem(
+            fileURL: URL(fileURLWithPath: "/tmp/photo.jpg"),
+            relativePath: "photo.jpg",
+            evidence: [
+                FileDateEvidence(source: .filesystemCreation, date: date(2005)),
+                FileDateEvidence(source: .exifOriginal, date: date(2012)),
+                FileDateEvidence(source: .exifDigitized, date: date(2010)),
+                FileDateEvidence(source: .filesystemModification, date: date(2024))
+            ],
+            now: date(2026)
+        )
+
+        XCTAssertEqual(item?.proposedCreationDate, date(2005))
+        XCTAssertEqual(item?.proposedSource, .filesystemCreation)
+    }
+
+    func testDoesNotRepairWhenAllCreationDatesAlreadyMatch() {
+        let item = FileDateRepairPlanner.makeItem(
+            fileURL: URL(fileURLWithPath: "/tmp/photo.jpg"),
+            relativePath: "photo.jpg",
+            evidence: [
+                FileDateEvidence(source: .filesystemCreation, date: date(2005)),
+                FileDateEvidence(source: .exifOriginal, date: date(2005)),
+                FileDateEvidence(source: .tiffDateTime, date: date(2005)),
+                FileDateEvidence(source: .filesystemModification, date: date(2024))
             ],
             now: date(2026)
         )
@@ -165,11 +219,28 @@ final class FileDateRepairScannerTests: XCTestCase {
             at: url.deletingLastPathComponent(),
             withIntermediateDirectories: true
         )
-        try Data().write(to: url)
-        let oldDate = Calendar(identifier: .gregorian).date(
-            from: DateComponents(year: 2005, month: 1, day: 1)
-        )!
-        try FileManager.default.setAttributes([.modificationDate: oldDate], ofItemAtPath: url.path)
+        let context = try XCTUnwrap(
+            CGContext(
+                data: nil,
+                width: 1,
+                height: 1,
+                bitsPerComponent: 8,
+                bytesPerRow: 4,
+                space: CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            )
+        )
+        let image = try XCTUnwrap(context.makeImage())
+        let destination = try XCTUnwrap(
+            CGImageDestinationCreateWithURL(url as CFURL, "public.jpeg" as CFString, 1, nil)
+        )
+        let properties: [CFString: Any] = [
+            kCGImagePropertyExifDictionary: [
+                kCGImagePropertyExifDateTimeOriginal: "2005:01:01 00:00:00"
+            ]
+        ]
+        CGImageDestinationAddImage(destination, image, properties as CFDictionary)
+        XCTAssertTrue(CGImageDestinationFinalize(destination))
     }
 }
 
@@ -192,5 +263,53 @@ final class FileDatePreservationRepairTests: XCTestCase {
         let actualModification = try XCTUnwrap(values.contentModificationDate)
         XCTAssertEqual(actualCreation.timeIntervalSince1970, proposedCreation.timeIntervalSince1970, accuracy: 1)
         XCTAssertEqual(actualModification.timeIntervalSince1970, modified.timeIntervalSince1970, accuracy: 1)
+    }
+
+    func testSynchronizesAllExistingImageCreationDates() async throws {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("FileDateMetadata-\(UUID().uuidString).tiff")
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let context = try XCTUnwrap(
+            CGContext(
+                data: nil,
+                width: 1,
+                height: 1,
+                bitsPerComponent: 8,
+                bytesPerRow: 4,
+                space: colorSpace,
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            )
+        )
+        let image = try XCTUnwrap(context.makeImage())
+        let destination = try XCTUnwrap(
+            CGImageDestinationCreateWithURL(url as CFURL, "public.tiff" as CFString, 1, nil)
+        )
+        let properties: [CFString: Any] = [
+            kCGImagePropertyExifDictionary: [
+                kCGImagePropertyExifDateTimeOriginal: "2012:01:01 00:00:00",
+                kCGImagePropertyExifDateTimeDigitized: "2010:01:01 00:00:00"
+            ],
+            kCGImagePropertyTIFFDictionary: [
+                kCGImagePropertyTIFFDateTime: "2008:01:01 00:00:00"
+            ]
+        ]
+        CGImageDestinationAddImage(destination, image, properties as CFDictionary)
+        XCTAssertTrue(CGImageDestinationFinalize(destination))
+
+        let target = Calendar(identifier: .gregorian).date(
+            from: DateComponents(year: 2005, month: 2, day: 3, hour: 4, minute: 5, second: 6)
+        )!
+        try FileDatePreservation.synchronizeImageCreationDates(in: url, to: target)
+
+        let evidence = try await MediaMetadataReader.readDateEvidence(url: url, isVideo: false)
+        for source in [FileDateSource.exifOriginal, .exifDigitized, .tiffDateTime] {
+            let actual = try XCTUnwrap(
+                evidence.first(where: { $0.source == source })?.date,
+                "Missing \(source); evidence: \(evidence)"
+            )
+            XCTAssertEqual(actual.timeIntervalSince1970, target.timeIntervalSince1970, accuracy: 1)
+        }
     }
 }

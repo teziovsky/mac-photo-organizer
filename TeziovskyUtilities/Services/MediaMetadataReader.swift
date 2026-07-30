@@ -77,16 +77,27 @@ enum MediaMetadataReader {
     private static func readVideoDateEvidence(url: URL) async -> [FileDateEvidence] {
         let asset = AVURLAsset(url: url)
         guard let metadata = try? await asset.load(.commonMetadata) else { return [] }
+        var dates: [Date] = []
         for item in metadata where item.commonKey == .commonKeyCreationDate {
             if let date = try? await item.load(.dateValue) {
-                return [FileDateEvidence(source: .containerCreation, date: date)]
+                dates.append(date)
+                continue
             }
             if let string = try? await item.load(.stringValue),
                let date = parseDateString(string) {
-                return [FileDateEvidence(source: .containerCreation, date: date)]
+                dates.append(date)
             }
         }
-        return []
+        return dates
+            .reduce(into: [Date]()) { uniqueDates, date in
+                guard !uniqueDates.contains(where: {
+                    abs($0.timeIntervalSince(date)) <= FileDateRepairPlanner.timestampTolerance
+                }) else {
+                    return
+                }
+                uniqueDates.append(date)
+            }
+            .map { FileDateEvidence(source: .containerCreation, date: $0) }
     }
 
     private static func readImageMetadata(url: URL, into snapshot: inout MediaMetadataSnapshot) {
@@ -108,26 +119,34 @@ enum MediaMetadataReader {
     }
 
     private static func readImageDateEvidence(url: URL) -> [FileDateEvidence] {
-        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
-              let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any] else {
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil) else {
             return []
         }
 
         var evidence: [FileDateEvidence] = []
-        if let exif = properties[kCGImagePropertyExifDictionary] as? [CFString: Any] {
-            appendDate(
-                exif[kCGImagePropertyExifDateTimeOriginal],
-                source: .exifOriginal,
-                to: &evidence
-            )
-            appendDate(
-                exif[kCGImagePropertyExifDateTimeDigitized],
-                source: .exifDigitized,
-                to: &evidence
-            )
-        }
-        if let tiff = properties[kCGImagePropertyTIFFDictionary] as? [CFString: Any] {
-            appendDate(tiff[kCGImagePropertyTIFFDateTime], source: .tiffDateTime, to: &evidence)
+        for index in 0..<CGImageSourceGetCount(source) {
+            guard let properties = CGImageSourceCopyPropertiesAtIndex(
+                source,
+                index,
+                nil
+            ) as? [CFString: Any] else {
+                continue
+            }
+            if let exif = properties[kCGImagePropertyExifDictionary] as? [CFString: Any] {
+                appendDate(
+                    exif[kCGImagePropertyExifDateTimeOriginal],
+                    source: .exifOriginal,
+                    to: &evidence
+                )
+                appendDate(
+                    exif[kCGImagePropertyExifDateTimeDigitized],
+                    source: .exifDigitized,
+                    to: &evidence
+                )
+            }
+            if let tiff = properties[kCGImagePropertyTIFFDictionary] as? [CFString: Any] {
+                appendDate(tiff[kCGImagePropertyTIFFDateTime], source: .tiffDateTime, to: &evidence)
+            }
         }
         return evidence
     }
@@ -138,6 +157,12 @@ enum MediaMetadataReader {
         to evidence: inout [FileDateEvidence]
     ) {
         guard let value = rawValue as? String, let date = parseExifDate(value) else { return }
+        guard !evidence.contains(where: {
+            $0.source == source &&
+                abs($0.date.timeIntervalSince(date)) <= FileDateRepairPlanner.timestampTolerance
+        }) else {
+            return
+        }
         evidence.append(FileDateEvidence(source: source, date: date))
     }
 

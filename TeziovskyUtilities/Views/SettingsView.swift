@@ -102,12 +102,10 @@ private struct FileDateRepairSettingsTab: View {
     var body: some View {
         Form {
             Section("Supported files") {
-                TextField("File extensions", text: $extensions, axis: .vertical)
-                    .lineLimit(3...6)
-                    .help("Separate extensions with commas, spaces, or new lines.")
+                FileExtensionTagsInput(extensions: $extensions)
                 Text(
                     "Only matching files are scanned. Enter extensions without a leading dot; "
-                        + "capitalization and duplicate entries are normalized automatically."
+                        + "type a comma or semicolon to add each extension."
                 )
                 .font(AlbumListRowStyle.detailFont)
                 .foregroundStyle(.secondary)
@@ -119,8 +117,9 @@ private struct FileDateRepairSettingsTab: View {
 
             Section("Repair behavior") {
                 Text(
-                    "Repair changes only Finder’s creation date. "
-                        + "Modification dates and embedded media metadata are preserved."
+                    "Repair synchronizes Finder Created and every existing EXIF, TIFF, "
+                        + "or video-container creation date to the oldest valid date found. "
+                        + "Modification dates stay unchanged."
                 )
                     .font(AlbumListRowStyle.detailFont)
                     .foregroundStyle(.secondary)
@@ -128,6 +127,166 @@ private struct FileDateRepairSettingsTab: View {
         }
         .formStyle(.grouped)
         .padding()
+    }
+}
+
+private struct FileExtensionTagsInput: View {
+    @Binding var extensions: String
+    @State private var draft = ""
+    @FocusState private var isDraftFocused: Bool
+
+    private var tags: [String] {
+        FileDateRepairExtensions.parse(extensions).sorted()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            SettingsFlowLayout(spacing: 7) {
+                ForEach(tags, id: \.self) { fileExtension in
+                    extensionChip(fileExtension)
+                }
+            }
+            .padding(8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.primary.opacity(0.04))
+            }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                isDraftFocused = true
+            }
+
+            TextField("Extension", text: $draft)
+                .textFieldStyle(.roundedBorder)
+                .focused($isDraftFocused)
+                .accessibilityLabel("Add file extension")
+                .onSubmit(commitDraft)
+                .onChange(of: draft) { _, value in
+                    commitValuesBeforeLastDelimiter(in: value)
+                }
+        }
+        .help("Type an extension, then comma, semicolon, or Return.")
+    }
+
+    private func extensionChip(_ fileExtension: String) -> some View {
+        HStack(spacing: 4) {
+            Text(".\(fileExtension)")
+                .font(.callout.monospaced())
+            Button {
+                remove(fileExtension)
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.caption2.weight(.bold))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Remove .\(fileExtension)")
+        }
+        .padding(.leading, 9)
+        .padding(.trailing, 7)
+        .padding(.vertical, 5)
+        .foregroundStyle(Color.accentColor)
+        .background(Color.accentColor.opacity(0.12), in: Capsule())
+        .overlay {
+            Capsule()
+                .strokeBorder(Color.accentColor.opacity(0.25))
+        }
+    }
+
+    private func commitValuesBeforeLastDelimiter(in value: String) {
+        guard let delimiterIndex = value.lastIndex(where: { $0 == "," || $0 == ";" }) else {
+            return
+        }
+        let committed = String(value[...delimiterIndex])
+        let remainder = String(value[value.index(after: delimiterIndex)...])
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        add(committed)
+        draft = remainder
+    }
+
+    private func commitDraft() {
+        add(draft)
+        draft = ""
+    }
+
+    private func add(_ value: String) {
+        let additions = FileDateRepairExtensions.parse(value)
+        guard !additions.isEmpty else { return }
+        extensions = Set(tags)
+            .union(additions)
+            .sorted()
+            .joined(separator: ", ")
+    }
+
+    private func remove(_ fileExtension: String) {
+        extensions = tags
+            .filter { $0 != fileExtension }
+            .joined(separator: ", ")
+    }
+}
+
+private struct SettingsFlowLayout: Layout {
+    let spacing: CGFloat
+
+    func sizeThatFits(
+        proposal: ProposedViewSize,
+        subviews: Subviews,
+        cache: inout ()
+    ) -> CGSize {
+        let availableWidth = proposal.width ?? .greatestFiniteMagnitude
+        var position = CGPoint.zero
+        var rowHeight: CGFloat = 0
+        var contentWidth: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if position.x > 0, position.x + spacing + size.width > availableWidth {
+                position.x = 0
+                position.y += rowHeight + spacing
+                rowHeight = 0
+            }
+            if position.x > 0 {
+                position.x += spacing
+            }
+            position.x += size.width
+            rowHeight = max(rowHeight, size.height)
+            contentWidth = max(contentWidth, position.x)
+        }
+
+        return CGSize(
+            width: proposal.width ?? contentWidth,
+            height: position.y + rowHeight
+        )
+    }
+
+    func placeSubviews(
+        in bounds: CGRect,
+        proposal: ProposedViewSize,
+        subviews: Subviews,
+        cache: inout ()
+    ) {
+        var position = CGPoint(x: bounds.minX, y: bounds.minY)
+        var rowHeight: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if position.x > bounds.minX,
+               position.x + spacing + size.width > bounds.maxX {
+                position.x = bounds.minX
+                position.y += rowHeight + spacing
+                rowHeight = 0
+            }
+            if position.x > bounds.minX {
+                position.x += spacing
+            }
+            subview.place(
+                at: position,
+                anchor: .topLeading,
+                proposal: ProposedViewSize(size)
+            )
+            position.x += size.width
+            rowHeight = max(rowHeight, size.height)
+        }
     }
 }
 
@@ -155,8 +314,13 @@ private struct DroneSettingsTab: View {
             Section("Compressed files") {
                 TextField("Compressed suffix", text: $compressedSuffix)
                     .help("Suffix added to HandBrake outputs; removed during finalize.")
-                TextField("Output extension", text: $handBrakeOutputExtension)
-                    .help("Extension for HandBrake outputs, e.g. mp4.")
+                Picker("Output extension", selection: $handBrakeOutputExtension) {
+                    ForEach(DroneFinalizeConfig.supportedOutputExtensions, id: \.self) { fileExtension in
+                        Text(".\(fileExtension)").tag(fileExtension)
+                    }
+                }
+                .pickerStyle(.menu)
+                .help("Container extension for HandBrake outputs.")
                 Text("Defaults: _COMPRESSED, mp4")
                     .font(AlbumListRowStyle.detailFont)
                     .foregroundStyle(.secondary)

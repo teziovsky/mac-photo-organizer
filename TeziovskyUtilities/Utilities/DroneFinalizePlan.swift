@@ -2,6 +2,8 @@ import Foundation
 
 /// User-configurable inputs for the drone project workflow.
 struct DroneFinalizeConfig: Equatable, Sendable {
+    static let supportedOutputExtensions = ["mp4", "mov", "mkv", "webm"]
+
     var compressedSuffix: String
     var rawDirectoryName: String
     var exportDirectoryName: String
@@ -33,9 +35,14 @@ struct DroneFinalizeConfig: Equatable, Sendable {
     }
 
     var normalizedOutputExtension: String {
-        let trimmed = handBrakeOutputExtension.trimmingCharacters(in: .whitespacesAndNewlines)
+        Self.normalizeOutputExtension(handBrakeOutputExtension)
+    }
+
+    static func normalizeOutputExtension(_ value: String) -> String {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
             .trimmingCharacters(in: CharacterSet(charactersIn: "."))
-        return trimmed.isEmpty ? "mp4" : trimmed.lowercased()
+            .lowercased()
+        return supportedOutputExtensions.contains(trimmed) ? trimmed : "mp4"
     }
 }
 

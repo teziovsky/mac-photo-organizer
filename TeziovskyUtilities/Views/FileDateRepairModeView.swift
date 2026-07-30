@@ -62,8 +62,8 @@ struct FileDateRepairModeView: View {
                 .font(.body)
                 .foregroundStyle(.secondary)
             Text(
-                "Only Finder’s creation date is changed. "
-                    + "File contents, embedded metadata, and modification dates stay untouched."
+                "Finder, EXIF/TIFF, and video-container creation dates are synchronized "
+                    + "to the oldest date found. Modification dates stay unchanged."
             )
                 .font(.callout)
                 .foregroundStyle(.secondary)
@@ -116,10 +116,11 @@ struct FileDateRepairModeView: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
-                Button("Cancel") {
+                Button(service.cancellationMessage == nil ? "Cancel" : "Cancelling…", role: .cancel) {
                     service.cancel()
                 }
                 .buttonStyle(.bordered)
+                .disabled(service.cancellationMessage != nil)
             }
         }
     }
@@ -134,11 +135,13 @@ struct FileDateRepairModeView: View {
                     chunkControls
                     LazyVStack(spacing: 8) {
                         ForEach(service.items) { item in
+                            let didFail = service.attemptedIDs.contains(item.id)
+                                && !service.repairedIDs.contains(item.id)
                             FileDateRepairRow(
                                 item: item,
                                 isRepaired: service.repairedIDs.contains(item.id),
-                                didFail: service.attemptedIDs.contains(item.id)
-                                    && !service.repairedIDs.contains(item.id)
+                                didFail: didFail,
+                                failureMessage: didFail ? service.failureMessage(for: item.id) : nil
                             )
                         }
                     }
@@ -161,7 +164,11 @@ struct FileDateRepairModeView: View {
             .font(.callout)
             .foregroundStyle(.secondary)
 
-            if service.items.isEmpty {
+            if let cancellationMessage = service.cancellationMessage {
+                Label(cancellationMessage, systemImage: "stop.circle.fill")
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 4)
+            } else if service.items.isEmpty {
                 Label("No incorrect creation dates found.", systemImage: "checkmark.circle.fill")
                     .foregroundStyle(.green)
                     .padding(.top, 4)
@@ -189,6 +196,15 @@ struct FileDateRepairModeView: View {
                 .foregroundStyle(.secondary)
 
             Spacer()
+
+            if !service.repairedIDs.isEmpty {
+                Button("Clear Processed") {
+                    service.clearProcessed()
+                }
+                .pillActionButton()
+                .disabled(service.isRunning)
+                .help("Remove successfully repaired files from the list")
+            }
 
             Button("Fix Current Chunk") {
                 service.repairCurrentChunk()
@@ -246,44 +262,69 @@ private struct FileDateRepairRow: View {
     let item: FileDateRepairItem
     let isRepaired: Bool
     let didFail: Bool
+    let failureMessage: String?
+    @State private var isExpanded = false
 
     var body: some View {
-        DisclosureGroup {
-            VStack(alignment: .leading, spacing: 5) {
-                ForEach(item.evidence) { evidence in
-                    HStack {
-                        Text(evidence.source.label)
-                        Spacer()
-                        Text(format(evidence.date))
-                            .monospacedDigit()
-                    }
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                }
+        Button {
+            withAnimation(.easeInOut(duration: 0.15)) {
+                isExpanded.toggle()
             }
-            .padding(.top, 6)
         } label: {
-            HStack(alignment: .top, spacing: 12) {
-                statusIcon
-                    .frame(width: 18)
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(item.relativePath)
-                        .font(.callout.monospaced())
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                    HStack(spacing: 6) {
-                        Text(format(item.currentCreationDate))
-                            .strikethrough()
-                        Image(systemName: "arrow.right")
-                        Text(format(item.proposedCreationDate))
-                            .foregroundStyle(.green)
-                        Text("from \(item.proposedSource.label)")
-                            .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(alignment: .center, spacing: 12) {
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                        .frame(width: 10)
+                    statusIcon
+                        .frame(width: 18)
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text(item.relativePath)
+                            .font(.callout.monospaced())
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                        HStack(spacing: 6) {
+                            Text(format(item.currentCreationDate))
+                                .strikethrough()
+                            Image(systemName: "arrow.right")
+                            Text(format(item.proposedCreationDate))
+                                .foregroundStyle(.green)
+                            Text("from \(item.proposedSource.label)")
+                                .foregroundStyle(.secondary)
+                        }
+                        .font(.caption.monospacedDigit())
                     }
-                    .font(.caption.monospacedDigit())
+                    Spacer(minLength: 0)
+                }
+
+                if isExpanded {
+                    VStack(alignment: .leading, spacing: 5) {
+                        if let failureMessage {
+                            Text(failureMessage)
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        ForEach(item.evidence) { evidence in
+                            HStack {
+                                Text(evidence.source.label)
+                                Spacer()
+                                Text(format(evidence.date))
+                                    .monospacedDigit()
+                            }
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        }
+                    }
+                    .padding(.leading, 40)
                 }
             }
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+        .accessibilityValue(isExpanded ? "Expanded" : "Collapsed")
         .padding(10)
         .background {
             RoundedRectangle(cornerRadius: 8)

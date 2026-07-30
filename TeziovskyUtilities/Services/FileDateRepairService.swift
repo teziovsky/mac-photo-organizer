@@ -45,6 +45,8 @@ enum FileDateRepairScanner {
                             evidence: evidence
                         )
                         return FileDateScanOutput(relativePath: file.relativePath, item: item, failure: nil)
+                    } catch is CancellationError {
+                        throw CancellationError()
                     } catch {
                         return FileDateScanOutput(
                             relativePath: file.relativePath,
@@ -166,6 +168,7 @@ final class FileDateRepairService: ObservableObject {
     @Published private(set) var repairedIDs: Set<String> = []
     @Published private(set) var attemptedIDs: Set<String> = []
     @Published private(set) var scannedFileCount = 0
+    @Published private(set) var cancellationMessage: String?
     @Published var chunkSize = 100
 
     private var operationTask: Task<Void, Never>?
@@ -186,6 +189,7 @@ final class FileDateRepairService: ObservableObject {
         resetResults()
         self.directory = directory
         isScanning = true
+        cancellationMessage = nil
         let extensions = FileDateRepairExtensions.parse(AppSettings.fileDateRepairExtensions)
         let operationID = UUID()
         self.operationID = operationID
@@ -236,6 +240,7 @@ final class FileDateRepairService: ObservableObject {
         guard !isRunning, !currentChunk.isEmpty, let directory else { return }
         let chunk = currentChunk
         isRepairing = true
+        cancellationMessage = nil
         progress = FileDateRepairProgress(total: chunk.count)
         let operationID = UUID()
         self.operationID = operationID
@@ -263,6 +268,8 @@ final class FileDateRepairService: ObservableObject {
                     try await repair(item)
                     guard self.operationID == operationID else { return }
                     repairedIDs.insert(item.id)
+                } catch is CancellationError {
+                    return
                 } catch {
                     guard self.operationID == operationID else { return }
                     failures.append(
@@ -276,17 +283,29 @@ final class FileDateRepairService: ObservableObject {
     }
 
     func cancel() {
+        guard isRunning else { return }
+        cancellationMessage = isScanning
+            ? "Scan cancelled. Rescan the folder to find files that need repair."
+            : "Repair cancelled. Files completed before cancellation remain repaired."
         operationTask?.cancel()
-        operationTask = nil
-        operationID = nil
-        isScanning = false
-        isRepairing = false
+    }
+
+    func clearProcessed() {
+        guard !isRunning, !repairedIDs.isEmpty else { return }
+        items.removeAll { repairedIDs.contains($0.id) }
+        repairedIDs = []
+        attemptedIDs = attemptedIDs.intersection(Set(items.map(\.id)))
+    }
+
+    func failureMessage(for itemID: String) -> String? {
+        failures.last(where: { $0.relativePath == itemID })?.message
     }
 
     func reset() {
         cancel()
         directory = nil
         resetResults()
+        cancellationMessage = nil
     }
 
     private func resetResults() {
@@ -323,24 +342,51 @@ final class FileDateRepairService: ObservableObject {
             )
         }
 
+        let embeddedSources = Set(
+            before.lazy.filter(\.source.isEmbeddedCreationDate).map(\.source)
+        )
+        let backupURL = try makeBackup(of: item.fileURL)
+        defer { try? FileManager.default.removeItem(at: backupURL) }
+
         try Task.checkCancellation()
         do {
-            try FileDatePreservation.applyCreationDate(item.proposedCreationDate, to: item.fileURL)
-            let created = try item.fileURL.resourceValues(forKeys: [.creationDateKey]).creationDate
-            guard let created,
-                  abs(created.timeIntervalSince(item.proposedCreationDate)) <=
-                    FileDateRepairPlanner.timestampTolerance else {
+            try await synchronizeEmbeddedDates(
+                for: item,
+                isVideo: isVideo,
+                isRequired: !embeddedSources.isEmpty
+            )
+            try Task.checkCancellation()
+            try FileDatePreservation.applyCreationDate(
+                item.proposedCreationDate,
+                preservingModificationDate: originalModification,
+                to: item.fileURL
+            )
+            let after = try await MediaMetadataReader.readDateEvidence(
+                url: item.fileURL,
+                isVideo: isVideo
+            )
+            try Task.checkCancellation()
+            guard datesWereSynchronized(
+                after,
+                expectedEmbeddedSources: embeddedSources,
+                target: item.proposedCreationDate,
+                originalModification: originalModification
+            ) else {
                 throw CocoaError(
                     .fileWriteUnknown,
-                    userInfo: [NSLocalizedDescriptionKey: "The creation date could not be verified after writing."]
+                    userInfo: [
+                        NSLocalizedDescriptionKey:
+                            "Not every creation date could be verified after writing."
+                    ]
                 )
             }
         } catch {
             do {
-                try FileDatePreservation.restoreFileDates(
+                try restoreBackup(
+                    backupURL,
+                    to: item.fileURL,
                     created: item.currentCreationDate,
-                    modified: originalModification,
-                    to: item.fileURL
+                    modified: originalModification
                 )
             } catch let rollbackError {
                 throw CocoaError(
@@ -353,5 +399,80 @@ final class FileDateRepairService: ObservableObject {
             }
             throw error
         }
+    }
+
+    private func makeBackup(of fileURL: URL) throws -> URL {
+        let backupURL = fileURL.deletingLastPathComponent()
+            .appendingPathComponent(".date-repair-backup-\(UUID().uuidString)")
+            .appendingPathExtension(fileURL.pathExtension)
+        try FileManager.default.copyItem(at: fileURL, to: backupURL)
+        return backupURL
+    }
+
+    private func synchronizeEmbeddedDates(
+        for item: FileDateRepairItem,
+        isVideo: Bool,
+        isRequired: Bool
+    ) async throws {
+        guard isRequired else { return }
+        if isVideo {
+            try await VideoMetadataTransfer.synchronizeCreationDates(
+                in: item.fileURL,
+                to: item.proposedCreationDate
+            )
+        } else {
+            try FileDatePreservation.synchronizeImageCreationDates(
+                in: item.fileURL,
+                to: item.proposedCreationDate
+            )
+        }
+    }
+
+    private func datesWereSynchronized(
+        _ evidence: [FileDateEvidence],
+        expectedEmbeddedSources: Set<FileDateSource>,
+        target: Date,
+        originalModification: Date
+    ) -> Bool {
+        let tolerance = FileDateRepairPlanner.timestampTolerance
+        guard let created = evidence.first(where: {
+            $0.source == .filesystemCreation
+        })?.date,
+            abs(created.timeIntervalSince(target)) <= tolerance,
+            let modified = evidence.first(where: {
+                $0.source == .filesystemModification
+            })?.date,
+            abs(modified.timeIntervalSince(originalModification)) <= tolerance else {
+            return false
+        }
+
+        for source in expectedEmbeddedSources {
+            let matchingDates = evidence.filter { $0.source == source }.map(\.date)
+            guard !matchingDates.isEmpty,
+                  matchingDates.allSatisfy({
+                      abs($0.timeIntervalSince(target)) <= tolerance
+                  }) else {
+                return false
+            }
+        }
+        return true
+    }
+
+    private func restoreBackup(
+        _ backupURL: URL,
+        to fileURL: URL,
+        created: Date,
+        modified: Date
+    ) throws {
+        let fileManager = FileManager.default
+        if fileManager.fileExists(atPath: fileURL.path) {
+            try fileManager.removeItem(at: fileURL)
+        }
+        try fileManager.moveItem(at: backupURL, to: fileURL)
+        try FileDatePreservation.restoreFileDates(
+            created: created,
+            modified: modified,
+            to: fileURL
+        )
     }
 }

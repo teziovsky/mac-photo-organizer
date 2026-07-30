@@ -1,6 +1,18 @@
 import AVFoundation
 import Foundation
 
+private final class ExportSessionCancellation: @unchecked Sendable {
+    let session: AVAssetExportSession
+
+    init(session: AVAssetExportSession) {
+        self.session = session
+    }
+
+    func cancel() {
+        session.cancelExport()
+    }
+}
+
 enum VideoMetadataTransferError: LocalizedError {
     case exportSessionUnavailable
     case exportFailed(String)
@@ -23,20 +35,40 @@ enum VideoMetadataTransfer {
         let sourceAsset = AVURLAsset(url: sourceURL)
         let metadata = try await sourceAsset.load(.commonMetadata)
         guard !metadata.isEmpty else { return }
+        try await rewrite(compressedURL, metadata: metadata)
+    }
 
-        let compressedAsset = AVURLAsset(url: compressedURL)
+    static func synchronizeCreationDates(in url: URL, to date: Date) async throws {
+        let asset = AVURLAsset(url: url)
+        let metadata = try await asset.load(.commonMetadata)
+        var didFindCreationDate = false
+        let synchronized = metadata.map { item -> AVMetadataItem in
+            guard item.commonKey == .commonKeyCreationDate,
+                  let mutableItem = item.mutableCopy() as? AVMutableMetadataItem else {
+                return item
+            }
+            didFindCreationDate = true
+            mutableItem.value = ISO8601DateFormatter().string(from: date) as NSString
+            return mutableItem
+        }
+        guard didFindCreationDate else { return }
+        try await rewrite(url, metadata: synchronized)
+    }
+
+    private static func rewrite(_ url: URL, metadata: [AVMetadataItem]) async throws {
+        let asset = AVURLAsset(url: url)
         guard let session = AVAssetExportSession(
-            asset: compressedAsset,
+            asset: asset,
             presetName: AVAssetExportPresetPassthrough
         ) else {
             throw VideoMetadataTransferError.exportSessionUnavailable
         }
 
-        let outputType = outputFileType(for: compressedURL, session: session)
-        let tempURL = compressedURL
+        let outputType = outputFileType(for: url, session: session)
+        let tempURL = url
             .deletingLastPathComponent()
-            .appendingPathComponent(".dronemeta-\(UUID().uuidString)")
-            .appendingPathExtension(compressedURL.pathExtension.isEmpty ? "mov" : compressedURL.pathExtension)
+            .appendingPathComponent(".video-metadata-\(UUID().uuidString)")
+            .appendingPathExtension(url.pathExtension.isEmpty ? "mov" : url.pathExtension)
 
         session.outputURL = tempURL
         session.outputFileType = outputType
@@ -46,13 +78,14 @@ enum VideoMetadataTransfer {
         defer { try? FileManager.default.removeItem(at: tempURL) }
 
         try await runExport(session)
+        try Task.checkCancellation()
 
         guard FileManager.default.fileExists(atPath: tempURL.path) else {
             throw VideoMetadataTransferError.exportFailed("Export produced no output file.")
         }
 
-        try FileManager.default.removeItem(at: compressedURL)
-        try FileManager.default.moveItem(at: tempURL, to: compressedURL)
+        try FileManager.default.removeItem(at: url)
+        try FileManager.default.moveItem(at: tempURL, to: url)
     }
 
     private static func outputFileType(for url: URL, session: AVAssetExportSession) -> AVFileType {
@@ -73,17 +106,23 @@ enum VideoMetadataTransfer {
     }
 
     private static func runExport(_ session: AVAssetExportSession) async throws {
-        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-            session.exportAsynchronously {
-                continuation.resume()
+        try Task.checkCancellation()
+        let cancellation = ExportSessionCancellation(session: session)
+        await withTaskCancellationHandler {
+            await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                session.exportAsynchronously {
+                    continuation.resume()
+                }
             }
+        } onCancel: {
+            cancellation.cancel()
         }
 
         switch session.status {
         case .completed:
             return
         case .cancelled:
-            throw VideoMetadataTransferError.exportFailed("Metadata export was cancelled.")
+            throw CancellationError()
         default:
             let message = session.error?.localizedDescription ?? "Unknown export error."
             throw VideoMetadataTransferError.exportFailed(message)

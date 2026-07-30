@@ -19,13 +19,22 @@ enum FileDateSource: String, CaseIterable, Sendable {
         }
     }
 
-    var canProposeCreationDate: Bool {
-        self != .filesystemCreation
+    var isCreationDate: Bool {
+        self != .filesystemModification
+    }
+
+    var isEmbeddedCreationDate: Bool {
+        switch self {
+        case .exifOriginal, .exifDigitized, .tiffDateTime, .containerCreation:
+            return true
+        case .filesystemCreation, .filesystemModification:
+            return false
+        }
     }
 }
 
 struct FileDateEvidence: Identifiable, Sendable, Equatable {
-    var id: String { source.rawValue }
+    var id: String { "\(source.rawValue)-\(date.timeIntervalSinceReferenceDate)" }
     let source: FileDateSource
     let date: Date
 }
@@ -70,11 +79,15 @@ enum FileDateRepairPlanner {
             return nil
         }
 
-        let validCandidates = evidence.filter {
-            $0.source.canProposeCreationDate && isPlausible($0.date, now: now)
+        let validCandidates = evidence.filter { isPlausible($0.date, now: now) }
+        guard let oldest = validCandidates.min(by: { $0.date < $1.date }) else {
+            return nil
         }
-        guard let oldest = validCandidates.min(by: { $0.date < $1.date }),
-              oldest.date < creation.addingTimeInterval(-timestampTolerance) else {
+
+        let creationDates = evidence.filter(\.source.isCreationDate)
+        guard creationDates.contains(where: {
+            abs($0.date.timeIntervalSince(oldest.date)) > timestampTolerance
+        }) else {
             return nil
         }
 

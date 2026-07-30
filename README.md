@@ -31,7 +31,7 @@ The result is the finished media sitting directly in the project folder with no 
 
 Choose a folder to scan supported media recursively. Hidden entries, packages, and symbolic links are skipped. For each file, the app compares Finder Created with the content modification date and available EXIF, TIFF, or video-container dates. Files whose oldest valid date predates Finder Created are listed with the current date, proposed date, and source.
 
-Nothing changes during scanning. Review the results, select a chunk size, then apply one chunk at a time. Repair changes only the filesystem creation date; file contents, modification dates, and embedded metadata are preserved. Supported file extensions are editable in Settings → File Dates.
+Nothing changes during scanning. Review the results, select a chunk size, then apply one chunk at a time. Repair synchronizes Finder Created and every existing EXIF, TIFF, or video-container creation field to the oldest valid date found; modification dates stay unchanged. The original file is backed up during each repair so a failed metadata rewrite can be rolled back. Supported file extensions are editable in Settings → File Dates.
 
 ### First launch
 

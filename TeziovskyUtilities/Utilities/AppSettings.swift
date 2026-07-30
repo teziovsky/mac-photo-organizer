@@ -137,9 +137,16 @@ enum AppSettings {
     static var droneHandBrakeOutputExtension: String {
         get {
             let value = UserDefaults.standard.string(forKey: droneHandBrakeOutputExtensionKey)
-            return (value?.isEmpty == false) ? value! : DroneFinalizeConfig.default.handBrakeOutputExtension
+            return DroneFinalizeConfig.normalizeOutputExtension(value ?? "")
         }
-        set { UserDefaults.standard.set(newValue, forKey: droneHandBrakeOutputExtensionKey) }
+
+
+        set {
+            UserDefaults.standard.set(
+                DroneFinalizeConfig.normalizeOutputExtension(newValue),
+                forKey: droneHandBrakeOutputExtensionKey
+            )
+        }
     }
 
     static var droneKeepRawAfterFinalize: Bool {

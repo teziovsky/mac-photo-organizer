@@ -88,6 +88,14 @@ final class DroneFinalizePlanTests: XCTestCase {
         XCTAssertEqual(plan.matchedPairs[0].finalName, "clip.mp4")
     }
 
+    func testNormalizesSupportedOutputExtension() {
+        XCTAssertEqual(DroneFinalizeConfig.normalizeOutputExtension(" .MKV "), "mkv")
+    }
+
+    func testUnsupportedOutputExtensionFallsBackToMP4() {
+        XCTAssertEqual(DroneFinalizeConfig.normalizeOutputExtension("avi"), "mp4")
+    }
+
     func testHasWorkReflectsContent() {
         XCTAssertFalse(makePlan(["notes.txt"]).hasWork)
         XCTAssertTrue(makePlan(["photo.jpg"]).hasWork)
