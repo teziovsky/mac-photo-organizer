@@ -118,7 +118,10 @@ private struct FileDateRepairSettingsTab: View {
             }
 
             Section("Repair behavior") {
-                Text("Repair changes only Finder’s creation date. Modification dates and embedded media metadata are preserved.")
+                Text(
+                    "Repair changes only Finder’s creation date. "
+                        + "Modification dates and embedded media metadata are preserved."
+                )
                     .font(AlbumListRowStyle.detailFont)
                     .foregroundStyle(.secondary)
             }
@@ -192,11 +195,15 @@ private struct PhotosSettingsTab: View {
         Form {
             Section("Organize export") {
                 Toggle("Organize into year folders", isOn: $organizeByYearEnabled)
-                    .help("When enabled, exports into year subfolders unless the chosen folder name already contains a year.")
+                    .help(
+                        "When enabled, exports into year subfolders "
+                            + "unless the chosen folder name already contains a year."
+                    )
                 Text(
                     "When on, photos are placed in a YEAR subfolder based on creation date. "
                         + "If the export folder name already contains a year (e.g. 2026 or 2026_10_test), "
-                        + "all items go directly into that folder. When off, everything exports flat into the chosen folder."
+                        + "all items go directly into that folder. "
+                        + "When off, everything exports flat into the chosen folder."
                 )
                 .font(AlbumListRowStyle.detailFont)
                 .foregroundStyle(.secondary)

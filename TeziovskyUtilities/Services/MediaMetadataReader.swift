@@ -17,6 +17,7 @@ enum MediaMetadataReader {
 
         if isVideo {
             evidence.append(contentsOf: await readVideoDateEvidence(url: url))
+            try Task.checkCancellation()
         } else {
             evidence.append(contentsOf: readImageDateEvidence(url: url))
         }
@@ -27,7 +28,7 @@ enum MediaMetadataReader {
         var snapshot = MediaMetadataSnapshot(fileName: url.lastPathComponent)
 
         if let values = try? url.resourceValues(forKeys: [
-            .fileSizeKey, .creationDateKey, .contentModificationDateKey,
+            .fileSizeKey, .creationDateKey, .contentModificationDateKey
         ]) {
             if let size = values.fileSize { snapshot.fileSizeBytes = Int64(size) }
             snapshot.creationDate = values.creationDate

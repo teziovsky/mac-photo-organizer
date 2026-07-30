@@ -103,7 +103,7 @@ enum FileDateRepairPlanner {
 enum FileDateRepairExtensions {
     static let defaults = [
         "3gp", "avi", "bmp", "gif", "heic", "heif", "jpeg", "jpg", "m4v",
-        "mov", "mp4", "mpeg", "mpg", "png", "tif", "tiff", "webp",
+        "mov", "mp4", "mpeg", "mpg", "png", "tif", "tiff", "webp"
     ]
 
     static func parse(_ value: String) -> Set<String> {

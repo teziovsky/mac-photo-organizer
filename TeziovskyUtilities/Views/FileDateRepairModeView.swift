@@ -61,7 +61,10 @@ struct FileDateRepairModeView: View {
             Text(AppBranding.fileDateRepairModeSubtitle)
                 .font(.body)
                 .foregroundStyle(.secondary)
-            Text("Only Finder’s creation date is changed. File contents, embedded metadata, and modification dates stay untouched.")
+            Text(
+                "Only Finder’s creation date is changed. "
+                    + "File contents, embedded metadata, and modification dates stay untouched."
+            )
                 .font(.callout)
                 .foregroundStyle(.secondary)
         }

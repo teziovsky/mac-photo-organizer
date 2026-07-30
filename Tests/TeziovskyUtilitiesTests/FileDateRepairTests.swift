@@ -13,7 +13,7 @@ final class FileDateRepairPlannerTests: XCTestCase {
             evidence: [
                 FileDateEvidence(source: .filesystemCreation, date: created),
                 FileDateEvidence(source: .filesystemModification, date: modified),
-                FileDateEvidence(source: .exifOriginal, date: exif),
+                FileDateEvidence(source: .exifOriginal, date: exif)
             ],
             now: date(2026)
         )
@@ -31,7 +31,7 @@ final class FileDateRepairPlannerTests: XCTestCase {
             relativePath: "photo.jpg",
             evidence: [
                 FileDateEvidence(source: .filesystemCreation, date: created),
-                FileDateEvidence(source: .filesystemModification, date: modified),
+                FileDateEvidence(source: .filesystemModification, date: modified)
             ],
             now: date(2026)
         )
@@ -45,7 +45,7 @@ final class FileDateRepairPlannerTests: XCTestCase {
             relativePath: "photo.jpg",
             evidence: [
                 FileDateEvidence(source: .filesystemCreation, date: date(2024)),
-                FileDateEvidence(source: .exifOriginal, date: date(2030)),
+                FileDateEvidence(source: .exifOriginal, date: date(2030))
             ],
             now: date(2026)
         )

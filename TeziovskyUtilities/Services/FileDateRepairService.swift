@@ -20,7 +20,7 @@ enum FileDateRepairScanner {
         supportedExtensions: Set<String>,
         progress: @escaping @Sendable (FileDateRepairProgress) async -> Void
     ) async throws -> FileDateScanResult {
-        let enumeration = enumerateFiles(in: directory, supportedExtensions: supportedExtensions)
+        let enumeration = try enumerateFiles(in: directory, supportedExtensions: supportedExtensions)
         var failures = enumeration.failures
         var items: [FileDateRepairItem] = []
         var nextIndex = 0
@@ -91,12 +91,12 @@ enum FileDateRepairScanner {
         in directory: URL,
         supportedExtensions: Set<String>,
         fileManager: FileManager = .default
-    ) -> (
+    ) throws -> (
         files: [(url: URL, relativePath: String)],
         failures: [FileDateRepairFailure]
     ) {
         let keys: [URLResourceKey] = [
-            .isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey, .isPackageKey,
+            .isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey, .isPackageKey
         ]
         var failures: [FileDateRepairFailure] = []
         guard let enumerator = fileManager.enumerator(
@@ -117,12 +117,13 @@ enum FileDateRepairScanner {
                 FileDateRepairFailure(
                     relativePath: directory.lastPathComponent,
                     message: "The directory could not be enumerated."
-                ),
+                )
             ])
         }
 
         var files: [(URL, String)] = []
         for case let url as URL in enumerator {
+            try Task.checkCancellation()
             do {
                 let values = try url.resourceValues(forKeys: Set(keys))
                 if values.isSymbolicLink == true || values.isPackage == true {
@@ -168,6 +169,7 @@ final class FileDateRepairService: ObservableObject {
     @Published var chunkSize = 100
 
     private var operationTask: Task<Void, Never>?
+    private var operationID: UUID?
 
     var isRunning: Bool { isScanning || isRepairing }
 
@@ -185,14 +187,19 @@ final class FileDateRepairService: ObservableObject {
         self.directory = directory
         isScanning = true
         let extensions = FileDateRepairExtensions.parse(AppSettings.fileDateRepairExtensions)
+        let operationID = UUID()
+        self.operationID = operationID
 
         operationTask = Task { [weak self] in
             guard let self else { return }
             let didAccess = directory.startAccessingSecurityScopedResource()
             defer {
                 if didAccess { directory.stopAccessingSecurityScopedResource() }
-                isScanning = false
-                operationTask = nil
+                if self.operationID == operationID {
+                    isScanning = false
+                    operationTask = nil
+                    self.operationID = nil
+                }
             }
 
             do {
@@ -201,18 +208,25 @@ final class FileDateRepairService: ObservableObject {
                     supportedExtensions: extensions
                 ) { progress in
                     await MainActor.run {
-                        self.progress = progress
+                        if self.operationID == operationID {
+                            self.progress = progress
+                        }
                     }
                 }
                 try Task.checkCancellation()
+                guard self.operationID == operationID else { return }
                 items = result.items
                 failures = result.failures
                 scannedFileCount = result.scannedFileCount
             } catch is CancellationError {
                 return
             } catch {
+                guard self.operationID == operationID else { return }
                 failures.append(
-                    FileDateRepairFailure(relativePath: directory.lastPathComponent, message: error.localizedDescription)
+                    FileDateRepairFailure(
+                        relativePath: directory.lastPathComponent,
+                        message: error.localizedDescription
+                    )
                 )
             }
         }
@@ -223,18 +237,23 @@ final class FileDateRepairService: ObservableObject {
         let chunk = currentChunk
         isRepairing = true
         progress = FileDateRepairProgress(total: chunk.count)
+        let operationID = UUID()
+        self.operationID = operationID
 
         operationTask = Task { [weak self] in
             guard let self else { return }
             let didAccess = directory.startAccessingSecurityScopedResource()
             defer {
                 if didAccess { directory.stopAccessingSecurityScopedResource() }
-                isRepairing = false
-                operationTask = nil
+                if self.operationID == operationID {
+                    isRepairing = false
+                    operationTask = nil
+                    self.operationID = nil
+                }
             }
 
             for (index, item) in chunk.enumerated() {
-                if Task.isCancelled { return }
+                guard !Task.isCancelled, self.operationID == operationID else { return }
                 progress = FileDateRepairProgress(
                     processed: index,
                     total: chunk.count,
@@ -242,8 +261,10 @@ final class FileDateRepairService: ObservableObject {
                 )
                 do {
                     try await repair(item)
+                    guard self.operationID == operationID else { return }
                     repairedIDs.insert(item.id)
                 } catch {
+                    guard self.operationID == operationID else { return }
                     failures.append(
                         FileDateRepairFailure(relativePath: item.relativePath, message: error.localizedDescription)
                     )
@@ -257,6 +278,7 @@ final class FileDateRepairService: ObservableObject {
     func cancel() {
         operationTask?.cancel()
         operationTask = nil
+        operationID = nil
         isScanning = false
         isRepairing = false
     }
@@ -292,16 +314,44 @@ final class FileDateRepairService: ObservableObject {
                 userInfo: [NSLocalizedDescriptionKey: "Dates changed since the scan. Rescan before repairing."]
             )
         }
-
-        try FileDatePreservation.applyCreationDate(item.proposedCreationDate, to: item.fileURL)
-        let after = try await MediaMetadataReader.readDateEvidence(url: item.fileURL, isVideo: isVideo)
-        guard let created = after.first(where: { $0.source == .filesystemCreation })?.date,
-              abs(created.timeIntervalSince(item.proposedCreationDate)) <=
-                FileDateRepairPlanner.timestampTolerance else {
+        guard let originalModification = before.first(where: {
+            $0.source == .filesystemModification
+        })?.date else {
             throw CocoaError(
-                .fileWriteUnknown,
-                userInfo: [NSLocalizedDescriptionKey: "The creation date could not be verified after writing."]
+                .fileReadUnknown,
+                userInfo: [NSLocalizedDescriptionKey: "The modification date could not be read safely."]
             )
+        }
+
+        try Task.checkCancellation()
+        do {
+            try FileDatePreservation.applyCreationDate(item.proposedCreationDate, to: item.fileURL)
+            let created = try item.fileURL.resourceValues(forKeys: [.creationDateKey]).creationDate
+            guard let created,
+                  abs(created.timeIntervalSince(item.proposedCreationDate)) <=
+                    FileDateRepairPlanner.timestampTolerance else {
+                throw CocoaError(
+                    .fileWriteUnknown,
+                    userInfo: [NSLocalizedDescriptionKey: "The creation date could not be verified after writing."]
+                )
+            }
+        } catch {
+            do {
+                try FileDatePreservation.restoreFileDates(
+                    created: item.currentCreationDate,
+                    modified: originalModification,
+                    to: item.fileURL
+                )
+            } catch let rollbackError {
+                throw CocoaError(
+                    .fileWriteUnknown,
+                    userInfo: [
+                        NSLocalizedDescriptionKey:
+                            "\(error.localizedDescription) Rollback also failed: \(rollbackError.localizedDescription)"
+                    ]
+                )
+            }
+            throw error
         }
     }
 }

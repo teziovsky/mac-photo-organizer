@@ -58,19 +58,39 @@ enum FileDatePreservation {
         }
 
         if let originalModified {
-            var values = URLResourceValues()
-            values.contentModificationDate = originalModified
-            var mutableURL = url
-            try mutableURL.setResourceValues(values)
-            try FileManager.default.setAttributes(
-                [.modificationDate: originalModified],
-                ofItemAtPath: url.path
-            )
+            var didRestore = false
+            var restoreError: Error?
+            do {
+                var values = URLResourceValues()
+                values.contentModificationDate = originalModified
+                var mutableURL = url
+                try mutableURL.setResourceValues(values)
+                didRestore = true
+            } catch {
+                restoreError = error
+            }
+            do {
+                try FileManager.default.setAttributes(
+                    [.modificationDate: originalModified],
+                    ofItemAtPath: url.path
+                )
+                didRestore = true
+            } catch {
+                restoreError = error
+            }
+            if !didRestore {
+                throw restoreError ?? POSIXError(.EINVAL)
+            }
         }
 
         if !didApply {
             throw lastError ?? POSIXError(.EINVAL)
         }
+    }
+
+    /// Restores a previously captured filesystem date pair after an unsuccessful repair.
+    static func restoreFileDates(created: Date, modified: Date, to url: URL) throws {
+        try applyFileDates(to: url, created: created, modified: modified)
     }
 
     private static func readExifOriginalDate(from url: URL) -> Date? {
@@ -114,7 +134,7 @@ enum FileDatePreservation {
         try FileManager.default.setAttributes(
             [
                 .creationDate: created,
-                .modificationDate: modified,
+                .modificationDate: modified
             ],
             ofItemAtPath: url.path
         )
