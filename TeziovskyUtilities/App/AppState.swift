@@ -13,6 +13,7 @@ final class AppState: ObservableObject {
     let photosService = PhotosService()
     let organizeExporter = OrganizeExporter()
     let droneWorkflow = DroneWorkflowCoordinator()
+    let fileDateRepairService = FileDateRepairService()
 
     private var cancellables = Set<AnyCancellable>()
     private var albumLoadGeneration = 0
@@ -44,6 +45,9 @@ final class AppState: ObservableObject {
             .sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &cancellables)
         droneWorkflow.objectWillChange
+            .sink { [weak self] _ in self?.objectWillChange.send() }
+            .store(in: &cancellables)
+        fileDateRepairService.objectWillChange
             .sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &cancellables)
     }
@@ -84,6 +88,10 @@ final class AppState: ObservableObject {
 
     func enterDroneMode() {
         route = .drone
+    }
+
+    func enterFileDateRepairMode() {
+        route = .fileDateRepair
     }
 
     /// Steps back one level in Photos mode: deselect photo → deselect album → home.

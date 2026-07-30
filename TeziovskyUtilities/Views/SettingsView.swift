@@ -15,6 +15,7 @@ struct SettingsView: View {
     @State private var droneHandBrakeOutputExtension: String = AppSettings.droneHandBrakeOutputExtension
     @State private var droneKeepRawAfterFinalize: Bool = AppSettings.droneKeepRawAfterFinalize
     @State private var dronePreserveOrientationOnFlatten: Bool = AppSettings.dronePreserveOrientationOnFlatten
+    @State private var fileDateRepairExtensions: String = AppSettings.fileDateRepairExtensions
 
     var body: some View {
         TabView {
@@ -42,6 +43,11 @@ struct SettingsView: View {
             .tabItem {
                 Label("Drone", systemImage: "airplane")
             }
+
+            FileDateRepairSettingsTab(extensions: $fileDateRepairExtensions)
+                .tabItem {
+                    Label("File Dates", systemImage: "calendar.badge.clock")
+                }
         }
         .frame(width: 520, height: 640)
         .onAppear {
@@ -58,6 +64,7 @@ struct SettingsView: View {
             droneHandBrakeOutputExtension = AppSettings.droneHandBrakeOutputExtension
             droneKeepRawAfterFinalize = AppSettings.droneKeepRawAfterFinalize
             dronePreserveOrientationOnFlatten = AppSettings.dronePreserveOrientationOnFlatten
+            fileDateRepairExtensions = AppSettings.fileDateRepairExtensions
             loadAlbumsIfNeeded()
         }
         .onChange(of: omittedAlbumIDs) { _, newValue in
@@ -76,6 +83,7 @@ struct SettingsView: View {
             AppSettings.droneHandBrakeOutputExtension = droneHandBrakeOutputExtension
             AppSettings.droneKeepRawAfterFinalize = droneKeepRawAfterFinalize
             AppSettings.dronePreserveOrientationOnFlatten = dronePreserveOrientationOnFlatten
+            AppSettings.fileDateRepairExtensions = fileDateRepairExtensions
             appState.syncOmittedFromOrganizeAlbums(omittedAlbumIDs)
             Task { await appState.photosService.reloadAlbums() }
         }
@@ -85,6 +93,38 @@ struct SettingsView: View {
         guard appState.photosService.canAccessLibrary,
               appState.photosService.albums.isEmpty else { return }
         Task { await appState.photosService.reloadAlbums() }
+    }
+}
+
+private struct FileDateRepairSettingsTab: View {
+    @Binding var extensions: String
+
+    var body: some View {
+        Form {
+            Section("Supported files") {
+                TextField("File extensions", text: $extensions, axis: .vertical)
+                    .lineLimit(3...6)
+                    .help("Separate extensions with commas, spaces, or new lines.")
+                Text(
+                    "Only matching files are scanned. Enter extensions without a leading dot; "
+                        + "capitalization and duplicate entries are normalized automatically."
+                )
+                .font(AlbumListRowStyle.detailFont)
+                .foregroundStyle(.secondary)
+
+                Button("Restore Defaults") {
+                    extensions = FileDateRepairExtensions.defaults.joined(separator: ", ")
+                }
+            }
+
+            Section("Repair behavior") {
+                Text("Repair changes only Finder’s creation date. Modification dates and embedded media metadata are preserved.")
+                    .font(AlbumListRowStyle.detailFont)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+        .padding()
     }
 }
 
