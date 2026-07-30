@@ -11,14 +11,21 @@
     "swift:clean": "swift package clean && rm -rf .build",
     "clean": "rm -rf build dist && xcodebuild -project TeziovskyUtilities.xcodeproj -scheme TeziovskyUtilities -derivedDataPath build/DerivedData clean",
     "build": "xcodebuild -project TeziovskyUtilities.xcodeproj -scheme TeziovskyUtilities -configuration Debug -derivedDataPath build/DerivedData build CODE_SIGNING_ALLOWED=NO",
-    "clean:build": "npm run clean && npm run build",
+    "clean:build": "pnpm run clean && pnpm run build",
     "build:production": "xcodebuild -project TeziovskyUtilities.xcodeproj -scheme TeziovskyUtilities -configuration Release -derivedDataPath build/DerivedData build CODE_SIGNING_ALLOWED=NO",
-    "run": "npm run build && open build/DerivedData/Build/Products/Debug/TeziovskyUtilities.app",
+    "run": "pnpm run build && open build/DerivedData/Build/Products/Debug/TeziovskyUtilities.app",
     "lint": "swiftlint lint",
     "lint:fix": "swiftlint --fix && swiftlint lint",
     "test": "swift test",
-    "release": "npm run build:production && rm -rf dist && mkdir -p dist && ditto build/DerivedData/Build/Products/Release/TeziovskyUtilities.app dist/TeziovskyUtilities.app && ditto -c -k --sequesterRsrc --keepParent dist/TeziovskyUtilities.app dist/TeziovskyUtilities-macOS.zip && echo 'Release artifacts: dist/TeziovskyUtilities.app dist/TeziovskyUtilities-macOS.zip'",
+    "release": "pnpm run build:production && rm -rf dist && mkdir -p dist && ditto build/DerivedData/Build/Products/Release/TeziovskyUtilities.app dist/TeziovskyUtilities.app && ditto -c -k --sequesterRsrc --keepParent dist/TeziovskyUtilities.app dist/TeziovskyUtilities-macOS.zip && echo 'Release artifacts: dist/TeziovskyUtilities.app dist/TeziovskyUtilities-macOS.zip'",
     "install": "bash scripts/install-to-applications.sh",
     "install:open": "bash scripts/install-to-applications.sh --open"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "11.18.0",
+      "onFail": "download"
+    }
   }
 }
