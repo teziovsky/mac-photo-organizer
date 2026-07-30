@@ -27,6 +27,72 @@ enum FileDatePreservation {
         try applyFileDates(to: destinationURL, created: created, modified: modified)
     }
 
+    /// Updates Finder's "Date Created" without changing the file's content modification date.
+    static func applyCreationDate(_ created: Date, to url: URL) throws {
+        let originalModified = try url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
+        var didApply = false
+        var lastError: Error?
+
+        do {
+            try setAPFSBirthTime(url: url, created: created)
+            didApply = true
+        } catch {
+            lastError = error
+        }
+
+        do {
+            var values = URLResourceValues()
+            values.creationDate = created
+            var mutableURL = url
+            try mutableURL.setResourceValues(values)
+            didApply = true
+        } catch {
+            lastError = error
+        }
+
+        do {
+            try FileManager.default.setAttributes([.creationDate: created], ofItemAtPath: url.path)
+            didApply = true
+        } catch {
+            lastError = error
+        }
+
+        if let originalModified {
+            var didRestore = false
+            var restoreError: Error?
+            do {
+                var values = URLResourceValues()
+                values.contentModificationDate = originalModified
+                var mutableURL = url
+                try mutableURL.setResourceValues(values)
+                didRestore = true
+            } catch {
+                restoreError = error
+            }
+            do {
+                try FileManager.default.setAttributes(
+                    [.modificationDate: originalModified],
+                    ofItemAtPath: url.path
+                )
+                didRestore = true
+            } catch {
+                restoreError = error
+            }
+            if !didRestore {
+                throw restoreError ?? POSIXError(.EINVAL)
+            }
+        }
+
+        if !didApply {
+            throw lastError ?? POSIXError(.EINVAL)
+        }
+    }
+
+    /// Restores a previously captured filesystem date pair after an unsuccessful repair.
+    static func restoreFileDates(created: Date, modified: Date, to url: URL) throws {
+        try applyFileDates(to: url, created: created, modified: modified)
+    }
+
     private static func readExifOriginalDate(from url: URL) -> Date? {
         guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
               let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any] else {
@@ -68,7 +134,7 @@ enum FileDatePreservation {
         try FileManager.default.setAttributes(
             [
                 .creationDate: created,
-                .modificationDate: modified,
+                .modificationDate: modified
             ],
             ofItemAtPath: url.path
         )
@@ -101,6 +167,30 @@ enum FileDatePreservation {
                             )
                         }
                     }
+                }
+            }
+            if status != 0 {
+                throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EINVAL)
+            }
+        }
+    }
+
+    private static func setAPFSBirthTime(url: URL, created: Date) throws {
+        var crtime = makeTimespec(from: created)
+        var attributeList = attrlist()
+        attributeList.bitmapcount = UInt16(ATTR_BIT_MAP_COUNT)
+        attributeList.commonattr = attrgroup_t(UInt32(ATTR_CMN_CRTIME))
+
+        try url.path.withCString { path in
+            let status = withUnsafeMutablePointer(to: &attributeList) { listPointer in
+                withUnsafeMutablePointer(to: &crtime) { createdPointer in
+                    setattrlist(
+                        path,
+                        UnsafeMutableRawPointer(listPointer).assumingMemoryBound(to: attrlist.self),
+                        UnsafeMutableRawPointer(createdPointer),
+                        MemoryLayout<timespec>.size,
+                        0
+                    )
                 }
             }
             if status != 0 {

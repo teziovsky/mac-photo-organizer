@@ -51,6 +51,9 @@
 		A00100000000000000000014 /* HandBrakeCompressor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00100000000000000000014 /* HandBrakeCompressor.swift */; };
 		A00100000000000000000015 /* DroneMediaPaths.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00100000000000000000015 /* DroneMediaPaths.swift */; };
 		A00100000000000000000016 /* DroneProjectValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00100000000000000000016 /* DroneProjectValidator.swift */; };
+		A00200000000000000000001 /* FileDateRepairModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00200000000000000000001 /* FileDateRepairModels.swift */; };
+		A00200000000000000000002 /* FileDateRepairService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00200000000000000000002 /* FileDateRepairService.swift */; };
+		A00200000000000000000003 /* FileDateRepairModeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00200000000000000000003 /* FileDateRepairModeView.swift */; };
 		0FF1B5869E37421096AD477E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CCEC6AF34D2A457CA48F3ED4 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -103,6 +106,9 @@
 		B00100000000000000000014 /* HandBrakeCompressor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandBrakeCompressor.swift; sourceTree = "<group>"; };
 		B00100000000000000000015 /* DroneMediaPaths.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DroneMediaPaths.swift; sourceTree = "<group>"; };
 		B00100000000000000000016 /* DroneProjectValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DroneProjectValidator.swift; sourceTree = "<group>"; };
+		B00200000000000000000001 /* FileDateRepairModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileDateRepairModels.swift; sourceTree = "<group>"; };
+		B00200000000000000000002 /* FileDateRepairService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileDateRepairService.swift; sourceTree = "<group>"; };
+		B00200000000000000000003 /* FileDateRepairModeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileDateRepairModeView.swift; sourceTree = "<group>"; };
 		334455667788990011223344 /* TeziovskyUtilities.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TeziovskyUtilities.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -143,6 +149,7 @@
 				A1B2C3D4E5F6478990ABCDEF0 /* ThumbnailDisplayMode.swift */,
 				B00100000000000000000002 /* AppRoute.swift */,
 				B00100000000000000000010 /* DroneStepModels.swift */,
+				B00200000000000000000001 /* FileDateRepairModels.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -161,6 +168,7 @@
 				B00100000000000000000014 /* HandBrakeCompressor.swift */,
 				B00100000000000000000006 /* VideoMetadataTransfer.swift */,
 				B00100000000000000000011 /* MediaMetadataReader.swift */,
+				B00200000000000000000002 /* FileDateRepairService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -201,6 +209,7 @@
 				B0010000000000000000000A /* PhotosModeView.swift */,
 				B0010000000000000000000B /* DroneModeView.swift */,
 				B00100000000000000000017 /* DroneFinalizeViews.swift */,
+				B00200000000000000000003 /* FileDateRepairModeView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -341,6 +350,9 @@
 				A0010000000000000000000A /* PhotosModeView.swift in Sources */,
 				A0010000000000000000000B /* DroneModeView.swift in Sources */,
 				A00100000000000000000017 /* DroneFinalizeViews.swift in Sources */,
+				A00200000000000000000001 /* FileDateRepairModels.swift in Sources */,
+				A00200000000000000000002 /* FileDateRepairService.swift in Sources */,
+				A00200000000000000000003 /* FileDateRepairModeView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

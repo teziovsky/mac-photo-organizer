@@ -22,6 +22,7 @@ enum AppSettings {
     private static let droneKeepRawAfterFinalizeKey = "droneKeepRawAfterFinalize"
     private static let dronePreserveOrientationOnFlattenKey = "dronePreserveOrientationOnFlatten"
     private static let droneLastHandBrakePresetKey = "droneLastHandBrakePreset"
+    private static let fileDateRepairExtensionsKey = "fileDateRepairExtensions"
 
     static var mediaGridColumnCount: Int {
         get {
@@ -179,6 +180,21 @@ enum AppSettings {
             keepRawAfterFinalize: droneKeepRawAfterFinalize,
             preserveOrientationOnFlatten: dronePreserveOrientationOnFlatten
         )
+    }
+
+    // MARK: - File date repair
+
+    static var fileDateRepairExtensions: String {
+        get {
+            UserDefaults.standard.string(forKey: fileDateRepairExtensionsKey)
+                ?? FileDateRepairExtensions.defaults.joined(separator: ", ")
+        }
+        set {
+            UserDefaults.standard.set(
+                FileDateRepairExtensions.normalizedString(newValue),
+                forKey: fileDateRepairExtensionsKey
+            )
+        }
     }
 
     static var exportDirectoryURL: URL? {

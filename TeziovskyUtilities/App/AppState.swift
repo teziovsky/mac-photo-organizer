@@ -13,6 +13,7 @@ final class AppState: ObservableObject {
     let photosService = PhotosService()
     let organizeExporter = OrganizeExporter()
     let droneWorkflow = DroneWorkflowCoordinator()
+    let fileDateRepairService = FileDateRepairService()
 
     private var cancellables = Set<AnyCancellable>()
     private var albumLoadGeneration = 0
@@ -45,6 +46,8 @@ final class AppState: ObservableObject {
             .store(in: &cancellables)
         droneWorkflow.objectWillChange
             .sink { [weak self] _ in self?.objectWillChange.send() }
+            .store(in: &cancellables)
+        fileDateRepairService.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &cancellables)
     }
 
@@ -80,10 +83,6 @@ final class AppState: ObservableObject {
     func enterPhotosMode() {
         route = .photos
         Task { await photosService.refreshAuthorizationStatus() }
-    }
-
-    func enterDroneMode() {
-        route = .drone
     }
 
     /// Steps back one level in Photos mode: deselect photo → deselect album → home.
@@ -369,5 +368,15 @@ final class AppState: ObservableObject {
         guard panel.runModal() == .OK, let url = panel.url else { return false }
         setExportDirectory(url)
         return true
+    }
+}
+
+extension AppState {
+    func enterDroneMode() {
+        route = .drone
+    }
+
+    func enterFileDateRepairMode() {
+        route = .fileDateRepair
     }
 }

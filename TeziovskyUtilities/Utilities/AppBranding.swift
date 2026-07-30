@@ -24,4 +24,8 @@ enum AppBranding {
     static let droneModeTitle = "Organize Drone Footage"
     static let droneModeSubtitle = "Validate project, compress exports, finalize delivery files."
     static let droneModeIcon = "airplane"
+
+    static let fileDateRepairModeTitle = "Repair File Dates"
+    static let fileDateRepairModeSubtitle = "Find media with incorrect creation dates and repair them safely in chunks."
+    static let fileDateRepairModeIcon = "calendar.badge.clock"
 }

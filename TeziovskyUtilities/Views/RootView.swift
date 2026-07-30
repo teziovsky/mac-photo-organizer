@@ -17,6 +17,8 @@ struct RootView: View {
                     PhotosModeView()
                 case .drone:
                     DroneModeView()
+                case .fileDateRepair:
+                    FileDateRepairModeView()
                 }
             }
         }

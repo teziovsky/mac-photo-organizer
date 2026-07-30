@@ -5,11 +5,30 @@ import ImageIO
 /// Reads displayable metadata from a media file (filesystem dates/size plus, where
 /// available, container creation date, dimensions, and duration).
 enum MediaMetadataReader {
+    static func readDateEvidence(url: URL, isVideo: Bool) async throws -> [FileDateEvidence] {
+        let values = try url.resourceValues(forKeys: [.creationDateKey, .contentModificationDateKey])
+        var evidence: [FileDateEvidence] = []
+        if let date = values.creationDate {
+            evidence.append(FileDateEvidence(source: .filesystemCreation, date: date))
+        }
+        if let date = values.contentModificationDate {
+            evidence.append(FileDateEvidence(source: .filesystemModification, date: date))
+        }
+
+        if isVideo {
+            evidence.append(contentsOf: await readVideoDateEvidence(url: url))
+            try Task.checkCancellation()
+        } else {
+            evidence.append(contentsOf: readImageDateEvidence(url: url))
+        }
+        return evidence
+    }
+
     static func read(url: URL, isVideo: Bool) async -> MediaMetadataSnapshot {
         var snapshot = MediaMetadataSnapshot(fileName: url.lastPathComponent)
 
         if let values = try? url.resourceValues(forKeys: [
-            .fileSizeKey, .creationDateKey, .contentModificationDateKey,
+            .fileSizeKey, .creationDateKey, .contentModificationDateKey
         ]) {
             if let size = values.fileSize { snapshot.fileSizeBytes = Int64(size) }
             snapshot.creationDate = values.creationDate
@@ -55,6 +74,21 @@ enum MediaMetadataReader {
         }
     }
 
+    private static func readVideoDateEvidence(url: URL) async -> [FileDateEvidence] {
+        let asset = AVURLAsset(url: url)
+        guard let metadata = try? await asset.load(.commonMetadata) else { return [] }
+        for item in metadata where item.commonKey == .commonKeyCreationDate {
+            if let date = try? await item.load(.dateValue) {
+                return [FileDateEvidence(source: .containerCreation, date: date)]
+            }
+            if let string = try? await item.load(.stringValue),
+               let date = parseDateString(string) {
+                return [FileDateEvidence(source: .containerCreation, date: date)]
+            }
+        }
+        return []
+    }
+
     private static func readImageMetadata(url: URL, into snapshot: inout MediaMetadataSnapshot) {
         guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
               let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any] else {
@@ -71,6 +105,40 @@ enum MediaMetadataReader {
            let date = parseExifDate(original) {
             snapshot.containerCreationDate = date
         }
+    }
+
+    private static func readImageDateEvidence(url: URL) -> [FileDateEvidence] {
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+              let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any] else {
+            return []
+        }
+
+        var evidence: [FileDateEvidence] = []
+        if let exif = properties[kCGImagePropertyExifDictionary] as? [CFString: Any] {
+            appendDate(
+                exif[kCGImagePropertyExifDateTimeOriginal],
+                source: .exifOriginal,
+                to: &evidence
+            )
+            appendDate(
+                exif[kCGImagePropertyExifDateTimeDigitized],
+                source: .exifDigitized,
+                to: &evidence
+            )
+        }
+        if let tiff = properties[kCGImagePropertyTIFFDictionary] as? [CFString: Any] {
+            appendDate(tiff[kCGImagePropertyTIFFDateTime], source: .tiffDateTime, to: &evidence)
+        }
+        return evidence
+    }
+
+    private static func appendDate(
+        _ rawValue: Any?,
+        source: FileDateSource,
+        to evidence: inout [FileDateEvidence]
+    ) {
+        guard let value = rawValue as? String, let date = parseExifDate(value) else { return }
+        evidence.append(FileDateEvidence(source: source, date: date))
     }
 
     private static func formatDuration(_ seconds: Double) -> String {

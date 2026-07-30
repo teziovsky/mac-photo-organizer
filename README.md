@@ -4,6 +4,7 @@ Native macOS app for organizing media. From a home screen you pick a workflow:
 
 - **Organize Photos** — review iCloud Photos albums and export them to a folder.
 - **Organize Drone Footage** — finalize a graded project folder (fully native, no external tools).
+- **Repair File Dates** — find media copied with incorrect Finder creation dates and repair it in chunks.
 
 > The Xcode target, scheme, and Swift module are all named `TeziovskyUtilities`; the user-facing app name is **Teziovsky Utilities** and the bundle ID is `com.teziovsky.utilities`.
 
@@ -25,6 +26,12 @@ Point the app at a project folder that contains a `raw/` and an `export/` subfol
 3. Remove the now-empty `raw/` and `export/` folders.
 
 The result is the finished media sitting directly in the project folder with no subdirectories. A preview lists every planned action before anything is changed (the operation deletes files). Video compression itself stays in HandBrake — this app handles the post-compression finalize.
+
+### Repair File Dates
+
+Choose a folder to scan supported media recursively. Hidden entries, packages, and symbolic links are skipped. For each file, the app compares Finder Created with the content modification date and available EXIF, TIFF, or video-container dates. Files whose oldest valid date predates Finder Created are listed with the current date, proposed date, and source.
+
+Nothing changes during scanning. Review the results, select a chunk size, then apply one chunk at a time. Repair changes only the filesystem creation date; file contents, modification dates, and embedded metadata are preserved. Supported file extensions are editable in Settings → File Dates.
 
 ### First launch
 
@@ -102,6 +109,7 @@ Set your development team in Xcode for signed release builds outside this repo (
 - **Export folder** — destination for the Organize action
 - **Drone → Compressed suffix** — suffix HandBrake adds to compressed files (default: `_COMPRESSED`)
 - **Drone → Raw / Export folder names** — subfolder names used by the drone finalize step (defaults: `raw`, `export`)
+- **File Dates → File extensions** — media extensions included by the recursive date-repair scan
 
 ## Notes
 
