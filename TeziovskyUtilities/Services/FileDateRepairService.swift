@@ -333,7 +333,7 @@ final class FileDateRepairService: ObservableObject {
             evidence: before
         ), abs(freshItem.currentCreationDate.timeIntervalSince(item.currentCreationDate)) <=
             FileDateRepairPlanner.timestampTolerance,
-            abs(freshItem.proposedCreationDate.timeIntervalSince(item.proposedCreationDate)) <=
+            abs(freshItem.proposedDate.timeIntervalSince(item.proposedDate)) <=
             FileDateRepairPlanner.timestampTolerance else {
             throw CocoaError(
                 .fileReadUnknown,
@@ -354,7 +354,7 @@ final class FileDateRepairService: ObservableObject {
         )
         let embeddedNeedsSync = FileDateRepairPlanner.embeddedCreationDatesNeedSync(
             before,
-            target: item.proposedCreationDate
+            target: item.proposedDate
         )
         let backupURL = try makeBackup(of: item.fileURL)
         defer { try? FileManager.default.removeItem(at: backupURL) }
@@ -367,10 +367,10 @@ final class FileDateRepairService: ObservableObject {
                 isRequired: embeddedNeedsSync
             )
             try Task.checkCancellation()
-            try FileDatePreservation.applyCreationDate(
-                item.proposedCreationDate,
-                preservingModificationDate: originalModification,
-                to: item.fileURL
+            try FileDatePreservation.applyFileDates(
+                to: item.fileURL,
+                created: item.proposedDate,
+                modified: item.proposedDate
             )
             let after = try await MediaMetadataReader.readDateEvidence(
                 url: item.fileURL,
@@ -380,8 +380,7 @@ final class FileDateRepairService: ObservableObject {
             if let failure = FileDateRepairVerification.validate(
                 after,
                 expectedEmbeddedSources: embeddedNeedsSync ? embeddedSources : [],
-                target: item.proposedCreationDate,
-                originalModification: originalModification
+                target: item.proposedDate
             ) {
                 throw CocoaError(
                     .fileWriteUnknown,
@@ -418,12 +417,12 @@ final class FileDateRepairService: ObservableObject {
         if isVideo {
             try await VideoMetadataTransfer.synchronizeCreationDates(
                 in: item.fileURL,
-                to: item.proposedCreationDate
+                to: item.proposedDate
             )
         } else {
             try FileDatePreservation.synchronizeImageCreationDates(
                 in: item.fileURL,
-                to: item.proposedCreationDate
+                to: item.proposedDate
             )
         }
     }

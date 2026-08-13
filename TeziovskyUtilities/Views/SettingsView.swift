@@ -117,9 +117,8 @@ private struct FileDateRepairSettingsTab: View {
 
             Section("Repair behavior") {
                 Text(
-                    "Repair synchronizes Finder Created and every existing EXIF, TIFF, "
-                        + "or video-container creation date to the oldest valid date found. "
-                        + "Modification dates stay unchanged."
+                    "Repair synchronizes Finder Created, Finder Modified, and every existing EXIF, TIFF, "
+                        + "or video-container date to the oldest valid date found."
                 )
                     .font(AlbumListRowStyle.detailFont)
                     .foregroundStyle(.secondary)

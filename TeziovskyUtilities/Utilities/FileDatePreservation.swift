@@ -321,7 +321,8 @@ enum FileDatePreservation {
         return String(format: "%@%02d:%02d", sign, absolute / 3600, (absolute % 3600) / 60)
     }
 
-    private static func applyFileDates(to url: URL, created: Date, modified: Date) throws {
+    /// Updates Finder's Date Created and Date Modified.
+    static func applyFileDates(to url: URL, created: Date, modified: Date) throws {
         try setAPFSBirthAndModificationTimes(url: url, created: created, modified: modified)
 
         var resourceValues = URLResourceValues()

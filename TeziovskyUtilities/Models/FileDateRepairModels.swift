@@ -19,10 +19,6 @@ enum FileDateSource: String, CaseIterable, Sendable {
         }
     }
 
-    var isCreationDate: Bool {
-        self != .filesystemModification
-    }
-
     var isEmbeddedCreationDate: Bool {
         switch self {
         case .exifOriginal, .exifDigitized, .tiffDateTime, .containerCreation:
@@ -44,9 +40,17 @@ struct FileDateRepairItem: Identifiable, Sendable, Equatable {
     let relativePath: String
     let fileURL: URL
     let currentCreationDate: Date
-    let proposedCreationDate: Date
+    let proposedDate: Date
     let proposedSource: FileDateSource
     let evidence: [FileDateEvidence]
+
+    /// Newest timestamp that still disagrees with the proposed date, used in the repair list.
+    var newestDisagreeingDate: Date {
+        evidence
+            .map(\.date)
+            .filter { abs($0.timeIntervalSince(proposedDate)) > FileDateRepairPlanner.timestampTolerance }
+            .max() ?? currentCreationDate
+    }
 }
 
 struct FileDateRepairFailure: Identifiable, Sendable, Equatable {
@@ -84,8 +88,7 @@ enum FileDateRepairPlanner {
             return nil
         }
 
-        let creationDates = evidence.filter(\.source.isCreationDate)
-        guard creationDates.contains(where: {
+        guard evidence.contains(where: {
             abs($0.date.timeIntervalSince(oldest.date)) > timestampTolerance
         }) else {
             return nil
@@ -95,7 +98,7 @@ enum FileDateRepairPlanner {
             relativePath: relativePath,
             fileURL: fileURL,
             currentCreationDate: creation,
-            proposedCreationDate: oldest.date,
+            proposedDate: oldest.date,
             proposedSource: oldest.source,
             evidence: evidence.sorted(by: evidenceSort)
         )
@@ -182,7 +185,7 @@ enum FileDateRepairVerification {
             case .missingModificationDate:
                 return "The filesystem modification date could not be verified after writing."
             case .modificationDateMismatch:
-                return "The filesystem modification date changed while repairing creation dates."
+                return "The filesystem modification date did not match the target after writing."
             case .embeddedDateMismatch(let source):
                 return "\(source.label) did not match the target after writing."
             case .embeddedDatesMissing:
@@ -198,7 +201,6 @@ enum FileDateRepairVerification {
         _ evidence: [FileDateEvidence],
         expectedEmbeddedSources: Set<FileDateSource>,
         target: Date,
-        originalModification: Date,
         tolerance: TimeInterval = FileDateRepairPlanner.timestampTolerance
     ) -> Failure? {
         guard let created = evidence.first(where: { $0.source == .filesystemCreation })?.date else {
@@ -210,7 +212,7 @@ enum FileDateRepairVerification {
         guard let modified = evidence.first(where: { $0.source == .filesystemModification })?.date else {
             return .missingModificationDate
         }
-        guard abs(modified.timeIntervalSince(originalModification)) <= tolerance else {
+        guard abs(modified.timeIntervalSince(target)) <= tolerance else {
             return .modificationDateMismatch
         }
 

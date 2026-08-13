@@ -62,8 +62,8 @@ struct FileDateRepairModeView: View {
                 .font(.body)
                 .foregroundStyle(.secondary)
             Text(
-                "Finder, EXIF/TIFF, and video-container creation dates are synchronized "
-                    + "to the oldest date found. Modification dates stay unchanged."
+                "Finder, EXIF/TIFF, and video-container dates are synchronized "
+                    + "to the oldest date found, including modification dates."
             )
                 .font(.callout)
                 .foregroundStyle(.secondary)
@@ -169,7 +169,7 @@ struct FileDateRepairModeView: View {
                     .foregroundStyle(.secondary)
                     .padding(.top, 4)
             } else if service.items.isEmpty {
-                Label("No incorrect creation dates found.", systemImage: "checkmark.circle.fill")
+                Label("No incorrect dates found.", systemImage: "checkmark.circle.fill")
                     .foregroundStyle(.green)
                     .padding(.top, 4)
             } else if remaining == 0 {
@@ -293,10 +293,10 @@ private struct FileDateRepairRow: View {
                             .lineLimit(1)
                             .truncationMode(.middle)
                         HStack(spacing: 6) {
-                            Text(format(item.currentCreationDate))
+                            Text(format(item.newestDisagreeingDate))
                                 .strikethrough()
                             Image(systemName: "arrow.right")
-                            Text(format(item.proposedCreationDate))
+                            Text(format(item.proposedDate))
                                 .foregroundStyle(.green)
                             Text("from \(item.proposedSource.label)")
                                 .foregroundStyle(.secondary)

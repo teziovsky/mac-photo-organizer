@@ -4,7 +4,7 @@ Native macOS app for organizing media. From a home screen you pick a workflow:
 
 - **Organize Photos** — review iCloud Photos albums and export them to a folder.
 - **Organize Drone Footage** — finalize a graded project folder (fully native, no external tools).
-- **Repair File Dates** — find media copied with incorrect Finder creation dates and repair it in chunks.
+- **Repair File Dates** — find media with incorrect dates and repair it in chunks.
 
 > The Xcode target, scheme, and Swift module are all named `TeziovskyUtilities`; the user-facing app name is **Teziovsky Utilities** and the bundle ID is `com.teziovsky.utilities`.
 
@@ -29,9 +29,9 @@ The result is the finished media sitting directly in the project folder with no 
 
 ### Repair File Dates
 
-Choose a folder to scan supported media recursively. Hidden entries, packages, and symbolic links are skipped. For each file, the app compares Finder Created with the content modification date and available EXIF, TIFF, or video-container dates. Files whose oldest valid date predates Finder Created are listed with the current date, proposed date, and source.
+Choose a folder to scan supported media recursively. Hidden entries, packages, and symbolic links are skipped. For each file, the app compares Finder Created, Finder Modified, and available EXIF, TIFF, or video-container dates. Files whose dates do not all match the oldest valid date are listed with the current date, proposed date, and source.
 
-Nothing changes during scanning. Review the results, select a chunk size, then apply one chunk at a time. Repair synchronizes Finder Created and every existing EXIF, TIFF, or video-container creation field to the oldest valid date found; modification dates stay unchanged. The original file is backed up during each repair so a failed metadata rewrite can be rolled back. Supported file extensions are editable in Settings → File Dates.
+Nothing changes during scanning. Review the results, select a chunk size, then apply one chunk at a time. Repair synchronizes Finder Created, Finder Modified, and every existing EXIF, TIFF, or video-container date to the oldest valid date found. The original file is backed up during each repair so a failed metadata rewrite can be rolled back. Supported file extensions are editable in Settings → File Dates.
 
 ### First launch
 

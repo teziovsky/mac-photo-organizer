@@ -26,6 +26,6 @@ enum AppBranding {
     static let droneModeIcon = "airplane"
 
     static let fileDateRepairModeTitle = "Repair File Dates"
-    static let fileDateRepairModeSubtitle = "Find media with incorrect creation dates and repair them safely in chunks."
+    static let fileDateRepairModeSubtitle = "Find media with incorrect dates and repair them safely in chunks."
     static let fileDateRepairModeIcon = "calendar.badge.clock"
 }
