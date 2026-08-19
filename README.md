@@ -2,15 +2,15 @@
 
 Native macOS app for organizing media. From a home screen you pick a workflow:
 
-- **Organize Photos** — review iCloud Photos albums and export them to a folder.
+- **Export iCloud Photos** — review iCloud Photos albums and export them to a folder.
 - **Organize Drone Footage** — finalize a graded project folder (fully native, no external tools).
-- **Repair File Dates** — find media with incorrect dates and repair it in chunks.
+- **Organize Local Photos** — convert legacy media, repair dates, and organize files into year folders.
 
 > The Xcode target, scheme, and Swift module are all named `TeziovskyUtilities`; the user-facing app name is **Teziovsky Utilities** and the bundle ID is `com.teziovsky.utilities`.
 
 ## Features
 
-### Organize Photos
+### Export iCloud Photos
 
 - Browse non-empty albums (hide albums ending with a configurable suffix, default `_zgrane`)
 - Lazy thumbnail **views** for large albums (PhotoKit loads item metadata per album; grid rows render on demand)
@@ -27,21 +27,25 @@ Point the app at a project folder that contains a `raw/` and an `export/` subfol
 
 The result is the finished media sitting directly in the project folder with no subdirectories. A preview lists every planned action before anything is changed (the operation deletes files). Video compression itself stays in HandBrake — this app handles the post-compression finalize.
 
-### Repair File Dates
+### Organize Local Photos
 
-Choose a folder to scan supported media recursively. Hidden entries, packages, and symbolic links are skipped. For each file, the app compares Finder Created, Finder Modified, and available EXIF, TIFF, or video-container dates. Files whose dates do not all match the oldest valid date are listed with the current date, proposed date, and source.
+Choose a folder to scan supported media recursively. Hidden entries, packages, and symbolic links are skipped. Nothing changes during scanning. The workflow separately previews media conversion, date repairs, and file organization, and only applies a step after explicit confirmation.
 
-Nothing changes during scanning. Review the results, select a chunk size, then apply one chunk at a time. Repair synchronizes Finder Created, Finder Modified, and every existing EXIF, TIFF, or video-container date to the oldest valid date found. The original file is backed up during each repair so a failed metadata rewrite can be rolled back. Supported file extensions are editable in Settings → File Dates.
+HEIC/HEIF images can be converted to JPEG at maximum quality. Legacy or unsupported videos can be re-encoded as H.264 + AAC in MP4 by default for widest compatibility. Settings → Local Media can disable either conversion, select H.264 or HEVC, select MP4 or QuickTime MOV, and choose whether originals are kept. Converted files are verified and inherit the original filesystem dates before an original is removed; keeping originals is enabled by default.
+
+For date repair, the app compares Finder Created, Finder Modified, and available EXIF, TIFF, or video-container dates. Files whose dates do not all match the oldest valid date are listed with the current date, proposed date, and source. Repair synchronizes those dates to the oldest valid date found. The original file is backed up during each repair so a failed metadata rewrite can be rolled back.
+
+For organization, each file uses that same oldest valid date. Photos move to `CURRENT_PARENT/YYYY/`; videos move to `CURRENT_PARENT/YYYY/_Filmy/`. Files already in the computed destination are skipped. A file under an incorrect year moves to the correct sibling year. Existing destination names are preserved by numbering the incoming file, for example `photo (1).jpg`. Empty source folders are left in place. Supported extensions are editable in Settings → Local Media.
 
 ### First launch
 
-On first launch (before Photos access is granted) the app shows a short explainer with a button to grant Photos access. Drone footage organizing needs no Photos permission, so you can continue without granting it.
+On first launch (before Photos access is granted) the app shows a short explainer with a button to grant Photos access. Drone and local-media organizing need no Photos permission, so you can continue without granting it.
 
 ## Requirements
 
 - macOS 14+
 - Xcode 15+
-- Photos library access (only for the Organize Photos workflow)
+- Photos library access (only for the Export iCloud Photos workflow)
 
 ## SwiftLint
 
@@ -109,7 +113,8 @@ Set your development team in Xcode for signed release builds outside this repo (
 - **Export folder** — destination for the Organize action
 - **Drone → Compressed suffix** — suffix HandBrake adds to compressed files (default: `_COMPRESSED`)
 - **Drone → Raw / Export folder names** — subfolder names used by the drone finalize step (defaults: `raw`, `export`)
-- **File Dates → File extensions** — media extensions included by the recursive date-repair scan
+- **Local Media → File extensions** — media extensions included by local conversion, date repair, and organization
+- **Local Media → Media conversion** — enable each conversion, keep or replace originals, and choose codec/container
 
 ## Notes
 

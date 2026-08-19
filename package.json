@@ -2,7 +2,7 @@
   "name": "teziovsky-utilities",
   "version": "1.0.0",
   "private": true,
-  "description": "Teziovsky Utilities — native macOS app to organize iCloud Photos albums and finalize drone footage projects",
+  "description": "Native macOS utilities for exporting iCloud Photos and organizing local and drone media",
   "license": "MIT",
   "author": "teziovsky",
   "scripts": {

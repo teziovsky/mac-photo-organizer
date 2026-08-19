@@ -4,7 +4,7 @@ import SwiftUI
 private enum HomeCardKind: Hashable {
     case photos
     case drone
-    case fileDateRepair
+    case localPhotos
 }
 
 /// Landing screen letting the user pick a workflow.
@@ -50,14 +50,14 @@ struct HomeView: View {
                 .prefersDefaultFocus(false, in: homeFocusScope)
 
                 HomeModeCard(
-                    kind: .fileDateRepair,
-                    title: AppBranding.fileDateRepairModeTitle,
-                    subtitle: AppBranding.fileDateRepairModeSubtitle,
-                    systemImage: AppBranding.fileDateRepairModeIcon,
+                    kind: .localPhotos,
+                    title: AppBranding.localPhotosModeTitle,
+                    subtitle: AppBranding.localPhotosModeSubtitle,
+                    systemImage: AppBranding.localPhotosModeIcon,
                     acceptsFocus: cardsAcceptFocus,
                     focus: $focusedCard
                 ) {
-                    appState.enterFileDateRepairMode()
+                    appState.enterLocalPhotosMode()
                 }
                 .prefersDefaultFocus(false, in: homeFocusScope)
             }

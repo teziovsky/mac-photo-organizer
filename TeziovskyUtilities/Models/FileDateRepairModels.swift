@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 
 enum FileDateSource: String, CaseIterable, Sendable {
@@ -70,6 +71,111 @@ struct FileDateRepairProgress: Sendable, Equatable {
     }
 }
 
+enum LocalVideoOutputContainer: String, CaseIterable, Sendable {
+    case mp4
+    case mov
+
+    var label: String {
+        switch self {
+        case .mp4: return "MP4 — widest compatibility"
+        case .mov: return "QuickTime MOV"
+        }
+    }
+
+    var fileExtension: String { rawValue }
+}
+
+enum LocalVideoCodec: String, CaseIterable, Sendable {
+    case h264
+    case hevc
+
+    var label: String {
+        switch self {
+        case .h264: return "H.264 + AAC — widest compatibility"
+        case .hevc: return "HEVC + AAC — smaller files"
+        }
+    }
+}
+
+struct LocalMediaConversionConfig: Sendable, Equatable {
+    let convertHEIC: Bool
+    let convertLegacyVideos: Bool
+    let keepOriginals: Bool
+    let videoOutputContainer: LocalVideoOutputContainer
+    let videoCodec: LocalVideoCodec
+
+    init(
+        convertHEIC: Bool = true,
+        convertLegacyVideos: Bool = true,
+        keepOriginals: Bool,
+        videoOutputContainer: LocalVideoOutputContainer,
+        videoCodec: LocalVideoCodec = .h264
+    ) {
+        self.convertHEIC = convertHEIC
+        self.convertLegacyVideos = convertLegacyVideos
+        self.keepOriginals = keepOriginals
+        self.videoOutputContainer = videoOutputContainer
+        self.videoCodec = videoCodec
+    }
+
+    static let `default` = LocalMediaConversionConfig(
+        keepOriginals: true,
+        videoOutputContainer: .mp4,
+        videoCodec: .h264
+    )
+}
+
+enum LocalMediaConversionKind: Sendable, Equatable {
+    case heicToJPEG
+    case legacyVideo(LocalVideoOutputContainer, LocalVideoCodec)
+
+    var label: String {
+        switch self {
+        case .heicToJPEG: return "HEIC → highest-quality JPEG"
+        case .legacyVideo(let container, let codec):
+            return "Legacy video → \(container.fileExtension.uppercased()) · \(codec.label)"
+        }
+    }
+}
+
+struct LocalMediaConversionItem: Identifiable, Sendable, Equatable {
+    var id: String { sourceRelativePath }
+    let sourceURL: URL
+    let sourceRelativePath: String
+    let destinationURL: URL
+    let destinationRelativePath: String
+    let kind: LocalMediaConversionKind
+    let keepOriginal: Bool
+    let destinationWasRenamed: Bool
+}
+
+struct LocalMediaConversionSummary: Sendable, Equatable {
+    var converted = 0
+    var failed = 0
+    var total = 0
+    var wasCancelled = false
+}
+
+struct LocalMediaOrganizationItem: Identifiable, Sendable, Equatable {
+    var id: String { sourceRelativePath }
+    let sourceURL: URL
+    let sourceRelativePath: String
+    let destinationURL: URL
+    let destinationRelativePath: String
+    let proposedDate: Date
+    let proposedSource: FileDateSource
+    let isVideo: Bool
+    let destinationWasRenamed: Bool
+}
+
+struct LocalMediaOrganizationSummary: Sendable, Equatable {
+    var moved = 0
+    var skipped = 0
+    var failed = 0
+    var total = 0
+    var wasCancelled = false
+}
+
 enum FileDateRepairPlanner {
     static let timestampTolerance: TimeInterval = 1
 
@@ -83,8 +189,7 @@ enum FileDateRepairPlanner {
             return nil
         }
 
-        let validCandidates = evidence.filter { isPlausible($0.date, now: now) }
-        guard let oldest = validCandidates.min(by: { $0.date < $1.date }) else {
+        guard let oldest = oldestPlausibleEvidence(in: evidence, now: now) else {
             return nil
         }
 
@@ -102,6 +207,15 @@ enum FileDateRepairPlanner {
             proposedSource: oldest.source,
             evidence: evidence.sorted(by: evidenceSort)
         )
+    }
+
+    static func oldestPlausibleEvidence(
+        in evidence: [FileDateEvidence],
+        now: Date = Date()
+    ) -> FileDateEvidence? {
+        evidence
+            .filter { isPlausible($0.date, now: now) }
+            .min { $0.date < $1.date }
     }
 
     private static func isPlausible(_ date: Date, now: Date) -> Bool {
@@ -128,10 +242,212 @@ enum FileDateRepairPlanner {
     }
 }
 
+enum LocalMediaOrganizationPlanner {
+    static let videoDirectoryName = "_Filmy"
+
+    static func makeCandidate(
+        fileURL: URL,
+        relativePath: String,
+        rootDirectory: URL,
+        evidence: [FileDateEvidence],
+        isVideo: Bool,
+        now: Date = Date()
+    ) -> LocalMediaOrganizationItem? {
+        guard let oldest = FileDateRepairPlanner.oldestPlausibleEvidence(in: evidence, now: now) else {
+            return nil
+        }
+
+        let year = yearString(for: oldest.date)
+        let parent = fileURL.deletingLastPathComponent()
+        let anchor: URL
+        var preservedDirectories: [String] = []
+        var prependVideoDirectory = isVideo
+
+        if let currentYearDirectory = nearestYearDirectory(startingAt: parent) {
+            preservedDirectories = relativeDirectoryComponents(
+                from: currentYearDirectory,
+                to: parent
+            )
+            let isInVideoDirectory = preservedDirectories.contains(videoDirectoryName)
+            if currentYearDirectory.lastPathComponent == year {
+                if !isVideo, !isInVideoDirectory {
+                    return nil
+                }
+                if isVideo, isInVideoDirectory {
+                    return nil
+                }
+            }
+            if isVideo {
+                prependVideoDirectory = false
+                if !isInVideoDirectory {
+                    preservedDirectories.append(videoDirectoryName)
+                }
+            } else {
+                preservedDirectories.removeAll { $0 == videoDirectoryName }
+            }
+            anchor = currentYearDirectory.deletingLastPathComponent()
+        } else {
+            anchor = parent
+        }
+
+        var destinationDirectory = anchor.appendingPathComponent(year, isDirectory: true)
+        if prependVideoDirectory {
+            destinationDirectory.appendPathComponent(videoDirectoryName, isDirectory: true)
+        }
+        for component in preservedDirectories {
+            destinationDirectory.appendPathComponent(component, isDirectory: true)
+        }
+        let destination = destinationDirectory.appendingPathComponent(fileURL.lastPathComponent)
+        guard destination.standardizedFileURL != fileURL.standardizedFileURL,
+              isWithinRoot(destination, rootDirectory: rootDirectory) else {
+            return nil
+        }
+
+        return LocalMediaOrganizationItem(
+            sourceURL: fileURL,
+            sourceRelativePath: relativePath,
+            destinationURL: destination,
+            destinationRelativePath: makeRelativePath(for: destination, root: rootDirectory),
+            proposedDate: oldest.date,
+            proposedSource: oldest.source,
+            isVideo: isVideo,
+            destinationWasRenamed: false
+        )
+    }
+
+    static func resolveCollisions(
+        _ candidates: [LocalMediaOrganizationItem],
+        rootDirectory: URL,
+        fileManager: FileManager = .default
+    ) -> [LocalMediaOrganizationItem] {
+        var reservedPaths = Set<String>()
+        return candidates
+            .sorted {
+                $0.sourceRelativePath.localizedStandardCompare($1.sourceRelativePath) == .orderedAscending
+            }
+            .map { item in
+                let destination = uniqueDestination(
+                    preferred: item.destinationURL,
+                    reservedPaths: &reservedPaths,
+                    fileManager: fileManager
+                )
+                return LocalMediaOrganizationItem(
+                    sourceURL: item.sourceURL,
+                    sourceRelativePath: item.sourceRelativePath,
+                    destinationURL: destination,
+                    destinationRelativePath: makeRelativePath(for: destination, root: rootDirectory),
+                    proposedDate: item.proposedDate,
+                    proposedSource: item.proposedSource,
+                    isVideo: item.isVideo,
+                    destinationWasRenamed: destination.lastPathComponent != item.destinationURL.lastPathComponent
+                )
+            }
+    }
+
+    private static func uniqueDestination(
+        preferred: URL,
+        reservedPaths: inout Set<String>,
+        fileManager: FileManager
+    ) -> URL {
+        var candidate = preferred
+        let base = preferred.deletingPathExtension().lastPathComponent
+        let fileExtension = preferred.pathExtension
+        var counter = 1
+
+        while fileManager.fileExists(atPath: candidate.path)
+            || reservedPaths.contains(candidate.standardizedFileURL.path) {
+            let filename = fileExtension.isEmpty
+                ? "\(base) (\(counter))"
+                : "\(base) (\(counter)).\(fileExtension)"
+            candidate = preferred.deletingLastPathComponent().appendingPathComponent(filename)
+            counter += 1
+        }
+        reservedPaths.insert(candidate.standardizedFileURL.path)
+        return candidate
+    }
+
+    private static func yearString(for date: Date) -> String {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        return String(calendar.component(.year, from: date))
+    }
+
+    private static func isYearDirectory(_ name: String) -> Bool {
+        name.count == 4 && name.allSatisfy(\.isNumber)
+    }
+
+    private static func nearestYearDirectory(startingAt directory: URL) -> URL? {
+        var candidate = directory.standardizedFileURL
+        while candidate.path != "/" {
+            if isYearDirectory(candidate.lastPathComponent) {
+                return candidate
+            }
+            let parent = candidate.deletingLastPathComponent()
+            guard parent.path != candidate.path else { return nil }
+            candidate = parent
+        }
+        return nil
+    }
+
+    private static func relativeDirectoryComponents(from ancestor: URL, to descendant: URL) -> [String] {
+        let ancestorComponents = ancestor.standardizedFileURL.pathComponents
+        let descendantComponents = descendant.standardizedFileURL.pathComponents
+        guard descendantComponents.starts(with: ancestorComponents) else { return [] }
+        return Array(descendantComponents.dropFirst(ancestorComponents.count))
+    }
+
+    private static func isWithinRoot(_ url: URL, rootDirectory: URL) -> Bool {
+        let rootPath = canonicalPath(for: rootDirectory)
+        let path = canonicalPath(for: url)
+        return path == rootPath || path.hasPrefix(rootPath + "/")
+    }
+
+    private static func makeRelativePath(for url: URL, root: URL) -> String {
+        let rootPath = canonicalPath(for: root)
+        let path = canonicalPath(for: url)
+        guard path.hasPrefix(rootPath + "/") else { return url.lastPathComponent }
+        return String(path.dropFirst(rootPath.count + 1))
+    }
+
+    private static func canonicalPath(for url: URL, fileManager: FileManager = .default) -> String {
+        var existingURL = url.standardizedFileURL
+        var missingComponents: [String] = []
+        while !fileManager.fileExists(atPath: existingURL.path) {
+            let parent = existingURL.deletingLastPathComponent()
+            guard parent.path != existingURL.path else { break }
+            missingComponents.insert(existingURL.lastPathComponent, at: 0)
+            existingURL = parent
+        }
+
+        var buffer = [CChar](repeating: 0, count: Int(PATH_MAX))
+        let didResolve = existingURL.path.withCString { path in
+            buffer.withUnsafeMutableBufferPointer { pointer in
+                realpath(path, pointer.baseAddress) != nil
+            }
+        }
+        let existingPath = didResolve ? String(cString: buffer) : existingURL.path
+        let completePath = missingComponents.reduce(URL(fileURLWithPath: existingPath)) {
+            $0.appendingPathComponent($1)
+        }.standardizedFileURL.path
+        return normalizePrivateSystemAlias(completePath)
+    }
+
+    private static func normalizePrivateSystemAlias(_ path: String) -> String {
+        for alias in ["/var", "/tmp", "/etc"] {
+            let privateAlias = "/private\(alias)"
+            if path == privateAlias || path.hasPrefix(privateAlias + "/") {
+                return String(path.dropFirst("/private".count))
+            }
+        }
+        return path
+    }
+}
+
 enum FileDateRepairExtensions {
     static let defaults = [
-        "3gp", "avi", "bmp", "gif", "heic", "heif", "jpeg", "jpg", "m4v",
-        "mov", "mp4", "mpeg", "mpg", "png", "tif", "tiff", "webp"
+        "3gp", "avi", "bmp", "flv", "gif", "heic", "heif", "jpeg", "jpg", "m2ts",
+        "m4v", "mkv", "mov", "mp4", "mpeg", "mpg", "mts", "png", "qt", "tif", "tiff",
+        "vob", "webp", "wmv"
     ]
 
     static func parse(_ value: String) -> Set<String> {

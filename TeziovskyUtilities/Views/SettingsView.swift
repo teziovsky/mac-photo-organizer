@@ -15,7 +15,12 @@ struct SettingsView: View {
     @State private var droneHandBrakeOutputExtension: String = AppSettings.droneHandBrakeOutputExtension
     @State private var droneKeepRawAfterFinalize: Bool = AppSettings.droneKeepRawAfterFinalize
     @State private var dronePreserveOrientationOnFlatten: Bool = AppSettings.dronePreserveOrientationOnFlatten
-    @State private var fileDateRepairExtensions: String = AppSettings.fileDateRepairExtensions
+    @State private var localMediaExtensions: String = AppSettings.localMediaExtensions
+    @State private var convertHEIC = AppSettings.localConvertHEIC
+    @State private var convertLegacyVideos = AppSettings.localConvertLegacyVideos
+    @State private var keepOriginalsAfterConversion = AppSettings.localKeepOriginalsAfterConversion
+    @State private var localVideoOutputContainer = AppSettings.localVideoOutputContainer
+    @State private var localVideoCodec = AppSettings.localVideoCodec
 
     var body: some View {
         TabView {
@@ -44,9 +49,16 @@ struct SettingsView: View {
                 Label("Drone", systemImage: "airplane")
             }
 
-            FileDateRepairSettingsTab(extensions: $fileDateRepairExtensions)
+            LocalPhotosSettingsTab(
+                extensions: $localMediaExtensions,
+                convertHEIC: $convertHEIC,
+                convertLegacyVideos: $convertLegacyVideos,
+                keepOriginalsAfterConversion: $keepOriginalsAfterConversion,
+                videoOutputContainer: $localVideoOutputContainer,
+                videoCodec: $localVideoCodec
+            )
                 .tabItem {
-                    Label("File Dates", systemImage: "calendar.badge.clock")
+                    Label("Local Media", systemImage: "folder.badge.gearshape")
                 }
         }
         .frame(width: 520, height: 640)
@@ -64,7 +76,12 @@ struct SettingsView: View {
             droneHandBrakeOutputExtension = AppSettings.droneHandBrakeOutputExtension
             droneKeepRawAfterFinalize = AppSettings.droneKeepRawAfterFinalize
             dronePreserveOrientationOnFlatten = AppSettings.dronePreserveOrientationOnFlatten
-            fileDateRepairExtensions = AppSettings.fileDateRepairExtensions
+            localMediaExtensions = AppSettings.localMediaExtensions
+            convertHEIC = AppSettings.localConvertHEIC
+            convertLegacyVideos = AppSettings.localConvertLegacyVideos
+            keepOriginalsAfterConversion = AppSettings.localKeepOriginalsAfterConversion
+            localVideoOutputContainer = AppSettings.localVideoOutputContainer
+            localVideoCodec = AppSettings.localVideoCodec
             loadAlbumsIfNeeded()
         }
         .onChange(of: omittedAlbumIDs) { _, newValue in
@@ -83,7 +100,12 @@ struct SettingsView: View {
             AppSettings.droneHandBrakeOutputExtension = droneHandBrakeOutputExtension
             AppSettings.droneKeepRawAfterFinalize = droneKeepRawAfterFinalize
             AppSettings.dronePreserveOrientationOnFlatten = dronePreserveOrientationOnFlatten
-            AppSettings.fileDateRepairExtensions = fileDateRepairExtensions
+            AppSettings.localMediaExtensions = localMediaExtensions
+            AppSettings.localConvertHEIC = convertHEIC
+            AppSettings.localConvertLegacyVideos = convertLegacyVideos
+            AppSettings.localKeepOriginalsAfterConversion = keepOriginalsAfterConversion
+            AppSettings.localVideoOutputContainer = localVideoOutputContainer
+            AppSettings.localVideoCodec = localVideoCodec
             appState.syncOmittedFromOrganizeAlbums(omittedAlbumIDs)
             Task { await appState.photosService.reloadAlbums() }
         }
@@ -96,8 +118,13 @@ struct SettingsView: View {
     }
 }
 
-private struct FileDateRepairSettingsTab: View {
+private struct LocalPhotosSettingsTab: View {
     @Binding var extensions: String
+    @Binding var convertHEIC: Bool
+    @Binding var convertLegacyVideos: Bool
+    @Binding var keepOriginalsAfterConversion: Bool
+    @Binding var videoOutputContainer: LocalVideoOutputContainer
+    @Binding var videoCodec: LocalVideoCodec
 
     var body: some View {
         Form {
@@ -115,10 +142,44 @@ private struct FileDateRepairSettingsTab: View {
                 }
             }
 
-            Section("Repair behavior") {
+            Section("Date repair") {
                 Text(
                     "Repair synchronizes Finder Created, Finder Modified, and every existing EXIF, TIFF, "
                         + "or video-container date to the oldest valid date found."
+                )
+                    .font(AlbumListRowStyle.detailFont)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Media conversion") {
+                Toggle("Convert HEIC/HEIF images to JPEG", isOn: $convertHEIC)
+                Toggle("Convert legacy or unsupported videos", isOn: $convertLegacyVideos)
+                Toggle("Keep original files after conversion", isOn: $keepOriginalsAfterConversion)
+                    .help("When off, an original is removed only after its converted file is verified.")
+                Picker("Legacy video output", selection: $videoOutputContainer) {
+                    ForEach(LocalVideoOutputContainer.allCases, id: \.self) { container in
+                        Text(container.label).tag(container)
+                    }
+                }
+                .disabled(!convertLegacyVideos)
+                Picker("Legacy video codec", selection: $videoCodec) {
+                    ForEach(LocalVideoCodec.allCases, id: \.self) { codec in
+                        Text(codec.label).tag(codec)
+                    }
+                }
+                .disabled(!convertLegacyVideos)
+                Text(
+                    "HEIC images are converted to JPEG at maximum quality. Legacy or unsupported "
+                        + "videos are re-encoded at the highest available quality."
+                )
+                    .font(AlbumListRowStyle.detailFont)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Organization") {
+                Text(
+                    "Photos move into a YYYY directory under their current parent. Videos move into "
+                        + "YYYY/_Filmy. Existing destinations receive a collision-safe numbered filename."
                 )
                     .font(AlbumListRowStyle.detailFont)
                     .foregroundStyle(.secondary)

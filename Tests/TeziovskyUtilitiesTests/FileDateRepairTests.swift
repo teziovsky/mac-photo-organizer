@@ -193,6 +193,332 @@ final class FileDateRepairExtensionTests: XCTestCase {
     }
 }
 
+final class LocalMediaOrganizationPlannerTests: XCTestCase {
+    private var root: URL!
+
+    override func setUpWithError() throws {
+        root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LocalMediaOrganizationTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    }
+
+    override func tearDownWithError() throws {
+        if let root {
+            try? FileManager.default.removeItem(at: root)
+        }
+    }
+
+    func testPlansPhotoAndVideoUnderTheirImmediateParent() throws {
+        let parent = root.appendingPathComponent("Trips/Italy", isDirectory: true)
+        let photo = parent.appendingPathComponent("photo.jpg")
+        let video = parent.appendingPathComponent("video.mov")
+
+        let photoItem = try XCTUnwrap(makeCandidate(photo, relativePath: "Trips/Italy/photo.jpg"))
+        let videoItem = try XCTUnwrap(
+            makeCandidate(video, relativePath: "Trips/Italy/video.mov", isVideo: true)
+        )
+
+        XCTAssertEqual(photoItem.destinationRelativePath, "Trips/Italy/2024/photo.jpg")
+        XCTAssertEqual(videoItem.destinationRelativePath, "Trips/Italy/2024/_Filmy/video.mov")
+    }
+
+    func testSkipsFilesAlreadyInComputedDestination() {
+        let photo = root.appendingPathComponent("Trips/Italy/2024/photo.jpg")
+        let video = root.appendingPathComponent("Trips/Italy/2024/_Filmy/video.mov")
+
+        XCTAssertNil(makeCandidate(photo, relativePath: "Trips/Italy/2024/photo.jpg"))
+        XCTAssertNil(
+            makeCandidate(
+                video,
+                relativePath: "Trips/Italy/2024/_Filmy/video.mov",
+                isVideo: true
+            )
+        )
+    }
+
+    func testSkipsPhotoInsideRelatedFolderBelowMatchingYear() {
+        let photo = root.appendingPathComponent(
+            "_ada/2022/Koncert_Dawid_Podsiadlo/photo.jpg"
+        )
+        let item = LocalMediaOrganizationPlanner.makeCandidate(
+            fileURL: photo,
+            relativePath: "_ada/2022/Koncert_Dawid_Podsiadlo/photo.jpg",
+            rootDirectory: root,
+            evidence: [
+                FileDateEvidence(source: .filesystemCreation, date: date(2022)),
+                FileDateEvidence(source: .filesystemModification, date: date(2023))
+            ],
+            isVideo: false,
+            now: date(2026)
+        )
+
+        XCTAssertNil(item)
+    }
+
+    func testSkipsVideoInsideNestedVideoFolderBelowMatchingYear() {
+        let relativePath = "_ada/2022/Koncert Dawid Podsiadlo/_Filmy/"
+            + "Video Dawid_Podsiadlo Poznan_20221.MOV"
+        let video = root.appendingPathComponent(relativePath)
+        let item = LocalMediaOrganizationPlanner.makeCandidate(
+            fileURL: video,
+            relativePath: relativePath,
+            rootDirectory: root,
+            evidence: [
+                FileDateEvidence(source: .filesystemCreation, date: date(2022)),
+                FileDateEvidence(source: .filesystemModification, date: date(2023))
+            ],
+            isVideo: true,
+            now: date(2026)
+        )
+
+        XCTAssertNil(item)
+    }
+
+    func testPreservesRelatedFolderWhenCorrectingYear() throws {
+        let photo = root.appendingPathComponent("_ada/2021/Koncert/photo.jpg")
+        let item = try XCTUnwrap(
+            makeCandidate(
+                photo,
+                relativePath: "_ada/2021/Koncert/photo.jpg"
+            )
+        )
+
+        XCTAssertEqual(item.destinationRelativePath, "_ada/2024/Koncert/photo.jpg")
+    }
+
+    func testCorrectsWrongYearWithoutNestingYearDirectories() throws {
+        let photo = root.appendingPathComponent("Trips/Italy/2021/photo.jpg")
+        let video = root.appendingPathComponent("Trips/Italy/2021/_Filmy/video.mov")
+
+        let photoItem = try XCTUnwrap(
+            makeCandidate(photo, relativePath: "Trips/Italy/2021/photo.jpg")
+        )
+        let videoItem = try XCTUnwrap(
+            makeCandidate(
+                video,
+                relativePath: "Trips/Italy/2021/_Filmy/video.mov",
+                isVideo: true
+            )
+        )
+
+        XCTAssertEqual(photoItem.destinationRelativePath, "Trips/Italy/2024/photo.jpg")
+        XCTAssertEqual(videoItem.destinationRelativePath, "Trips/Italy/2024/_Filmy/video.mov")
+    }
+
+    func testMovesPhotoOutOfVideoDirectory() throws {
+        let photo = root.appendingPathComponent("Trips/Italy/2024/_Filmy/photo.jpg")
+        let item = try XCTUnwrap(
+            makeCandidate(photo, relativePath: "Trips/Italy/2024/_Filmy/photo.jpg")
+        )
+
+        XCTAssertEqual(item.destinationRelativePath, "Trips/Italy/2024/photo.jpg")
+    }
+
+    func testUsesOldestPlausibleDateForDestinationYear() throws {
+        let file = root.appendingPathComponent("photo.jpg")
+        let candidate = try XCTUnwrap(
+            LocalMediaOrganizationPlanner.makeCandidate(
+                fileURL: file,
+                relativePath: "photo.jpg",
+                rootDirectory: root,
+                evidence: [
+                    FileDateEvidence(source: .filesystemCreation, date: date(2024)),
+                    FileDateEvidence(source: .filesystemModification, date: date(2015)),
+                    FileDateEvidence(source: .exifOriginal, date: date(2005))
+                ],
+                isVideo: false,
+                now: date(2026)
+            )
+        )
+
+        XCTAssertEqual(candidate.destinationRelativePath, "2005/photo.jpg")
+        XCTAssertEqual(candidate.proposedSource, .exifOriginal)
+    }
+
+    func testResolvesExistingAndPlannedDestinationCollisionsDeterministically() throws {
+        let destinationDirectory = root.appendingPathComponent("2024", isDirectory: true)
+        try FileManager.default.createDirectory(at: destinationDirectory, withIntermediateDirectories: true)
+        try Data("existing".utf8).write(to: destinationDirectory.appendingPathComponent("photo.jpg"))
+
+        let first = try XCTUnwrap(makeCandidate(root.appendingPathComponent("photo.jpg"), relativePath: "photo.jpg"))
+        let second = try XCTUnwrap(
+            makeCandidate(
+                root.appendingPathComponent("2021/photo.jpg"),
+                relativePath: "2021/photo.jpg"
+            )
+        )
+        let resolved = LocalMediaOrganizationPlanner.resolveCollisions(
+            [first, second],
+            rootDirectory: root
+        )
+
+        XCTAssertEqual(
+            resolved.map(\.destinationRelativePath),
+            ["2024/photo (1).jpg", "2024/photo (2).jpg"]
+        )
+        XCTAssertTrue(resolved.allSatisfy(\.destinationWasRenamed))
+    }
+
+    func testMoveNeverOverwritesDestinationCreatedAfterPreview() async throws {
+        let source = root.appendingPathComponent("photo.jpg")
+        let destination = root.appendingPathComponent("2024/photo.jpg")
+        try Data("source".utf8).write(to: source)
+        try FileManager.default.createDirectory(
+            at: destination.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try Data("destination".utf8).write(to: destination)
+        let item = LocalMediaOrganizationItem(
+            sourceURL: source,
+            sourceRelativePath: "photo.jpg",
+            destinationURL: destination,
+            destinationRelativePath: "2024/photo.jpg",
+            proposedDate: date(2024),
+            proposedSource: .filesystemCreation,
+            isVideo: false,
+            destinationWasRenamed: false
+        )
+
+        do {
+            try await LocalMediaOrganizer.move(item)
+            XCTFail("Expected the move to reject an occupied destination")
+        } catch {
+            XCTAssertTrue(FileManager.default.fileExists(atPath: source.path))
+            XCTAssertEqual(try Data(contentsOf: destination), Data("destination".utf8))
+        }
+    }
+
+    private func makeCandidate(
+        _ fileURL: URL,
+        relativePath: String,
+        isVideo: Bool = false
+    ) -> LocalMediaOrganizationItem? {
+        LocalMediaOrganizationPlanner.makeCandidate(
+            fileURL: fileURL,
+            relativePath: relativePath,
+            rootDirectory: root,
+            evidence: [
+                FileDateEvidence(source: .filesystemCreation, date: date(2024)),
+                FileDateEvidence(source: .filesystemModification, date: date(2025))
+            ],
+            isVideo: isVideo,
+            now: date(2026)
+        )
+    }
+
+    private func date(_ year: Int) -> Date {
+        Calendar(identifier: .gregorian).date(from: DateComponents(year: year, month: 1, day: 1))!
+    }
+}
+
+final class LocalMediaConversionTests: XCTestCase {
+    private var root: URL!
+
+    override func setUpWithError() throws {
+        root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LocalMediaConversionTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    }
+
+    override func tearDownWithError() throws {
+        if let root {
+            try? FileManager.default.removeItem(at: root)
+        }
+    }
+
+    func testPlansHEICToJPEGWithOriginalRetentionSetting() async throws {
+        let source = root.appendingPathComponent("photo.heic")
+        try Data().write(to: source)
+        let item = await LocalMediaConversionPlanner.makeCandidate(
+            fileURL: source,
+            relativePath: "photo.heic",
+            rootDirectory: root,
+            config: LocalMediaConversionConfig(keepOriginals: false, videoOutputContainer: .mp4)
+        )
+
+        XCTAssertEqual(item?.destinationRelativePath, "photo.jpg")
+        XCTAssertEqual(item?.kind, .heicToJPEG)
+        XCTAssertEqual(item?.keepOriginal, false)
+    }
+
+    func testSkipsConversionsDisabledInSettings() async throws {
+        let source = root.appendingPathComponent("photo.heic")
+        try Data().write(to: source)
+        let item = await LocalMediaConversionPlanner.makeCandidate(
+            fileURL: source,
+            relativePath: "photo.heic",
+            rootDirectory: root,
+            config: LocalMediaConversionConfig(
+                convertHEIC: false,
+                keepOriginals: true,
+                videoOutputContainer: .mp4
+            )
+        )
+
+        XCTAssertNil(item)
+    }
+
+    func testPlansLegacyVideoUsingConfiguredContainerAndResolvesCollision() async throws {
+        let source = root.appendingPathComponent("clip.avi")
+        let occupied = root.appendingPathComponent("clip.mov")
+        try Data().write(to: source)
+        try Data().write(to: occupied)
+        let plannedCandidate = await LocalMediaConversionPlanner.makeCandidate(
+            fileURL: source,
+            relativePath: "clip.avi",
+            rootDirectory: root,
+            config: LocalMediaConversionConfig(keepOriginals: true, videoOutputContainer: .mov)
+        )
+        let candidate = try XCTUnwrap(plannedCandidate)
+        let item = try XCTUnwrap(
+            LocalMediaConversionPlanner.resolveCollisions([candidate], rootDirectory: root).first
+        )
+
+        XCTAssertEqual(item.kind, .legacyVideo(.mov, .h264))
+        XCTAssertEqual(item.destinationRelativePath, "clip (1).mov")
+        XCTAssertTrue(item.destinationWasRenamed)
+    }
+
+    func testConvertsHEICToVerifiedJPEGBeforeRemovingOriginal() async throws {
+        let source = root.appendingPathComponent("photo.heic")
+        guard let context = CGContext(
+            data: nil,
+            width: 2,
+            height: 2,
+            bitsPerComponent: 8,
+            bytesPerRow: 8,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ), let image = context.makeImage(),
+              let destination = CGImageDestinationCreateWithURL(
+                  source as CFURL,
+                  "public.heic" as CFString,
+                  1,
+                  nil
+              ) else {
+            throw XCTSkip("HEIC encoding is unavailable on this host")
+        }
+        CGImageDestinationAddImage(destination, image, nil)
+        guard CGImageDestinationFinalize(destination) else {
+            throw XCTSkip("HEIC encoding is unavailable on this host")
+        }
+
+        let plannedItem = await LocalMediaConversionPlanner.makeCandidate(
+            fileURL: source,
+            relativePath: "photo.heic",
+            rootDirectory: root,
+            config: LocalMediaConversionConfig(keepOriginals: false, videoOutputContainer: .mp4)
+        )
+        let item = try XCTUnwrap(plannedItem)
+        try await LocalMediaConverter.convert(item)
+
+        XCTAssertFalse(FileManager.default.fileExists(atPath: source.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: item.destinationURL.path))
+        let converted = try XCTUnwrap(CGImageSourceCreateWithURL(item.destinationURL as CFURL, nil))
+        XCTAssertGreaterThan(CGImageSourceGetCount(converted), 0)
+    }
+}
+
 final class FileDateRepairScannerTests: XCTestCase {
     private var root: URL!
 
@@ -231,9 +557,21 @@ final class FileDateRepairScannerTests: XCTestCase {
             supportedExtensions: ["jpg"],
             progress: { _ in }
         )
+        let visibleURL = root.appendingPathComponent("visible.jpg")
+        let evidence = try await MediaMetadataReader.readDateEvidence(url: visibleURL, isVideo: false)
+        let directCandidate = LocalMediaOrganizationPlanner.makeCandidate(
+            fileURL: visibleURL,
+            relativePath: "visible.jpg",
+            rootDirectory: root,
+            evidence: evidence,
+            isVideo: MediaFileClassifier.isVideo(visibleURL.lastPathComponent)
+        )
 
         XCTAssertEqual(result.scannedFileCount, 1)
         XCTAssertEqual(result.items.map(\.relativePath), ["visible.jpg"])
+        XCTAssertNotNil(directCandidate, "Evidence: \(evidence), root: \(root.path)")
+        XCTAssertEqual(result.organizationItems.map(\.sourceRelativePath), ["visible.jpg"])
+        XCTAssertEqual(result.organizationSkippedCount, 0)
     }
 
     func testScanHonorsCancellation() async throws {

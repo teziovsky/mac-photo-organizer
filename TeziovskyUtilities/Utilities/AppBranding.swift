@@ -17,15 +17,15 @@ enum AppBranding {
             ?? (Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String)
             ?? fallbackAppName
 
-    static let photosModeTitle = "Organize Photos"
-    static let photosModeSubtitle = "Review iCloud Photos albums and export them to a folder."
-    static let photosModeIcon = "photo.on.rectangle.angled"
+    static let photosModeTitle = "Export iCloud Photos"
+    static let photosModeSubtitle = "Review iCloud Photos albums and export originals to a folder."
+    static let photosModeIcon = "icloud.and.arrow.down"
 
     static let droneModeTitle = "Organize Drone Footage"
     static let droneModeSubtitle = "Validate project, compress exports, finalize delivery files."
     static let droneModeIcon = "airplane"
 
-    static let fileDateRepairModeTitle = "Repair File Dates"
-    static let fileDateRepairModeSubtitle = "Find media with incorrect dates and repair them safely in chunks."
-    static let fileDateRepairModeIcon = "calendar.badge.clock"
+    static let localPhotosModeTitle = "Organize Local Photos"
+    static let localPhotosModeSubtitle = "Convert legacy media, repair dates, and organize files into year folders."
+    static let localPhotosModeIcon = "folder.badge.gearshape"
 }

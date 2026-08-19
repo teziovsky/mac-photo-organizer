@@ -13,7 +13,7 @@ final class AppState: ObservableObject {
     let photosService = PhotosService()
     let organizeExporter = OrganizeExporter()
     let droneWorkflow = DroneWorkflowCoordinator()
-    let fileDateRepairService = FileDateRepairService()
+    let localPhotosService = LocalPhotosService()
 
     private var cancellables = Set<AnyCancellable>()
     private var albumLoadGeneration = 0
@@ -47,7 +47,7 @@ final class AppState: ObservableObject {
         droneWorkflow.objectWillChange
             .sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &cancellables)
-        fileDateRepairService.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() }
+        localPhotosService.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &cancellables)
     }
 
@@ -68,7 +68,7 @@ final class AppState: ObservableObject {
         hasDismissedPermissionsOnboarding = true
     }
 
-    /// Proceeds without granting Photos access (drone mode needs no Photos permission).
+    /// Proceeds without granting Photos access (drone and local-media modes do not need it).
     func continueWithoutPhotosAccess() {
         hasDismissedPermissionsOnboarding = true
     }
@@ -376,7 +376,7 @@ extension AppState {
         route = .drone
     }
 
-    func enterFileDateRepairMode() {
-        route = .fileDateRepair
+    func enterLocalPhotosMode() {
+        route = .localPhotos
     }
 }

@@ -2,12 +2,17 @@ import Foundation
 
 struct FileDateScanOutput: Sendable {
     let relativePath: String
-    let item: FileDateRepairItem?
+    let conversionCandidate: LocalMediaConversionItem?
+    let repairItem: FileDateRepairItem?
+    let organizationCandidate: LocalMediaOrganizationItem?
     let failure: FileDateRepairFailure?
 }
 
 struct FileDateScanResult: Sendable {
+    let conversionItems: [LocalMediaConversionItem]
     let items: [FileDateRepairItem]
+    let organizationItems: [LocalMediaOrganizationItem]
+    let organizationSkippedCount: Int
     let failures: [FileDateRepairFailure]
     let scannedFileCount: Int
 }
@@ -18,11 +23,15 @@ enum FileDateRepairScanner {
     static func scan(
         directory: URL,
         supportedExtensions: Set<String>,
+        conversionConfig: LocalMediaConversionConfig = .default,
         progress: @escaping @Sendable (FileDateRepairProgress) async -> Void
     ) async throws -> FileDateScanResult {
         let enumeration = try enumerateFiles(in: directory, supportedExtensions: supportedExtensions)
         var failures = enumeration.failures
+        var conversionCandidates: [LocalMediaConversionItem] = []
         var items: [FileDateRepairItem] = []
+        var organizationCandidates: [LocalMediaOrganizationItem] = []
+        var organizationSkippedCount = 0
         var nextIndex = 0
         var processed = 0
 
@@ -33,24 +42,45 @@ enum FileDateRepairScanner {
                 nextIndex += 1
                 group.addTask {
                     try Task.checkCancellation()
+                    let conversionCandidate = await LocalMediaConversionPlanner.makeCandidate(
+                        fileURL: file.url,
+                        relativePath: file.relativePath,
+                        rootDirectory: directory,
+                        config: conversionConfig
+                    )
                     do {
-                        let isVideo = MediaFileClassifier.isVideo(file.url.lastPathComponent)
+                        let isVideo = LocalMediaConversionPlanner.isVideoCandidate(file.url)
                         let evidence = try await MediaMetadataReader.readDateEvidence(
                             url: file.url,
                             isVideo: isVideo
                         )
-                        let item = FileDateRepairPlanner.makeItem(
+                        let repairItem = FileDateRepairPlanner.makeItem(
                             fileURL: file.url,
                             relativePath: file.relativePath,
                             evidence: evidence
                         )
-                        return FileDateScanOutput(relativePath: file.relativePath, item: item, failure: nil)
+                        let organizationCandidate = LocalMediaOrganizationPlanner.makeCandidate(
+                            fileURL: file.url,
+                            relativePath: file.relativePath,
+                            rootDirectory: directory,
+                            evidence: evidence,
+                            isVideo: isVideo
+                        )
+                        return FileDateScanOutput(
+                            relativePath: file.relativePath,
+                            conversionCandidate: conversionCandidate,
+                            repairItem: repairItem,
+                            organizationCandidate: organizationCandidate,
+                            failure: nil
+                        )
                     } catch is CancellationError {
                         throw CancellationError()
                     } catch {
                         return FileDateScanOutput(
                             relativePath: file.relativePath,
-                            item: nil,
+                            conversionCandidate: conversionCandidate,
+                            repairItem: nil,
+                            organizationCandidate: nil,
                             failure: FileDateRepairFailure(
                                 relativePath: file.relativePath,
                                 message: error.localizedDescription
@@ -67,7 +97,12 @@ enum FileDateRepairScanner {
             while let output = try await group.next() {
                 try Task.checkCancellation()
                 processed += 1
-                if let item = output.item { items.append(item) }
+                if let item = output.conversionCandidate { conversionCandidates.append(item) }
+                if let item = output.repairItem { items.append(item) }
+                if let item = output.organizationCandidate { organizationCandidates.append(item) }
+                if output.organizationCandidate == nil, output.failure == nil {
+                    organizationSkippedCount += 1
+                }
                 if let failure = output.failure { failures.append(failure) }
                 if processed == enumeration.files.count || processed.isMultiple(of: 20) {
                     await progress(
@@ -83,7 +118,16 @@ enum FileDateRepairScanner {
         }
 
         return FileDateScanResult(
+            conversionItems: LocalMediaConversionPlanner.resolveCollisions(
+                conversionCandidates,
+                rootDirectory: directory
+            ),
             items: items.sorted { $0.relativePath.localizedStandardCompare($1.relativePath) == .orderedAscending },
+            organizationItems: LocalMediaOrganizationPlanner.resolveCollisions(
+                organizationCandidates,
+                rootDirectory: directory
+            ),
+            organizationSkippedCount: organizationSkippedCount,
             failures: failures,
             scannedFileCount: enumeration.files.count
         )
@@ -157,14 +201,64 @@ enum FileDateRepairScanner {
     }
 }
 
+enum LocalMediaOrganizer {
+    static func move(_ item: LocalMediaOrganizationItem, fileManager: FileManager = .default) async throws {
+        try Task.checkCancellation()
+        guard fileManager.fileExists(atPath: item.sourceURL.path) else {
+            throw CocoaError(
+                .fileNoSuchFile,
+                userInfo: [NSLocalizedDescriptionKey: "The source file no longer exists. Rescan before organizing."]
+            )
+        }
+        guard !fileManager.fileExists(atPath: item.destinationURL.path) else {
+            throw CocoaError(
+                .fileWriteFileExists,
+                userInfo: [
+                    NSLocalizedDescriptionKey:
+                        "The previewed destination now exists. Rescan to generate a new collision-safe name."
+                ]
+            )
+        }
+
+        let evidence = try await MediaMetadataReader.readDateEvidence(
+            url: item.sourceURL,
+            isVideo: item.isVideo
+        )
+        guard let oldest = FileDateRepairPlanner.oldestPlausibleEvidence(in: evidence),
+              abs(oldest.date.timeIntervalSince(item.proposedDate)) <=
+              FileDateRepairPlanner.timestampTolerance else {
+            throw CocoaError(
+                .fileReadUnknown,
+                userInfo: [NSLocalizedDescriptionKey: "Dates changed since the preview. Rescan before organizing."]
+            )
+        }
+
+        try Task.checkCancellation()
+        try fileManager.createDirectory(
+            at: item.destinationURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try fileManager.moveItem(at: item.sourceURL, to: item.destinationURL)
+    }
+}
+
 @MainActor
-final class FileDateRepairService: ObservableObject {
+final class LocalPhotosService: ObservableObject {
     @Published private(set) var directory: URL?
+    @Published private(set) var conversionItems: [LocalMediaConversionItem] = []
     @Published private(set) var items: [FileDateRepairItem] = []
+    @Published private(set) var organizationItems: [LocalMediaOrganizationItem] = []
+    @Published private(set) var organizationSkippedCount = 0
     @Published private(set) var failures: [FileDateRepairFailure] = []
     @Published private(set) var progress = FileDateRepairProgress()
+    @Published private(set) var conversionProgress = FileDateRepairProgress()
+    @Published private(set) var organizationProgress = FileDateRepairProgress()
+    @Published private(set) var conversionSummary: LocalMediaConversionSummary?
+    @Published private(set) var organizationSummary: LocalMediaOrganizationSummary?
     @Published private(set) var isScanning = false
+    @Published private(set) var isConverting = false
     @Published private(set) var isRepairing = false
+    @Published private(set) var isOrganizing = false
     @Published private(set) var repairedIDs: Set<String> = []
     @Published private(set) var attemptedIDs: Set<String> = []
     @Published private(set) var scannedFileCount = 0
@@ -174,7 +268,7 @@ final class FileDateRepairService: ObservableObject {
     private var operationTask: Task<Void, Never>?
     private var operationID: UUID?
 
-    var isRunning: Bool { isScanning || isRepairing }
+    var isRunning: Bool { isScanning || isConverting || isRepairing || isOrganizing }
 
     var pendingItems: [FileDateRepairItem] {
         items.filter { !attemptedIDs.contains($0.id) }
@@ -190,7 +284,8 @@ final class FileDateRepairService: ObservableObject {
         self.directory = directory
         isScanning = true
         cancellationMessage = nil
-        let extensions = FileDateRepairExtensions.parse(AppSettings.fileDateRepairExtensions)
+        let extensions = FileDateRepairExtensions.parse(AppSettings.localMediaExtensions)
+        let conversionConfig = AppSettings.localMediaConversionConfig
         let operationID = UUID()
         self.operationID = operationID
 
@@ -209,7 +304,8 @@ final class FileDateRepairService: ObservableObject {
             do {
                 let result = try await FileDateRepairScanner.scan(
                     directory: directory,
-                    supportedExtensions: extensions
+                    supportedExtensions: extensions,
+                    conversionConfig: conversionConfig
                 ) { progress in
                     await MainActor.run {
                         if self.operationID == operationID {
@@ -219,7 +315,10 @@ final class FileDateRepairService: ObservableObject {
                 }
                 try Task.checkCancellation()
                 guard self.operationID == operationID else { return }
+                conversionItems = result.conversionItems
                 items = result.items
+                organizationItems = result.organizationItems
+                organizationSkippedCount = result.organizationSkippedCount
                 failures = result.failures
                 scannedFileCount = result.scannedFileCount
             } catch is CancellationError {
@@ -289,11 +388,115 @@ final class FileDateRepairService: ObservableObject {
         }
     }
 
+    func organizeAll() {
+        guard !isRunning, !organizationItems.isEmpty, let directory else { return }
+        let plannedItems = organizationItems
+        let skippedCount = organizationSkippedCount
+        isOrganizing = true
+        cancellationMessage = nil
+        organizationSummary = LocalMediaOrganizationSummary(
+            skipped: skippedCount,
+            total: plannedItems.count
+        )
+        organizationProgress = FileDateRepairProgress(total: plannedItems.count)
+        let operationID = UUID()
+        self.operationID = operationID
+
+        operationTask = Task { [weak self] in
+            guard let self else { return }
+            let didAccess = directory.startAccessingSecurityScopedResource()
+            defer {
+                if didAccess { directory.stopAccessingSecurityScopedResource() }
+                if self.operationID == operationID {
+                    isOrganizing = false
+                    operationTask = nil
+                    self.operationID = nil
+                }
+            }
+
+            var summary = LocalMediaOrganizationSummary(
+                skipped: skippedCount,
+                total: plannedItems.count
+            )
+            var moveFailures: [FileDateRepairFailure] = []
+            for (index, item) in plannedItems.enumerated() {
+                guard !Task.isCancelled, self.operationID == operationID else {
+                    summary.wasCancelled = true
+                    organizationSummary = summary
+                    return
+                }
+                organizationProgress = FileDateRepairProgress(
+                    processed: index,
+                    total: plannedItems.count,
+                    currentPath: item.sourceRelativePath
+                )
+                do {
+                    try await organize(item)
+                    summary.moved += 1
+                } catch is CancellationError {
+                    summary.wasCancelled = true
+                    organizationSummary = summary
+                    return
+                } catch {
+                    summary.failed += 1
+                    moveFailures.append(
+                        FileDateRepairFailure(
+                            relativePath: item.sourceRelativePath,
+                            message: error.localizedDescription
+                        )
+                    )
+                }
+                organizationProgress.processed = index + 1
+                organizationSummary = summary
+            }
+
+            guard !Task.isCancelled, self.operationID == operationID else {
+                summary.wasCancelled = true
+                organizationSummary = summary
+                return
+            }
+            organizationProgress.currentPath = "Refreshing preview…"
+            do {
+                let extensions = FileDateRepairExtensions.parse(AppSettings.localMediaExtensions)
+                let refreshed = try await FileDateRepairScanner.scan(
+                    directory: directory,
+                    supportedExtensions: extensions,
+                    conversionConfig: AppSettings.localMediaConversionConfig,
+                    progress: { _ in }
+                )
+                guard self.operationID == operationID else { return }
+                conversionItems = refreshed.conversionItems
+                items = refreshed.items
+                organizationItems = refreshed.organizationItems
+                organizationSkippedCount = refreshed.organizationSkippedCount
+                failures = moveFailures + refreshed.failures
+                scannedFileCount = refreshed.scannedFileCount
+            } catch is CancellationError {
+                summary.wasCancelled = true
+            } catch {
+                moveFailures.append(
+                    FileDateRepairFailure(
+                        relativePath: directory.lastPathComponent,
+                        message: "Files were organized, but the refresh failed: \(error.localizedDescription)"
+                    )
+                )
+                failures = moveFailures
+            }
+            organizationSummary = summary
+        }
+    }
+
     func cancel() {
         guard isRunning else { return }
-        cancellationMessage = isScanning
-            ? "Scan cancelled. Rescan the folder to find files that need repair."
-            : "Repair cancelled. Files completed before cancellation remain repaired."
+        if isScanning {
+            cancellationMessage = "Scan cancelled. Rescan the folder to refresh the previews."
+        } else if isConverting {
+            cancellationMessage = "Conversion cancelled. Completed conversions were kept."
+        } else if isRepairing {
+            cancellationMessage = "Repair cancelled. Files completed before cancellation remain repaired."
+        } else {
+            cancellationMessage = "Organization cancelled. Files moved before cancellation remain organized."
+        }
         operationTask?.cancel()
     }
 
@@ -316,12 +519,23 @@ final class FileDateRepairService: ObservableObject {
     }
 
     private func resetResults() {
+        conversionItems = []
         items = []
+        organizationItems = []
+        organizationSkippedCount = 0
         failures = []
         progress = FileDateRepairProgress()
+        conversionProgress = FileDateRepairProgress()
+        organizationProgress = FileDateRepairProgress()
+        conversionSummary = nil
+        organizationSummary = nil
         repairedIDs = []
         attemptedIDs = []
         scannedFileCount = 0
+    }
+
+    private func organize(_ item: LocalMediaOrganizationItem) async throws {
+        try await LocalMediaOrganizer.move(item)
     }
 
     private func repair(_ item: FileDateRepairItem) async throws {
@@ -451,5 +665,103 @@ final class FileDateRepairService: ObservableObject {
             modified: modified,
             to: fileURL
         )
+    }
+}
+
+extension LocalPhotosService {
+    func convertAll() {
+        guard !isRunning, !conversionItems.isEmpty, let directory else { return }
+        let plannedItems = conversionItems
+        isConverting = true
+        cancellationMessage = nil
+        conversionSummary = LocalMediaConversionSummary(total: plannedItems.count)
+        conversionProgress = FileDateRepairProgress(total: plannedItems.count)
+        let operationID = UUID()
+        self.operationID = operationID
+
+        operationTask = Task { [weak self] in
+            guard let self else { return }
+            let didAccess = directory.startAccessingSecurityScopedResource()
+            defer {
+                if didAccess { directory.stopAccessingSecurityScopedResource() }
+                if self.operationID == operationID {
+                    isConverting = false
+                    operationTask = nil
+                    self.operationID = nil
+                }
+            }
+
+            var summary = LocalMediaConversionSummary(total: plannedItems.count)
+            var conversionFailures: [FileDateRepairFailure] = []
+            var convertedKeptSources = Set<String>()
+            for (index, item) in plannedItems.enumerated() {
+                guard !Task.isCancelled, self.operationID == operationID else {
+                    summary.wasCancelled = true
+                    conversionSummary = summary
+                    return
+                }
+                conversionProgress = FileDateRepairProgress(
+                    processed: index,
+                    total: plannedItems.count,
+                    currentPath: item.sourceRelativePath
+                )
+                do {
+                    try await LocalMediaConverter.convert(item)
+                    summary.converted += 1
+                    if item.keepOriginal {
+                        convertedKeptSources.insert(item.sourceRelativePath)
+                    }
+                } catch is CancellationError {
+                    summary.wasCancelled = true
+                    conversionSummary = summary
+                    return
+                } catch {
+                    summary.failed += 1
+                    conversionFailures.append(
+                        FileDateRepairFailure(
+                            relativePath: item.sourceRelativePath,
+                            message: error.localizedDescription
+                        )
+                    )
+                }
+                conversionProgress.processed = index + 1
+                conversionSummary = summary
+            }
+
+            guard !Task.isCancelled, self.operationID == operationID else {
+                summary.wasCancelled = true
+                conversionSummary = summary
+                return
+            }
+            conversionProgress.currentPath = "Refreshing previews…"
+            do {
+                let refreshed = try await FileDateRepairScanner.scan(
+                    directory: directory,
+                    supportedExtensions: FileDateRepairExtensions.parse(AppSettings.localMediaExtensions),
+                    conversionConfig: AppSettings.localMediaConversionConfig,
+                    progress: { _ in }
+                )
+                guard self.operationID == operationID else { return }
+                conversionItems = refreshed.conversionItems.filter {
+                    !convertedKeptSources.contains($0.sourceRelativePath)
+                }
+                items = refreshed.items
+                organizationItems = refreshed.organizationItems
+                organizationSkippedCount = refreshed.organizationSkippedCount
+                failures = conversionFailures + refreshed.failures
+                scannedFileCount = refreshed.scannedFileCount
+            } catch is CancellationError {
+                summary.wasCancelled = true
+            } catch {
+                conversionFailures.append(
+                    FileDateRepairFailure(
+                        relativePath: directory.lastPathComponent,
+                        message: "Conversion finished, but previews could not refresh: \(error.localizedDescription)"
+                    )
+                )
+                failures = conversionFailures
+            }
+            conversionSummary = summary
+        }
     }
 }

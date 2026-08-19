@@ -22,7 +22,12 @@ enum AppSettings {
     private static let droneKeepRawAfterFinalizeKey = "droneKeepRawAfterFinalize"
     private static let dronePreserveOrientationOnFlattenKey = "dronePreserveOrientationOnFlatten"
     private static let droneLastHandBrakePresetKey = "droneLastHandBrakePreset"
-    private static let fileDateRepairExtensionsKey = "fileDateRepairExtensions"
+    private static let localMediaExtensionsKey = "fileDateRepairExtensions"
+    private static let localConvertHEICKey = "localConvertHEIC"
+    private static let localConvertLegacyVideosKey = "localConvertLegacyVideos"
+    private static let localKeepOriginalsAfterConversionKey = "localKeepOriginalsAfterConversion"
+    private static let localVideoOutputContainerKey = "localVideoOutputContainer"
+    private static let localVideoCodecKey = "localVideoCodec"
 
     static var mediaGridColumnCount: Int {
         get {
@@ -139,8 +144,6 @@ enum AppSettings {
             let value = UserDefaults.standard.string(forKey: droneHandBrakeOutputExtensionKey)
             return DroneFinalizeConfig.normalizeOutputExtension(value ?? "")
         }
-
-
         set {
             UserDefaults.standard.set(
                 DroneFinalizeConfig.normalizeOutputExtension(newValue),
@@ -189,19 +192,91 @@ enum AppSettings {
         )
     }
 
-    // MARK: - File date repair
+    // MARK: - Local media
 
-    static var fileDateRepairExtensions: String {
+    static var localMediaExtensions: String {
         get {
-            UserDefaults.standard.string(forKey: fileDateRepairExtensionsKey)
+            UserDefaults.standard.string(forKey: localMediaExtensionsKey)
                 ?? FileDateRepairExtensions.defaults.joined(separator: ", ")
         }
         set {
             UserDefaults.standard.set(
                 FileDateRepairExtensions.normalizedString(newValue),
-                forKey: fileDateRepairExtensionsKey
+                forKey: localMediaExtensionsKey
             )
         }
+    }
+
+    static var localKeepOriginalsAfterConversion: Bool {
+        get {
+            if UserDefaults.standard.object(forKey: localKeepOriginalsAfterConversionKey) == nil {
+                return LocalMediaConversionConfig.default.keepOriginals
+            }
+            return UserDefaults.standard.bool(forKey: localKeepOriginalsAfterConversionKey)
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: localKeepOriginalsAfterConversionKey)
+        }
+    }
+
+    static var localConvertHEIC: Bool {
+        get {
+            if UserDefaults.standard.object(forKey: localConvertHEICKey) == nil {
+                return LocalMediaConversionConfig.default.convertHEIC
+            }
+            return UserDefaults.standard.bool(forKey: localConvertHEICKey)
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: localConvertHEICKey)
+        }
+    }
+
+    static var localConvertLegacyVideos: Bool {
+        get {
+            if UserDefaults.standard.object(forKey: localConvertLegacyVideosKey) == nil {
+                return LocalMediaConversionConfig.default.convertLegacyVideos
+            }
+            return UserDefaults.standard.bool(forKey: localConvertLegacyVideosKey)
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: localConvertLegacyVideosKey)
+        }
+    }
+
+    static var localVideoOutputContainer: LocalVideoOutputContainer {
+        get {
+            guard let rawValue = UserDefaults.standard.string(forKey: localVideoOutputContainerKey),
+                  let container = LocalVideoOutputContainer(rawValue: rawValue) else {
+                return LocalMediaConversionConfig.default.videoOutputContainer
+            }
+            return container
+        }
+        set {
+            UserDefaults.standard.set(newValue.rawValue, forKey: localVideoOutputContainerKey)
+        }
+    }
+
+    static var localVideoCodec: LocalVideoCodec {
+        get {
+            guard let rawValue = UserDefaults.standard.string(forKey: localVideoCodecKey),
+                  let codec = LocalVideoCodec(rawValue: rawValue) else {
+                return LocalMediaConversionConfig.default.videoCodec
+            }
+            return codec
+        }
+        set {
+            UserDefaults.standard.set(newValue.rawValue, forKey: localVideoCodecKey)
+        }
+    }
+
+    static var localMediaConversionConfig: LocalMediaConversionConfig {
+        LocalMediaConversionConfig(
+            convertHEIC: localConvertHEIC,
+            convertLegacyVideos: localConvertLegacyVideos,
+            keepOriginals: localKeepOriginalsAfterConversion,
+            videoOutputContainer: localVideoOutputContainer,
+            videoCodec: localVideoCodec
+        )
     }
 
     static var exportDirectoryURL: URL? {
